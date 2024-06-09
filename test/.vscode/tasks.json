@@ -1,0 +1,21 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "C: Build debug",
+            "type": "shell",
+            "command": "gcc",
+            "args": [
+                "-g", // Include debugging information
+                "${file}", // The file currently open in the editor
+                // "-o", // Specify output file
+                // "${fileDirname}/${fileBasenameNoExtension}" // Output file location and name
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$gcc"
+        }
+    ]
+}
