@@ -1,13 +1,23 @@
 console.log("hey yo");
 
+var imageUrls = [];
+
 // Handle the message inside the webview
 window.addEventListener('message', event => {
-    
-    const message = event.data; // The JSON data our extension sent
+
+    let message = event.data; // The JSON data our extension sent
+    if (!message) { message = event.message; }
+    if (!message) { message = event; }
     console.log("message received", message);
 
     if (message.command === 'variable') {
-        doVariable(message)
+        doVariable(message);
+    }
+    else if (message.command === 'image') {
+        url = message.url;
+        imageUrls.push(url);
+        console.log("image", url, imageUrls);
+        doImage();
     }
 });
 
@@ -22,17 +32,23 @@ var tabledata = [
 ];
 
 var value;
-
+function doImage() {
+    imageUrls.forEach(imageUrl => {
+        let img = document.createElement("img");
+        img.src = imageUrl;
+        document.body.appendChild(img);
+    });
+}
 
 function doVariable(message) {
     var value = message.output.message.body.output;
-    if (value === "\n"){
+    if (value === "\n") {
         return;
     }
-    
-    console.log("YOYO", value)
+
+    console.log("YOYO", value);
     value = JSON.parse(value);
-    console.log("YOYO", value)
+    console.log("YOYO", value);
     // value = convertDfJsonToTabulatorJson(value);
     // console.log("YOYO", value)
 
@@ -42,7 +58,7 @@ function doVariable(message) {
     // });
 
     jspreadsheet(document.getElementById('spreadsheet'), {
-        data:value
+        data: value
     });
 
 }

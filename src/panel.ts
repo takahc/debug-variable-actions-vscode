@@ -3,7 +3,7 @@ import dedent from 'dedent';
 
 
 export class VariableViewPanel {
-    private _panel: vscode.WebviewPanel | undefined = undefined;
+    private _panel: vscode.WebviewPanel;
     private _panels: vscode.WebviewPanel[] = [];
     private _disposables: vscode.Disposable[] = [];
     private _context: vscode.ExtensionContext;
@@ -12,6 +12,7 @@ export class VariableViewPanel {
     constructor(context: vscode.ExtensionContext) {
         console.log("VariableViewPanel constructor");
         this._context = context;
+        this._panel = this.createPanel();
     }
 
     createPanel(): vscode.WebviewPanel {
@@ -19,17 +20,26 @@ export class VariableViewPanel {
             return this._panel;
         }
         console.log("VariableViewPanel create");
+
+        let localResourceRoots = this._context.storageUri ? [
+            vscode.Uri.joinPath(this._context.extensionUri, "public"),
+            vscode.Uri.joinPath(this._context.storageUri)
+        ] : [vscode.Uri.joinPath(this._context.extensionUri, "public")];
+
         this._panel = vscode.window.createWebviewPanel(
             'variableView',
             'Variable View',
-            vscode.ViewColumn.One,
+            vscode.ViewColumn.Beside,
             {
-                enableScripts: true
+                enableScripts: true,
+                localResourceRoots: localResourceRoots
             }
         );
 
+        let csp = this._panel.webview.cspSource;
+
         this._panel.onDidDispose(() => {
-            this._panel = undefined;
+            this._panel = this.createPanel();
         });
 
         let publicDir = this._panel.webview.asWebviewUri(
@@ -182,7 +192,7 @@ export class VariableViewPanel {
         // </body>
         // </html>`
 
-        
+
         // jSpreadsheet
         this._panel.webview.html = dedent`
         <html>
@@ -199,7 +209,7 @@ export class VariableViewPanel {
 
             <script src="${publicDir}/index.js" />
         </html>
-        `
+        `;
 
         return this._panel;
     }
@@ -211,6 +221,17 @@ export class VariableViewPanel {
             return true;
         }
         return false;
+    }
+
+    getWebViewUrlString(relative_path: string) {
+        const p = this._context.storageUri ?
+            vscode.Uri.joinPath(this._context.storageUri, relative_path) :
+            vscode.Uri.joinPath(this._context.globalStorageUri, relative_path);
+
+        const uri = this._panel.webview.asWebviewUri(p);
+        const urlStr = uri.toString();
+
+        return urlStr;
     }
 
     render(where: vscode.ViewColumn = vscode.ViewColumn.One) {

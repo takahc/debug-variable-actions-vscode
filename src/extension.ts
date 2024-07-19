@@ -2,8 +2,14 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import dedent from 'dedent';
+import Jimp from 'jimp';
+import sharp from 'sharp';
+
+import * as fs from 'fs';
+import * as path from 'path';
 
 import { VariableTrackerRegister } from './tracker';
+import { VariableViewPanel } from './panel';
 
 process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
 
@@ -15,6 +21,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Only allow a single Cat Coder
 	let lastPanel: vscode.WebviewPanel | undefined = undefined;
+	let panel: VariableViewPanel = new VariableViewPanel(context);
 
 	// Register a variable tracker:
 	console.log("context", context);
@@ -290,7 +297,16 @@ export function activate(context: vscode.ExtensionContext) {
 
 			let bufferData = Buffer.from(readMemory.data, "base64");
 			const off = bytesForPx * channels;
-			let image: number[] = new Array<number>(size).fill(0);
+
+
+			// Determine the correct TypedArray based on data characteristics
+			const TypedArray = bytesForPx === 1 ? Uint8Array :
+				bytesForPx === 2 ? (isSigned ? Int16Array : Uint16Array) :
+					bytesForPx === 4 ? (isInt ? (isSigned ? Int32Array : Uint32Array) : Float32Array) :
+						Float64Array; // Assuming bytesForPx === 8 for double precision floats
+
+			// Create a typed array from the buffer data
+			let imageArray = new TypedArray(bufferData.buffer, bufferData.byteOffset, bufferData.byteLength / bytesForPx);
 			for (let i = 0; i < height; i++) {
 				for (let j = 0; j < width; j++) {
 					const offset = off * j;
@@ -314,19 +330,64 @@ export function activate(context: vscode.ExtensionContext) {
 							throw Error;
 						}
 					}
-					image[i * width + j] = b;
+					imageArray[i * width + j] = b;
 				}
 			}
-			console.log("image:", image);
+			console.log("imageArray:", imageArray);
 
-			// Display
+
 			const workspaceFolders = vscode.workspace.workspaceFolders;
-			const filePath = workspaceFolders ? vscode.Uri.joinPath(workspaceFolders[0].uri, `${request.variable.name}.png`) : null;
+			const relativePath = `${request.variable.name}.png`;
+			// const filePath = workspaceFolders ? vscode.Uri.joinPath(workspaceFolders[0].uri, relativePath) : null;
+			const storageUri = context.storageUri ? context.storageUri : context.globalStorageUri;
+			const filePath = vscode.Uri.joinPath(storageUri, relativePath);
+
+			// Extract the directory path from filePath
+			const dirPath = path.dirname(filePath.fsPath);
+
+			// Check if the directory exists, if not, create it
+			if (!fs.existsSync(dirPath)) {
+				fs.mkdirSync(dirPath, { recursive: true });
+			}
+
+
 			if (filePath) {
-				const openPath = vscode.Uri.file(filePath.toString());
-				vscode.workspace.openTextDocument(filePath).then(doc => {
-					vscode.window.showTextDocument(doc);
+				// Use Sharp to process the image data
+				await sharp(imageArray, {
+					raw: {
+						width: width,
+						height: height,
+						channels: channels,
+					},
+					create: {
+						width: width,
+						height: height,
+						channels: 3,
+						background: { r: 0, g: 0, b: 0, alpha: 0 },
+					}
+				})
+					.toFile(filePath.fsPath, (err, info) => {
+						if (err) {
+							console.error('Error processing image:', err);
+						} else {
+							console.log('Image processed and saved:', info);
+						}
+					});
+
+				// Display
+				// const openPath = vscode.Uri.file(filePath.toString()).toString().replace("/file:", "");
+				// vscode.commands.executeCommand('vscode.open', filePath.fsPath);
+				let a = filePath.toString();
+				let weburi = panel.getWebViewUrlString(relativePath);
+				panel.render();
+				panel.postMessage({
+					command: "image",
+					// url: filePath.toString()
+					url: weburi
+
 				});
+				panel.showPanel();
+
 			}
 
 
