@@ -21,7 +21,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Only allow a single Cat Coder
 	let lastPanel: vscode.WebviewPanel | undefined = undefined;
-	let panel: VariableViewPanel = new VariableViewPanel(context);
 
 	// Register a variable tracker:
 	console.log("context", context);
@@ -378,15 +377,18 @@ export function activate(context: vscode.ExtensionContext) {
 				// const openPath = vscode.Uri.file(filePath.toString()).toString().replace("/file:", "");
 				// vscode.commands.executeCommand('vscode.open', filePath.fsPath);
 				let a = filePath.toString();
-				let weburi = panel.getWebViewUrlString(relativePath);
-				panel.render();
-				panel.postMessage({
-					command: "image",
-					// url: filePath.toString()
-					url: weburi
+				VariableViewPanel.render(context);
+				const panel = VariableViewPanel.currentPanel;
+				if (panel) {
+					const weburi = panel.getWebViewUrlString(filePath);
+					panel.postMessage({
+						command: "image",
+						// url: filePath.toString()
+						url: weburi
 
-				});
-				panel.showPanel();
+					});
+					panel.showPanel();
+				}
 
 			}
 
