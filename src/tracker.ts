@@ -10,7 +10,24 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         this._context = context;
     }
 
-    public onDidSendMessage(message: any) { }
+    public async onDidSendMessage(message: any) {
+        console.log("onDidSendMessage", Object.assign({}, message));
+
+        if (message.type === 'event' && message.event === 'stopped') {
+            const session = vscode.debug.activeDebugSession;
+            const threadId = message.body.threadId;
+            const stackTrace = await session?.customRequest('stackTrace', { threadId });
+            const frameId = stackTrace.stackFrames[0].id;
+            const scopes = await session?.customRequest('scopes', { frameId });
+            console.log("scopes", scopes);
+            for (const scope of scopes.scopes) {
+                const variables = await session?.customRequest('variables', { variablesReference: scope.variablesReference });
+                console.log(variables);
+                // Here you can process the variables as needed
+            }
+        }
+
+    }
 
     //     public onDidSendMessage(message: any) {
     //         console.log(Object.assign({}, message));
