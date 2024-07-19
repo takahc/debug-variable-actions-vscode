@@ -1,6 +1,5 @@
 console.log("hey yo");
 
-var imageUrls = [];
 
 // Handle the message inside the webview
 window.addEventListener('message', event => {
@@ -15,9 +14,8 @@ window.addEventListener('message', event => {
     }
     else if (message.command === 'image') {
         url = message.url;
-        imageUrls.push(url);
-        console.log("image", url, imageUrls);
-        doImage();
+        console.log("image", url);
+        doImage(url);
     }
 });
 
@@ -32,12 +30,10 @@ var tabledata = [
 ];
 
 var value;
-function doImage() {
-    imageUrls.forEach(imageUrl => {
-        let img = document.createElement("img");
-        img.src = imageUrl;
-        document.body.appendChild(img);
-    });
+function doImage(imageUrl) {
+    let img = document.createElement("img");
+    img.src = imageUrl;
+    document.body.appendChild(img);
 }
 
 function doVariable(message) {
