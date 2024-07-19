@@ -214,7 +214,7 @@ export class VariableViewPanel {
         return this._panel;
     }
 
-    showPanel(where: vscode.ViewColumn = vscode.ViewColumn.One): boolean {
+    showPanel(where: vscode.ViewColumn = vscode.ViewColumn.Beside): boolean {
         console.log("VariableViewPanel show");
         if (this._panel) {
             this._panel.reveal(where);
@@ -234,7 +234,7 @@ export class VariableViewPanel {
         return urlStr;
     }
 
-    render(where: vscode.ViewColumn = vscode.ViewColumn.One) {
+    render(where: vscode.ViewColumn = vscode.ViewColumn.Beside) {
         console.log("VariableViewPanel render");
         if (!this._panel) {
             this._panel = this.createPanel();
