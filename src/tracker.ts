@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { VariableViewPanel } from './panel';
 import { register } from 'module';
 
-import { DebugSessionTracker } from './variable';
+import { DebugSessionTracker } from './variable/debugSessionTracker';
 
 export class VariableTracker implements vscode.DebugAdapterTracker {
     private _context: vscode.ExtensionContext;
