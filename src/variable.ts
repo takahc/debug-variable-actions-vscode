@@ -1,4 +1,3 @@
-import { ImageType } from './types/types';
 import * as vscode from 'vscode';
 
 
