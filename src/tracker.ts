@@ -52,6 +52,8 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
             const imageVariables = sessionTracker.gatherImageVariables();
             console.log(imageVariables);
 
+            imageVariables[0].toFile("C:\\mytemp\\", "test.png");
+
             let wahat = 3;
         }
 

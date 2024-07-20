@@ -13,6 +13,8 @@ export class DebugVariable {
     public endAddress: string | undefined;
     public sizeByte: string | undefined;
 
+    public binaryInfo: IbinaryInfo<any> | undefined;
+
 
     // value's type is the variable type or an array of DebugVariable or dictionary of DebugVariable
     public value: any | DebugVariableArrayType | DebugVariableStructType | undefined;
@@ -42,10 +44,10 @@ export class DebugVariable {
         // type
         if (type) {
             this.type = type;
-            const typeBinaryInfo: IbinaryInfo<any> = type.evalBinaryInfo({});
-            if (typeBinaryInfo.fixedSize) {
-                this.endAddress = "0X" + (parseInt(this.meta.endAddress) + typeBinaryInfo.sizeByte).toString(16).toUpperCase();
-            }
+            // const typeBinaryInfo: IbinaryInfo<any> = type.evalBinaryInfo({});
+            // if (typeBinaryInfo.fixedSize) {
+            //     this.endAddress = "0X" + (parseInt(this.meta.endAddress) + typeBinaryInfo.sizeByte).toString(16).toUpperCase();
+            // }
         }
 
     }
@@ -73,6 +75,21 @@ export class DebugVariable {
 
     parseType() {
 
+    }
+
+    evalBinaryInfo() {
+        let values = this.getVariableValuesAsDict({});
+        Object.assign(values, { "$meta": this.meta });
+        console.log("values", values);
+        if (this.type) {
+            this.binaryInfo = this.type?.evalBinaryInfo(values);
+            console.log("this.binaryInfo", this.binaryInfo);
+            return this.binaryInfo;
+        }
+        else {
+            console.error("type is undefined");
+            return undefined;
+        }
     }
 
     async drillDown(until = { depth: -1, type_names: [] as string[] }, final = false) {
@@ -162,7 +179,7 @@ export class DebugVariable {
         if (Array.isArray(this.value)) {
             this.value.forEach((variable: DebugVariable) => {
                 let temp = variable.getVariableValuesAsDict({});
-                ret[variable.name!] = temp;
+                Object.assign(ret, temp);
             });
         }
         else {

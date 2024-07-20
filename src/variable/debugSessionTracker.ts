@@ -180,8 +180,7 @@ export class DebugThread {
         }
         for (let variable of frame.variables) {
             console.log("start drillDown", variable);
-            // await variable.drillDown({ depth: -1, type_names: ["Image"] });
-            await variable.drillDown({ depth: -1, type_names: [] });
+            await variable.drillDown({ depth: -1, type_names: ["Image"] });
         }
         return frame.variables;
     }
