@@ -333,8 +333,12 @@ class DebugVariable {
     gatherMeta() {
         let gathered = {
             session: { ...this.frame.thread.tracker.session },
-            thread: { ...this.frame.thread.meta }
+            thread: { ...this.frame.thread.meta },
+            frame: { ...this.frame.meta },
+            variable: { ...this.meta },
         };
+
+        return gathered;
     }
 
 }
