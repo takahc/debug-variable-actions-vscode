@@ -1,7 +1,7 @@
 import { DebugFrame } from './debugSessionTracker';
 import { EvalExpression } from './evalExpression';
 import { ImageVariable, ImageVariableType } from './imageVariable';
-
+import { VariableTypeFactory } from './variableTypeFactory';
 
 export class DebugVariable {
     public meta: any;
@@ -50,7 +50,7 @@ export class DebugVariable {
 
     }
 
-    async parse() {
+    parse() {
         // Parse type
         if (this.type) {
             this.parseType();
@@ -76,34 +76,44 @@ export class DebugVariable {
     }
 
     async drillDown(until = { depth: -1, type_names: [] as string[] }, final = false) {
-        if (!this.meta) { return; }
-        if (until.depth === 0) { return; } // break if the depth reaches 0
+        // if (this.meta === undefined) { return; }
+        // if (until.depth === 0) { return; } // break if the depth reaches 0
 
         // fetch child debug variables
-        const variables = await this.frame.thread.tracker.session?.customRequest('variables', { variablesReference: this.meta.variablesReference });
-        if (!variables) { return; }
+        const variables = await this.frame.thread.tracker.session?.customRequest('variables',
+            { variablesReference: this.meta.variablesReference }
+        );
+        // if (!variables) { return; }
 
-        console.log("drillDown", variables);
+        console.log("drillDown", this.meta.name, this.name, variables, "ref:", this.meta.variablesReference);
         if (variables.variables.length > 0) {
             this.isArray = true;
-            variables.variables.forEach((meta: any) => {
+            for (const meta of variables.variables) {
                 // add child variable
-                let variable = this.addChildVariable(meta);
+                let variable: DebugVariable;
+                if (["Image"].includes(meta.type)) {
+                    let imageType = VariableTypeFactory.get("Image") || undefined;
+                    variable = this.addChildVariable(meta, this, imageType);
+                }
+                else {
+                    // comment out below if you don't want to fetch non-image variables
+                    variable = this.addChildVariable(meta, this, undefined);
+                }
 
                 // count down until.depth if it is not -1 nor negative
                 if (until.depth > 0) { until.depth--; }
 
-                // if this.meta.type is in until.tyes, next is the last drill down
+                // if meta.type is in until.tyes, next is the last drill down
                 let next_final = false;
-                if (until.type_names.length > 0 && until.type_names.includes(this.meta.type as string)) {
+                if (until.type_names.length > 0 && until.type_names.includes(meta.type as string)) {
                     next_final = true; // FIXME: until.type is not working
                 }
 
                 if (!final) {
                     // recursive drill down
-                    variable.drillDown(until, next_final);
+                    await variable.drillDown(until, next_final);
                 }
-            });
+            };
         } else {
             // the item is not an array, so value is set to meta.value
             this.isArray = false;
@@ -134,38 +144,7 @@ export class DebugVariable {
 
 
     autoTypeSelector(type_name: string) {
-        const PrimitiveTypes: { [key: string]: { sizeByte: number, signed: boolean } } = {
-            "char": { sizeByte: 1, signed: true },
-            "unsigned char": { sizeByte: 1, signed: false },
-            "short": { sizeByte: 2, signed: true },
-            "unsigned short": { sizeByte: 2, signed: false },
-            "int": { sizeByte: 4, signed: true },
-            "unsigned int": { sizeByte: 4, signed: false },
-            "long": { sizeByte: 4, signed: true },
-            "unsigned long": { sizeByte: 4, signed: false },
-            "long long": { sizeByte: 8, signed: true },
-            "unsigned long long": { sizeByte: 8, signed: false },
-            "float": { sizeByte: 4, signed: true },
-            "double": { sizeByte: 8, signed: true },
-            "long double": { sizeByte: 16, signed: true }
-        };
-        if (PrimitiveTypes[type_name]) {
-            let { sizeByte, signed } = PrimitiveTypes[type_name];
-            let littleEndian = true;
-            let fixedSize = false;
-            let type = new DebugVariableType(type_name, type_name,
-                {
-                    sizeByte: `${sizeByte}`,
-                    littleEndian: `${littleEndian}`,
-                    signed: `${signed}`,
-                    fixedSize: `${signed}`,
-                }
-            );
-            return type;
-        }
-        else {
-            return undefined;
-        }
+
     }
 
     gatherMeta() {
@@ -179,19 +158,26 @@ export class DebugVariable {
         return gathered;
     }
 
-}
-
-
-
-export class DebugVariableTypeFactory {
-
-    public static get MyImageType() {
-        // return new ImageVariableType("Image", "Image", , true, true, 0, 0, 0, 0, 0, 0, 0, "RGB);
-        return false;
+    getVariableValuesAsDict(ret: { [key: string]: any } = {}) {
+        if (Array.isArray(this.value)) {
+            this.value.forEach((variable: DebugVariable) => {
+                let temp = variable.getVariableValuesAsDict({});
+                ret[variable.name!] = temp;
+            });
+        }
+        else {
+            ret[this.name!] = this.value;
+        }
+        return ret;
     }
 
+    judgeArrayByName(): "array" | "other" {
+        if (this.name) {
+            if ("^\[[0-9]\]$".match(this.name)) { return "array"; }
+        }
+        return "other";
+    }
 }
-
 
 
 export interface IbinaryInfo<T> {

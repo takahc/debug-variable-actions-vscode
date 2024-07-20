@@ -2,6 +2,7 @@ import { constants } from 'buffer';
 import * as vscode from 'vscode';
 import { ImageVariable, ImageVariableType } from './imageVariable';
 import { DebugVariable, DebugVariableType } from './debugVariable';
+import { VariableTypeFactory } from './variableTypeFactory';
 
 
 type IdType = number;
@@ -99,7 +100,9 @@ export class DebugSessionTracker {
     }
 
     gatherImageVariables() {
-        const imageVariables = this.gatherAllVariables().filter(variable => variable instanceof ImageVariable);
+        const imageVariables = this.gatherAllVariables().filter(
+            variable => variable instanceof ImageVariable
+        );
         return imageVariables;
     }
 }
@@ -164,11 +167,21 @@ export class DebugThread {
             console.log("local_scope", local_scope);
             const variables = await this.tracker.session?.customRequest('variables', { variablesReference: local_scope.variablesReference });
             console.log("variables", variables);
-            variables.variables.forEach((variable: any) => { frame.addVariable(variable); });
+            variables.variables.forEach((variable: any) => {
+                if (["Image"].includes(variable.type)) {
+                    let imageType = VariableTypeFactory.get("Image") || undefined;
+                    frame.addVariable(variable, imageType);
+                }
+                else {
+                    // comment out below if you don't want to fetch non-image variables
+                    frame.addVariable(variable);
+                }
+            });
         }
         for (let variable of frame.variables) {
             console.log("start drillDown", variable);
-            await variable.drillDown({ depth: -1, type_names: ["Image"] });
+            // await variable.drillDown({ depth: -1, type_names: ["Image"] });
+            await variable.drillDown({ depth: -1, type_names: [] });
         }
         return frame.variables;
     }

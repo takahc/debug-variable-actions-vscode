@@ -3,6 +3,7 @@ import { VariableViewPanel } from './panel';
 import { register } from 'module';
 
 import { DebugSessionTracker } from './variable/debugSessionTracker';
+import { DebugVariable } from './variable/debugVariable';
 
 export class VariableTracker implements vscode.DebugAdapterTracker {
     private _context: vscode.ExtensionContext;
@@ -39,7 +40,19 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
             const variables = await thread.fetchLocalVariablesInFirstFrame();
             console.log("fetchLocalVariablesInFirstFrame", variables);
 
+            let values: any = [];
+            variables.forEach((variable: DebugVariable) => {
+                values.push(variable.getVariableValuesAsDict());
+            });
+            console.log("values", values);
 
+            const allVariables = sessionTracker.gatherAllVariables();
+            console.log(allVariables);
+
+            const imageVariables = sessionTracker.gatherImageVariables();
+            console.log(imageVariables);
+
+            let wahat = 3;
         }
 
     }
