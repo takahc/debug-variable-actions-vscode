@@ -40,7 +40,7 @@ export class DebugSessionTracker {
         if (!DebugSessionTracker.trackers) {
             return undefined;
         } else {
-            return DebugSessionTracker.trackers.find(tracker => tracker.trakcerId === _trackerQuery);
+            return DebugSessionTracker.trackers.find(tracker => tracker.trackerId === _trackerQuery);
         }
     }
 
@@ -87,7 +87,11 @@ export class DebugSessionTracker {
 class DebugThread {
     public readonly tracker: DebugSessionTracker;
     public readonly id: IdType;
-    public readonly frames: DebugFrame[];
+    private _frames: DebugFrame[];
+
+    public get frames(): DebugFrame[] {
+        return this._frames;
+    }
 
     constructor(
         _tracker: DebugSessionTracker,
@@ -96,7 +100,7 @@ class DebugThread {
     ) {
         this.tracker = _tracker;
         this.id = _threadId;
-        this.frames = _frames;
+        this._frames = _frames;
     }
 
     addFrame(_frameId: IdType, _variables: DebugVariable[] = []): DebugFrame {
@@ -104,6 +108,41 @@ class DebugThread {
         this.frames.push(frame);
         return frame;
     }
+
+    async queryFrame(): Promise<DebugFrame[] | undefined> {
+        const stackTrace = await this.tracker.session?.customRequest('stackTrace', { threadId: this.id });
+        if (stackTrace) {
+            this._frames = [];
+            stackTrace.stackFrames.map((stackFrame: any) => {
+                this.addFrame(stackFrame.id);
+            });
+            return this._frames;
+        }
+        else {
+            return undefined;
+        }
+    }
+
+    async fetchLocalVariablesInFirstFrame() {
+        if (this.frames.length === 0) {
+            await this.queryFrame();
+        }
+        if (this.frames.length === 0) {
+            return [];
+        }
+        const frame = this.frames[0];
+        const scopes = await this.tracker.session?.customRequest('scopes', { frameId: frame.id });
+        console.log("scopes", scopes);
+        if (scopes) {
+            const local_scope = scopes.scopes.find((scope: any) => scope.name === "Locals");
+            console.log("local_scope", local_scope);
+            const variables = await this.tracker.session?.customRequest('variables', { variablesReference: local_scope.variablesReference });
+            console.log("variables", variables);
+            variables.variables.forEach((variable: any) => { frame.addVariable(variable); });
+        }
+        return frame.variables;
+    }
+
 }
 
 class DebugFrame {
@@ -121,8 +160,8 @@ class DebugFrame {
         this.variables = _variables;
     }
 
-    addVariable() {
-        let variable = new DebugVariable(this);
+    addVariable(meta: any) {
+        let variable = new DebugVariable(this, meta);
         this.variables.push(variable);
         return variable;
     }
@@ -130,14 +169,14 @@ class DebugFrame {
 }
 
 class DebugVariable {
+    public meta: any;
     public readonly frame: DebugFrame;
-    public readonly name: string | undefined;
-    public readonly expression: string | undefined;
-    public readonly type: DebugVariableType | undefined;
-
-    public readonly startAddress: string | undefined;
-    public readonly endAddress: string | undefined;
-    public readonly sizeByte: string | undefined;
+    public name: string | undefined;
+    public expression: string | undefined;
+    public type: DebugVariableType | undefined;
+    public startAddress: string | undefined;
+    public endAddress: string | undefined;
+    public sizeByte: string | undefined;
 
 
     // value's type is the variable type or an array of DebugVariable or dictionary of DebugVariable
@@ -145,8 +184,27 @@ class DebugVariable {
 
     constructor(
         _frame: DebugFrame,
+        _meta?: any,
     ) {
         this.frame = _frame;
+        this.meta = _meta;
+
+        // Parse meta
+        if (this.meta) {
+            this.parseMeta();
+        }
+    }
+
+    parseMeta() {
+        this.name = this.meta.name;
+        this.expression = this.meta.evaluateName;
+        this.type = this.meta.type;
+
+        this.startAddress = this.meta.startAddress;
+        this.endAddress = this.meta.endAddress;
+        this.sizeByte = this.meta.sizeByte;
+
+        this.value = this.meta.value;
     }
 }
 

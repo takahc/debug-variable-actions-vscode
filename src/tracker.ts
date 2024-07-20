@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import { VariableViewPanel } from './panel';
 import { register } from 'module';
 
+import { DebugSessionTracker } from './variable';
+
 export class VariableTracker implements vscode.DebugAdapterTracker {
     private _context: vscode.ExtensionContext;
     private _panel: VariableViewPanel | undefined;
@@ -15,16 +17,26 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
 
         if (message.type === 'event' && message.event === 'stopped') {
             const session = vscode.debug.activeDebugSession;
+            let sessionTracker = DebugSessionTracker.newSessionTracker(session!);
             const threadId = message.body.threadId;
-            const stackTrace = await session?.customRequest('stackTrace', { threadId });
-            const frameId = stackTrace.stackFrames[0].id;
-            const scopes = await session?.customRequest('scopes', { frameId });
-            console.log("scopes", scopes);
-            for (const scope of scopes.scopes) {
-                const variables = await session?.customRequest('variables', { variablesReference: scope.variablesReference });
-                console.log(variables);
-                // Here you can process the variables as needed
-            }
+
+            // const stackTrace = await session?.customRequest('stackTrace', { threadId });
+            // const frameId = stackTrace.stackFrames[0].id;
+            // const scopes = await session?.customRequest('scopes', { frameId });
+
+            // console.log(frameId);
+            // console.log(stackTrace);
+            // console.log("scopes", scopes);
+            // for (const scope of scopes.scopes) {
+            //     const variables = await session?.customRequest('variables', { variablesReference: scope.variablesReference });
+            //     console.log(variables);
+            //     // Here you can process the variables as needed
+            // }
+
+            console.log("fetchLocalVariablesInFirstFrame", sessionTracker);
+            const thread = sessionTracker.addThread(threadId);
+            const variables = await thread.fetchLocalVariablesInFirstFrame();
+            console.log("fetchLocalVariablesInFirstFrame", variables);
         }
 
     }
@@ -75,6 +87,7 @@ export class VariableTrackerRegister implements vscode.DebugAdapterTrackerFactor
     createDebugAdapterTracker(session: vscode.DebugSession):
         vscode.ProviderResult<vscode.DebugAdapterTracker> {
         console.log("sessoin!", session);
+        DebugSessionTracker.newSessionTracker(session);
         return this.variableTracker;
     }
 
