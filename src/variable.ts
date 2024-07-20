@@ -75,14 +75,30 @@ export class DebugSessionTracker {
     }
 
     // util
-    public getAllVariables(): DebugVariable[] {
+    public gatherAllVariables(): DebugVariable[] {
         let allVariables: DebugVariable[] = [];
         for (let thread of this.threads) {
             for (let frame of thread.frames) {
-                allVariables.push(...frame.variables);
+                // recursive gather
+                let gather = (variable: DebugVariable) => {
+                    allVariables.push(variable);
+                    if (variable.value instanceof Array) {
+                        variable.value.forEach((child: DebugVariable) => {
+                            gather(child);
+                        });
+                    }
+                };
+                frame.variables.forEach((variable: DebugVariable) => {
+                    gather(variable);
+                });
             }
         }
         return allVariables;
+    }
+
+    gatherImageVariables() {
+        const imageVariables = this.gatherAllVariables().filter(variable => variable instanceof ImageVariable);
+        return imageVariables;
     }
 }
 
@@ -176,8 +192,14 @@ class DebugFrame {
         this.meta = meta;
     }
 
-    addVariable(meta: any) {
-        let variable = new DebugVariable(this, meta);
+    addVariable(meta: any, type?: DebugVariableType): DebugVariable {
+        let variable;
+        if (type instanceof ImageVariableType) {
+            variable = new ImageVariable(this, meta, type);
+        }
+        else {
+            variable = new DebugVariable(this, meta);
+        }
         this.variables.push(variable);
         return variable;
     }
@@ -210,6 +232,7 @@ class DebugVariable {
     constructor(
         _frame: DebugFrame,
         _meta?: any,
+        type?: DebugVariableType
     ) {
         this.frame = _frame;
         this.meta = _meta;
@@ -219,12 +242,17 @@ class DebugVariable {
             this.parseMeta();
         }
 
-        // type
-        this.sizeByte = this.meta.sizeByte;
-
         // address
         this.startAddress = this.meta.memoryReference;
-        // this.endAddress = this.meta.endAddress;
+
+        // type
+        if (type) {
+            this.type = type;
+            if (this.type.sizeByte) {
+                this.endAddress = "0X" + (parseInt(this.meta.endAddress) + this.type.sizeByte).toString(16).toUpperCase();
+            }
+        }
+
     }
 
     async parse() {
@@ -288,8 +316,14 @@ class DebugVariable {
         }
     }
 
-    addChildVariable(meta: any, parent: DebugVariable = this) {
-        let variable = new DebugVariable(this.frame, meta);
+    addChildVariable(meta: any, parent: DebugVariable = this, type?: DebugVariableType) {
+        let variable;
+        if (type instanceof ImageVariableType) {
+            variable = new ImageVariable(this.frame, meta, type);
+        }
+        else {
+            variable = new DebugVariable(this.frame, meta);
+        }
         variable.parent = parent;
         if (!Array.isArray(this.value)) {
             // if meta.value is set, replace it to an empty array
@@ -371,28 +405,112 @@ class TypeFactory {
 
 }
 
+
+class DebugVariableTypeFactory {
+
+    public static get MyImageType() {
+        return new ImageVariableType("Image", "Image", , true, true, 0, 0, 0, 0, 0, 0, 0, "RGB);
+    }
+
+}
+
+
+class EvalExpression<ReturnType> {
+    public expression: string = "";
+    constructor(expression: string) {
+        this.expression = expression;
+    }
+
+    static eval<ReturnType>(expression: string, context?: Record<string, any> | undefined): ReturnType {
+        let func;
+        if (context === undefined) {
+            const func = new Function(`return ${expression};`);
+            return func()
+        }
+        else {
+            // Extract keys and values from the context object
+            const keys = Object.keys(context);
+            const values = keys.map(key => context[key]);
+
+            // Create a new function that returns the result of the expression
+            // The function's arguments are the keys from the context object
+            const func = new Function(...keys, `return ${expression};`);
+
+            // Execute the function with the context values
+            return func(...values);
+        }
+    }
+
+    eval(context?: Record<string, any>): ReturnType {
+        return EvalExpression.eval(this.expression, context);
+    }
+
+    setExpression(expression: string) {
+        this.expression = expression;
+    }
+}
+
+interface IbinaryMeta {
+    [key: string]: any;
+    sizeByte: number,
+    littleEndian: boolean,
+    signed: boolean,
+}
+interface IbinaryMetaExpressions {
+    [key: string]: EvalExpression<any>;
+    sizeByte: EvalExpression<number>,
+    littleEndian: EvalExpression<boolean>,
+    signed: EvalExpression<boolean>,
+}
+interface IbinaryMetaStrings {
+    sizeByte: string,
+    littleEndian: string,
+    signed: string,
+}
+
 class DebugVariableType {
-    // debug variable type knows its name and expression
+    // meta
     public readonly name: string | undefined;
     public readonly expression: string | undefined;
-    public sizeByte: number | undefined;
-    public isLittleEndian: boolean = true;
-    public isSigned: boolean = true;
-
     public isVisualizable: boolean = false;
+
+    // binary info
+    public binaryMeta: IbinaryMetaExpressions = {
+        sizeByte: new EvalExpression<number>(""),
+        littleEndian: new EvalExpression<boolean>("true"),
+        signed: new EvalExpression<boolean>("true"),
+    };
 
     constructor(
         _name: string,
         _expression?: string,
-        _sizeByte?: number,
-        _isLittleEndian?: boolean,
-        _isSigned?: boolean
+        binaryMetaString?: IbinaryMetaStrings,
     ) {
         this.name = _name;
         this.expression = _expression;
-        this.sizeByte = _sizeByte;
-        this.isLittleEndian = _isLittleEndian || true;
-        this.isSigned = _isSigned || true;
+        if (binaryMetaString) {
+            Object.entries(binaryMetaString).forEach(([key, value]) => {
+                this.binaryMeta[key].setExpression(value);
+            });
+        }
+    }
+
+    eval(members: any) {
+        let binaryMetaValues: IbinaryMeta = {
+            sizeByte: 0,
+            littleEndian: false,
+            signed: false,
+        };
+        // eval as a type by given members
+        Object.entries(this.binaryMeta).forEach(([key, evalExpression]) => {
+            // Assuming EvalExpression has an evaluate method that takes members as context
+            binaryMetaValues[key] = evalExpression.eval(members);
+        });
+        return {
+            name: this.name,
+            expression: this.expression,
+            binaryMeta: binaryMetaValues
+        }
     }
 }
 
@@ -404,16 +522,44 @@ type DebugVariableArrayType = DebugVariableType[];
 // Struct type
 type DebugVariableStructType = { [key: string]: DebugVariableType };
 
+
+interface IImageMeta {
+    mem_width: EvalExpression<number>,
+    mem_height: EvalExpression<number>,
+    image_width: EvalExpression<number>,
+    image_height: EvalExpression<number>,
+    stride: EvalExpression<number>,
+    channels: EvalExpression<number>,
+    data: EvalExpression<number>,
+    format: EvalExpression<number>,
+};
+
+interface IImageMetaString {
+    mem_width: string,
+    mem_height: string,
+    image_width: string,
+    image_height: string,
+    stride: string,
+    channels: string,
+    data: string,
+    format: string,
+};
+
+
 class ImageVariableType extends DebugVariableType {
     // ImageVariableType knows its member names or fixed values
-    public mem_width: number | undefined;
-    public mem_height: number | undefined;
-    public image_width: number | undefined;
-    public image_height: number | undefined;
-    public stride: number | undefined;
-    public channels: number | undefined;
-    public data: number | undefined;
-    public format: string | undefined;
+
+
+    public imageMeta: IImageMeta = {
+        mem_width: new EvalExpression<number>(""),
+        mem_height: new EvalExpression<number>(""),
+        image_width: new EvalExpression<number>(""),
+        image_height: new EvalExpression<number>(""),
+        stride: new EvalExpression<number>(""),
+        channels: new EvalExpression<number>(""),
+        data: new EvalExpression<string>(""),
+        format: new EvalExpression<string>(""),
+    };
 
     constructor(
         _name: string,
