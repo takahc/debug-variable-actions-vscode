@@ -248,8 +248,9 @@ class DebugVariable {
         // type
         if (type) {
             this.type = type;
-            if (this.type.sizeByte) {
-                this.endAddress = "0X" + (parseInt(this.meta.endAddress) + this.type.sizeByte).toString(16).toUpperCase();
+            const typeBinaryInfo: IbinaryInfo<any> = type.evalBinaryInfo({});
+            if (typeBinaryInfo.fixedSize) {
+                this.endAddress = "0X" + (parseInt(this.meta.endAddress) + typeBinaryInfo.sizeByte).toString(16).toUpperCase();
             }
         }
 
@@ -339,24 +340,33 @@ class DebugVariable {
 
 
     autoTypeSelector(type_name: string) {
-        const PrimitiveTypes: { [key: string]: { sizeByte: number, isSigned: boolean } } = {
-            "char": { sizeByte: 1, isSigned: true },
-            "unsigned char": { sizeByte: 1, isSigned: false },
-            "short": { sizeByte: 2, isSigned: true },
-            "unsigned short": { sizeByte: 2, isSigned: false },
-            "int": { sizeByte: 4, isSigned: true },
-            "unsigned int": { sizeByte: 4, isSigned: false },
-            "long": { sizeByte: 4, isSigned: true },
-            "unsigned long": { sizeByte: 4, isSigned: false },
-            "long long": { sizeByte: 8, isSigned: true },
-            "unsigned long long": { sizeByte: 8, isSigned: false },
-            "float": { sizeByte: 4, isSigned: true },
-            "double": { sizeByte: 8, isSigned: true },
-            "long double": { sizeByte: 16, isSigned: true }
+        const PrimitiveTypes: { [key: string]: { sizeByte: number, signed: boolean } } = {
+            "char": { sizeByte: 1, signed: true },
+            "unsigned char": { sizeByte: 1, signed: false },
+            "short": { sizeByte: 2, signed: true },
+            "unsigned short": { sizeByte: 2, signed: false },
+            "int": { sizeByte: 4, signed: true },
+            "unsigned int": { sizeByte: 4, signed: false },
+            "long": { sizeByte: 4, signed: true },
+            "unsigned long": { sizeByte: 4, signed: false },
+            "long long": { sizeByte: 8, signed: true },
+            "unsigned long long": { sizeByte: 8, signed: false },
+            "float": { sizeByte: 4, signed: true },
+            "double": { sizeByte: 8, signed: true },
+            "long double": { sizeByte: 16, signed: true }
         };
         if (PrimitiveTypes[type_name]) {
-            let { sizeByte, isSigned } = PrimitiveTypes[type_name];
-            let type = new DebugVariableType(type_name, type_name, sizeByte, true, isSigned);
+            let { sizeByte, signed } = PrimitiveTypes[type_name];
+            let littleEndian = true;
+            let fixedSize = false;
+            let type = new DebugVariableType(type_name, type_name,
+                {
+                    sizeByte: `${sizeByte}`,
+                    littleEndian: `${littleEndian}`,
+                    signed: `${signed}`,
+                    fixedSize: `${signed}`,
+                }
+            );
             return type;
         }
         else {
@@ -409,7 +419,8 @@ class TypeFactory {
 class DebugVariableTypeFactory {
 
     public static get MyImageType() {
-        return new ImageVariableType("Image", "Image", , true, true, 0, 0, 0, 0, 0, 0, 0, "RGB);
+        // return new ImageVariableType("Image", "Image", , true, true, 0, 0, 0, 0, 0, 0, 0, "RGB);
+        return false;
     }
 
 }
@@ -425,7 +436,7 @@ class EvalExpression<ReturnType> {
         let func;
         if (context === undefined) {
             const func = new Function(`return ${expression};`);
-            return func()
+            return func();
         }
         else {
             // Extract keys and values from the context object
@@ -449,71 +460,51 @@ class EvalExpression<ReturnType> {
         this.expression = expression;
     }
 }
-
-interface IbinaryMeta {
-    [key: string]: any;
-    sizeByte: number,
-    littleEndian: boolean,
-    signed: boolean,
-}
-interface IbinaryMetaExpressions {
-    [key: string]: EvalExpression<any>;
-    sizeByte: EvalExpression<number>,
-    littleEndian: EvalExpression<boolean>,
-    signed: EvalExpression<boolean>,
-}
-interface IbinaryMetaStrings {
-    sizeByte: string,
-    littleEndian: string,
-    signed: string,
+interface IbinaryInfo<T> {
+    [key: string]: T,
+    sizeByte: T,
+    littleEndian: T,
+    signed: T,
+    fixedSize: T,
 }
 
 class DebugVariableType {
-    // meta
     public readonly name: string | undefined;
     public readonly expression: string | undefined;
     public isVisualizable: boolean = false;
 
-    // binary info
-    public binaryMeta: IbinaryMetaExpressions = {
-        sizeByte: new EvalExpression<number>(""),
-        littleEndian: new EvalExpression<boolean>("true"),
-        signed: new EvalExpression<boolean>("true"),
-    };
+    private binaryMeta: IbinaryInfo<EvalExpression<any>>;
 
     constructor(
-        _name: string,
-        _expression?: string,
-        binaryMetaString?: IbinaryMetaStrings,
+        name: string,
+        expression?: string,
+        binaryMetaString?: IbinaryInfo<string>,
     ) {
-        this.name = _name;
-        this.expression = _expression;
-        if (binaryMetaString) {
-            Object.entries(binaryMetaString).forEach(([key, value]) => {
-                this.binaryMeta[key].setExpression(value);
-            });
-        }
+        this.name = name;
+        this.expression = expression;
+        this.binaryMeta = {
+            sizeByte: new EvalExpression<number>(binaryMetaString?.sizeByte || ""),
+            littleEndian: new EvalExpression<boolean>(binaryMetaString?.littleEndian || "true"),
+            signed: new EvalExpression<boolean>(binaryMetaString?.signed || "true"),
+            fixedSize: new EvalExpression<boolean>(binaryMetaString?.fixedSize || "false"),
+        };
     }
 
-    eval(members: any) {
-        let binaryMetaValues: IbinaryMeta = {
+    evalBinaryInfo(members: any): IbinaryInfo<any> {
+        const binaryInfo: IbinaryInfo<any> = {
             sizeByte: 0,
             littleEndian: false,
             signed: false,
+            fixedSize: false,
         };
-        // eval as a type by given members
+
         Object.entries(this.binaryMeta).forEach(([key, evalExpression]) => {
-            // Assuming EvalExpression has an evaluate method that takes members as context
-            binaryMetaValues[key] = evalExpression.eval(members);
+            binaryInfo[key] = evalExpression.eval(members);
         });
-        return {
-            name: this.name,
-            expression: this.expression,
-            binaryMeta: binaryMetaValues
-        }
+
+        return binaryInfo;
     }
 }
-
 
 
 // Array type
@@ -523,67 +514,59 @@ type DebugVariableArrayType = DebugVariableType[];
 type DebugVariableStructType = { [key: string]: DebugVariableType };
 
 
-interface IImageMeta {
-    mem_width: EvalExpression<number>,
-    mem_height: EvalExpression<number>,
-    image_width: EvalExpression<number>,
-    image_height: EvalExpression<number>,
-    stride: EvalExpression<number>,
-    channels: EvalExpression<number>,
-    data: EvalExpression<number>,
-    format: EvalExpression<number>,
+interface IimageInfo<T> {
+    [key: string]: T,
+    mem_width: T,
+    mem_height: T,
+    image_width: T,
+    image_height: T,
+    stride: T,
+    channels: T,
+    data: T,
+    format: T,
 };
-
-interface IImageMetaString {
-    mem_width: string,
-    mem_height: string,
-    image_width: string,
-    image_height: string,
-    stride: string,
-    channels: string,
-    data: string,
-    format: string,
-};
-
 
 class ImageVariableType extends DebugVariableType {
     // ImageVariableType knows its member names or fixed values
 
 
-    public imageMeta: IImageMeta = {
-        mem_width: new EvalExpression<number>(""),
-        mem_height: new EvalExpression<number>(""),
-        image_width: new EvalExpression<number>(""),
-        image_height: new EvalExpression<number>(""),
-        stride: new EvalExpression<number>(""),
-        channels: new EvalExpression<number>(""),
-        data: new EvalExpression<string>(""),
-        format: new EvalExpression<string>(""),
-    };
+    private imageMeta: IimageInfo<EvalExpression<any>>;
 
     constructor(
-        _name: string,
-        _expression?: string,
-        _sizeByte?: number,
-        _isLittleEndian?: boolean,
-        _isSigned?: boolean,
-        _mem_width?: number,
-        _mem_height?: number,
-        _image_width?: number,
-        _image_height?: number,
-        _stride?: number,
-        _channels?: number,
-        _data?: number,
-        _format?: string
+        name: string,
+        expression?: string,
+        binaryMetaString?: IbinaryInfo<string>,
+        imageMetaString?: IimageInfo<string>,
     ) {
-        super(_name, _expression, _sizeByte, _isLittleEndian, _isSigned);
-        this.mem_width = _mem_width;
-        this.mem_height = _mem_height;
-        this.image_width = _image_width;
-        this.image_height = _image_height;
-        this.stride = _stride;
-        this.channels = _channels;
-        this.data = _data;
-        this.format = _format;
+        super(name, expression, binaryMetaString);
+        this.imageMeta = {
+            mem_width: new EvalExpression<number>(imageMetaString?.mem_width || "0"),
+            mem_height: new EvalExpression<number>(imageMetaString?.mem_height || "0"),
+            image_width: new EvalExpression<number>(imageMetaString?.image_width || "0"),
+            image_height: new EvalExpression<number>(imageMetaString?.image_height || "0"),
+            stride: new EvalExpression<number>(imageMetaString?.stride || "0"),
+            channels: new EvalExpression<number>(imageMetaString?.channels || "0"),
+            data: new EvalExpression<string>(imageMetaString?.data || "0X00"),
+            format: new EvalExpression<string>(imageMetaString?.format || "RGB"),
+        };
+    }
+
+    evalImageInfo(members: any) {
+        const imageInfo: IimageInfo<any> = {
+            mem_width: 0,
+            mem_height: 0,
+            image_width: 0,
+            image_height: 0,
+            stride: 0,
+            channels: 0,
+            data: 0X00,
+            format: "RGB",
+        };
+
+        Object.entries(this.imageMeta).forEach(([key, evalExpression]) => {
+            imageInfo[key] = evalExpression.eval(members);
+        });
+
+        return imageInfo;
     }
 }
