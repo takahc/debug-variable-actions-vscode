@@ -13,11 +13,12 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
     }
 
     public async onDidSendMessage(message: any) {
-        console.log("onDidSendMessage", Object.assign({}, message));
+        // console.log("onDidSendMessage", Object.assign({}, message));
 
         if (message.type === 'event' && message.event === 'stopped') {
             const session = vscode.debug.activeDebugSession;
             let sessionTracker = DebugSessionTracker.newSessionTracker(session!);
+            sessionTracker.breakCount++;
             const threadId = message.body.threadId;
 
             // const stackTrace = await session?.customRequest('stackTrace', { threadId });
@@ -34,9 +35,11 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
             // }
 
             console.log("fetchLocalVariablesInFirstFrame", sessionTracker);
-            const thread = sessionTracker.addThread(threadId);
+            const thread = sessionTracker.addThread(threadId, [], message.body);
             const variables = await thread.fetchLocalVariablesInFirstFrame();
             console.log("fetchLocalVariablesInFirstFrame", variables);
+
+
         }
 
     }

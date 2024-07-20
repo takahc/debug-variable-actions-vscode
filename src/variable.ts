@@ -1,3 +1,4 @@
+import { constants } from 'buffer';
 import * as vscode from 'vscode';
 
 
@@ -11,6 +12,8 @@ export class DebugSessionTracker {
     public sessionName: TrackerName;
     private _session: vscode.DebugSession;
     public readonly threads: DebugThread[] = [];
+
+    public breakCount: number = 0;
 
     // manage trackers
     private static _trackerIdCounter: number = 0;
@@ -59,8 +62,8 @@ export class DebugSessionTracker {
 
         return new_tracker;
     }
-    public addThread(_threadId: IdType, _frames: DebugFrame[] = []): DebugThread {
-        let thread = new DebugThread(this, _threadId, _frames);
+    public addThread(_threadId: IdType, _frames: DebugFrame[] = [], meta?: any): DebugThread {
+        let thread = new DebugThread(this, _threadId, _frames, meta);
         this.threads.push(thread);
         return thread;
     }
@@ -88,6 +91,8 @@ class DebugThread {
     public readonly id: IdType;
     private _frames: DebugFrame[];
 
+    public meta: any;
+
     public get frames(): DebugFrame[] {
         return this._frames;
     }
@@ -96,24 +101,28 @@ class DebugThread {
         _tracker: DebugSessionTracker,
         _threadId: IdType,
         _frames: DebugFrame[] = [],
+        meta?: any
     ) {
         this.tracker = _tracker;
         this.id = _threadId;
         this._frames = _frames;
+
+        this.meta = meta;
     }
 
-    addFrame(_frameId: IdType, _variables: DebugVariable[] = []): DebugFrame {
-        let frame = new DebugFrame(this, _frameId, _variables);
+    addFrame(_frameId: IdType, _variables: DebugVariable[] = [], meta?: any): DebugFrame {
+        let frame = new DebugFrame(this, _frameId, _variables, meta);
         this.frames.push(frame);
         return frame;
     }
 
     async queryFrame(): Promise<DebugFrame[] | undefined> {
         const stackTrace = await this.tracker.session?.customRequest('stackTrace', { threadId: this.id });
+        console.log(stackTrace);
         if (stackTrace) {
             this._frames = [];
             stackTrace.stackFrames.map((stackFrame: any) => {
-                this.addFrame(stackFrame.id);
+                this.addFrame(stackFrame.id, [], stackFrame);
             });
             return this._frames;
         }
@@ -139,6 +148,10 @@ class DebugThread {
             console.log("variables", variables);
             variables.variables.forEach((variable: any) => { frame.addVariable(variable); });
         }
+        for (let variable of frame.variables) {
+            console.log("start drillDown", variable);
+            await variable.drillDown({ depth: -1, type_names: ["Image"] });
+        }
         return frame.variables;
     }
 
@@ -149,14 +162,18 @@ class DebugFrame {
     public readonly id: IdType;
     public readonly variables: DebugVariable[];
 
+    public meta: any;
+
     constructor(
         _thread: DebugThread,
         _frameId: IdType,
         _variables: DebugVariable[] = [],
+        meta?: any
     ) {
         this.thread = _thread;
         this.id = _frameId;
         this.variables = _variables;
+        this.meta = meta;
     }
 
     addVariable(meta: any) {
@@ -166,6 +183,9 @@ class DebugFrame {
     }
 
 }
+
+
+
 
 class DebugVariable {
     public meta: any;
@@ -181,6 +201,12 @@ class DebugVariable {
     // value's type is the variable type or an array of DebugVariable or dictionary of DebugVariable
     public value: any | DebugVariableArrayType | DebugVariableStructType | undefined;
 
+    // not primitive type
+    public isVisualizable: boolean | undefined = undefined;
+    public isArray: boolean | undefined = undefined;
+    public isStruct: boolean | undefined = undefined;
+    public parent: DebugVariable | undefined;
+
     constructor(
         _frame: DebugFrame,
         _meta?: any,
@@ -192,19 +218,125 @@ class DebugVariable {
         if (this.meta) {
             this.parseMeta();
         }
+
+        // type
+        this.sizeByte = this.meta.sizeByte;
+
+        // address
+        this.startAddress = this.meta.memoryReference;
+        // this.endAddress = this.meta.endAddress;
+    }
+
+    async parse() {
+        // Parse type
+        if (this.type) {
+            this.parseType();
+        }
     }
 
     parseMeta() {
         this.name = this.meta.name;
         this.expression = this.meta.evaluateName;
         this.type = this.meta.type;
-
-        this.startAddress = this.meta.startAddress;
-        this.endAddress = this.meta.endAddress;
-        this.sizeByte = this.meta.sizeByte;
-
         this.value = this.meta.value;
     }
+
+    async judgeHasChild() {
+        if (!this.meta) { return false; }
+        const variables = await this.frame.thread.tracker.session?.customRequest('variables', { variablesReference: this.meta.variablesReference });
+        if (variables.variables.length > 0) { return true; }
+        return false;
+    }
+
+    parseType() {
+
+    }
+
+    async drillDown(until = { depth: -1, type_names: [] as string[] }, final = false) {
+        if (!this.meta) { return; }
+        if (until.depth === 0) { return; } // break if the depth reaches 0
+
+        // fetch child debug variables
+        const variables = await this.frame.thread.tracker.session?.customRequest('variables', { variablesReference: this.meta.variablesReference });
+        if (!variables) { return; }
+
+        console.log("drillDown", variables);
+        if (variables.variables.length > 0) {
+            this.isArray = true;
+            variables.variables.forEach((meta: any) => {
+                // add child variable
+                let variable = this.addChildVariable(meta);
+
+                // count down until.depth if it is not -1 nor negative
+                if (until.depth > 0) { until.depth--; }
+
+                // if this.meta.type is in until.tyes, next is the last drill down
+                let next_final = false;
+                if (until.type_names.length > 0 && until.type_names.includes(this.meta.type as string)) {
+                    next_final = true; // FIXME: until.type is not working
+                }
+
+                if (!final) {
+                    // recursive drill down
+                    variable.drillDown(until, next_final);
+                }
+            });
+        } else {
+            // the item is not an array, so value is set to meta.value
+            this.isArray = false;
+            this.value = this.meta.value; // no need to set here, because it is already set in the constructor
+        }
+    }
+
+    addChildVariable(meta: any, parent: DebugVariable = this) {
+        let variable = new DebugVariable(this.frame, meta);
+        variable.parent = parent;
+        if (!Array.isArray(this.value)) {
+            // if meta.value is set, replace it to an empty array
+            this.value = [];
+        }
+        this.value.push(variable);
+        return variable;
+    }
+
+    setParent(_parent: DebugVariable) {
+        this.parent = _parent;
+    }
+
+
+    autoTypeSelector(type_name: string) {
+        const PrimitiveTypes: { [key: string]: { sizeByte: number, isSigned: boolean } } = {
+            "char": { sizeByte: 1, isSigned: true },
+            "unsigned char": { sizeByte: 1, isSigned: false },
+            "short": { sizeByte: 2, isSigned: true },
+            "unsigned short": { sizeByte: 2, isSigned: false },
+            "int": { sizeByte: 4, isSigned: true },
+            "unsigned int": { sizeByte: 4, isSigned: false },
+            "long": { sizeByte: 4, isSigned: true },
+            "unsigned long": { sizeByte: 4, isSigned: false },
+            "long long": { sizeByte: 8, isSigned: true },
+            "unsigned long long": { sizeByte: 8, isSigned: false },
+            "float": { sizeByte: 4, isSigned: true },
+            "double": { sizeByte: 8, isSigned: true },
+            "long double": { sizeByte: 16, isSigned: true }
+        };
+        if (PrimitiveTypes[type_name]) {
+            let { sizeByte, isSigned } = PrimitiveTypes[type_name];
+            let type = new DebugVariableType(type_name, type_name, sizeByte, true, isSigned);
+            return type;
+        }
+        else {
+            return undefined;
+        }
+    }
+
+    gatherMeta() {
+        let gathered = {
+            session: { ...this.frame.thread.tracker.session },
+            thread: { ...this.frame.thread.meta }
+        };
+    }
+
 }
 
 class ImageVariable extends DebugVariable {
@@ -220,25 +352,48 @@ class ImageVariable extends DebugVariable {
 
     public byte_for_px: number | undefined;
 
-    toFile() {
-
+    toFile(parent_dir: string, filename?: string) {
+        let buffer = this.buffer;
+        if (buffer instanceof Buffer) {
+            let filename = this.name + ".png";
+        }
     }
 }
 
+class TypeFactory {
+    public static createType(_name: string, _expression?: string): DebugVariableType {
+        return new DebugVariableType(_name, _expression);
+    }
+
+}
 
 class DebugVariableType {
     // debug variable type knows its name and expression
     public readonly name: string | undefined;
     public readonly expression: string | undefined;
+    public sizeByte: number | undefined;
+    public isLittleEndian: boolean = true;
+    public isSigned: boolean = true;
+
+    public isVisualizable: boolean = false;
 
     constructor(
         _name: string,
-        _expression?: string
+        _expression?: string,
+        _sizeByte?: number,
+        _isLittleEndian?: boolean,
+        _isSigned?: boolean
     ) {
         this.name = _name;
         this.expression = _expression;
+        this.sizeByte = _sizeByte;
+        this.isLittleEndian = _isLittleEndian || true;
+        this.isSigned = _isSigned || true;
     }
 }
+
+
+
 // Array type
 type DebugVariableArrayType = DebugVariableType[];
 
@@ -259,6 +414,9 @@ class ImageVariableType extends DebugVariableType {
     constructor(
         _name: string,
         _expression?: string,
+        _sizeByte?: number,
+        _isLittleEndian?: boolean,
+        _isSigned?: boolean,
         _mem_width?: number,
         _mem_height?: number,
         _image_width?: number,
@@ -268,7 +426,7 @@ class ImageVariableType extends DebugVariableType {
         _data?: number,
         _format?: string
     ) {
-        super(_name, _expression);
+        super(_name, _expression, _sizeByte, _isLittleEndian, _isSigned);
         this.mem_width = _mem_width;
         this.mem_height = _mem_height;
         this.image_width = _image_width;
@@ -278,5 +436,4 @@ class ImageVariableType extends DebugVariableType {
         this.data = _data;
         this.format = _format;
     }
-
 }
