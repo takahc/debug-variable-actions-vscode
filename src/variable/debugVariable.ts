@@ -154,8 +154,8 @@ export class DebugVariable {
             for (const meta of variables.variables) {
                 // add child variable
                 let variable: DebugVariable;
-                if (["Image"].includes(meta.type)) {
-                    let imageType = VariableTypeFactory.get("Image") || undefined;
+                if (VariableTypeFactory.ImageTypeNames.includes(meta.type)) {
+                    let imageType = VariableTypeFactory.get(meta.type) || undefined;
                     variable = this.addChildVariable(meta, this, imageType);
                 }
                 else {

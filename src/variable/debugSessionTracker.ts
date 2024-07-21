@@ -199,8 +199,8 @@ export class DebugThread {
             const variables = await this.tracker.session?.customRequest('variables', { variablesReference: local_scope.variablesReference });
             console.log("variables", variables);
             variables.variables.forEach((variable: any) => {
-                if (["Image"].includes(variable.type)) {
-                    let imageType = VariableTypeFactory.get("Image") || undefined;
+                if (VariableTypeFactory.ImageTypeNames.includes(variable.type)) {
+                    let imageType = VariableTypeFactory.get(variable.type) || undefined;
                     frame.addVariable(variable, imageType);
                 }
                 else {
@@ -211,7 +211,7 @@ export class DebugThread {
         }
         for (let variable of frame.variables) {
             console.log("start drillDown", variable);
-            await variable.drillDown({ depth: -1, type_names: ["Image"] });
+            await variable.drillDown({ depth: -1, type_names: VariableTypeFactory.ImageTypeNames });
         }
         return frame.variables;
     }

@@ -18,6 +18,10 @@ export class VariableTypeFactory {
         "long double": { sizeByte: 16, signed: true, isInt: false },
     };
 
+    public static get ImageTypeNames() {
+        return ["Image"];
+    }
+
     public static get MyImageType() {
         return new ImageVariableType("Image", "Image",
             {
