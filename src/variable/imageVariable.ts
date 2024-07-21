@@ -61,7 +61,7 @@ export class ImageVariable extends DebugVariable {
         }
     }
 
-    async toFile(parent_dir?: vscode.Uri, filename?: string) {
+    async toFile() {
         let buffer = this.buffer;
 
 
@@ -160,21 +160,21 @@ export class ImageVariable extends DebugVariable {
         // }
 
         // Save
-        if (filename === undefined) {
-            filename = `${this.name}_${this.expression}.png`;
-        }
-        if (parent_dir === undefined) {
-            const context = this.frame.thread.tracker.context;
-            const storageUri = context.storageUri ? context.storageUri : context.globalStorageUri;
-            const breakCount = this.frame.thread.tracker.breakCount;
-            const threadId = this.frame.thread.id;
-            const frameId = this.frame.meta.name;
-            const frameName = this.frame.meta.name;
-            const source = `${this.frame.meta.source.name}(${this.frame.meta.line},${this.frame.meta.column})`;
-            const parent_dir_name = `Break${breakCount}_thread${threadId}_frame${frameId}_${frameName}_${source}`;
-            parent_dir = vscode.Uri.joinPath(storageUri, parent_dir_name);
-        }
-        const filePath = vscode.Uri.joinPath(parent_dir, filename);
+        const context = this.frame.thread.tracker.context;
+        const storageUri = context.storageUri ? context.storageUri : context.globalStorageUri;
+        const breakCount = this.frame.thread.tracker.breakCount;
+        const threadId = this.frame.thread.id;
+        const frameId = this.frame.meta.name;
+        const frameName = this.frame.meta.name;
+        const source = `${this.frame.meta.source.name}(${this.frame.meta.line},${this.frame.meta.column})`;
+
+        // const session_dir_name = `Session${date}_${this.frame.thread.tracker.session.type}_${this.frame.thread.tracker.session.id}`;
+        const session_dir_name = `Session${this.frame.thread.tracker.debugStartDate}`;
+        const break_dir_name = `Break${breakCount}_thread${threadId}_frame${frameId}_${frameName}_${source}`;
+        // const filename = `${this.name}_${this.expression}.png`;
+        const filename = `${this.expression}.png`;
+        const filePath = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, filename);
+        console.log("filePath", filePath);
 
         // Extract the directory path from filePath
         const dirPath = path.dirname(filePath.fsPath);

@@ -13,50 +13,56 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         this._context = context;
     }
 
+    async proc(message: any) {
+        const session = vscode.debug.activeDebugSession;
+        let sessionTracker = DebugSessionTracker.newSessionTracker(this._context, session!);
+        sessionTracker.breakCount++;
+        const threadId = message.body.threadId;
+
+        // const stackTrace = await session?.customRequest('stackTrace', { threadId });
+        // const frameId = stackTrace.stackFrames[0].id;
+        // const scopes = await session?.customRequest('scopes', { frameId });
+
+        // console.log(frameId);
+        // console.log(stackTrace);
+        // console.log("scopes", scopes);
+        // for (const scope of scopes.scopes) {
+        //     const variables = await session?.customRequest('variables', { variablesReference: scope.variablesReference });
+        //     console.log(variables);
+        //     // Here you can process the variables as needed
+        // }
+
+        console.log("fetchLocalVariablesInFirstFrame", sessionTracker);
+        const thread = sessionTracker.addThread(threadId, [], message.body);
+        const variables = await thread.fetchLocalVariablesInFirstFrame();
+        console.log("fetchLocalVariablesInFirstFrame", variables);
+
+        let values: any = [];
+        variables.forEach((variable: DebugVariable) => {
+            values.push(variable.getVariableValuesAsDict());
+        });
+        console.log("values", values);
+
+        const allVariables = sessionTracker.gatherAllVariables();
+        console.log(allVariables);
+
+        const imageVariables = sessionTracker.gatherImageVariables();
+        console.log(imageVariables);
+
+        for (const imageVariable of imageVariables) {
+            await imageVariable.toFile();
+            // imageVariable.toFile();
+        }
+
+        let wahat = 3;
+
+    }
+
     public async onDidSendMessage(message: any) {
         // console.log("onDidSendMessage", Object.assign({}, message));
 
         if (message.type === 'event' && message.event === 'stopped') {
-            const session = vscode.debug.activeDebugSession;
-            let sessionTracker = DebugSessionTracker.newSessionTracker(this._context, session!);
-            sessionTracker.breakCount++;
-            const threadId = message.body.threadId;
-
-            // const stackTrace = await session?.customRequest('stackTrace', { threadId });
-            // const frameId = stackTrace.stackFrames[0].id;
-            // const scopes = await session?.customRequest('scopes', { frameId });
-
-            // console.log(frameId);
-            // console.log(stackTrace);
-            // console.log("scopes", scopes);
-            // for (const scope of scopes.scopes) {
-            //     const variables = await session?.customRequest('variables', { variablesReference: scope.variablesReference });
-            //     console.log(variables);
-            //     // Here you can process the variables as needed
-            // }
-
-            console.log("fetchLocalVariablesInFirstFrame", sessionTracker);
-            const thread = sessionTracker.addThread(threadId, [], message.body);
-            const variables = await thread.fetchLocalVariablesInFirstFrame();
-            console.log("fetchLocalVariablesInFirstFrame", variables);
-
-            let values: any = [];
-            variables.forEach((variable: DebugVariable) => {
-                values.push(variable.getVariableValuesAsDict());
-            });
-            console.log("values", values);
-
-            const allVariables = sessionTracker.gatherAllVariables();
-            console.log(allVariables);
-
-            const imageVariables = sessionTracker.gatherImageVariables();
-            console.log(imageVariables);
-
-            for (const imageVariable of imageVariables) {
-                await imageVariable.toFile();
-            }
-
-            let wahat = 3;
+            await this.proc(message);
         }
 
     }

@@ -126,7 +126,7 @@ export class DebugVariable {
         );
         // if (!variables) { return; }
 
-        console.log("drillDown", this.meta.name, this.name, variables, "ref:", this.meta.variablesReference);
+        // console.log("drillDown", this.meta.name, this.name, variables, "ref:", this.meta.variablesReference);
         if (variables.variables.length > 0) {
             this.isArray = true;
             for (const meta of variables.variables) {

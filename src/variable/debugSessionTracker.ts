@@ -16,6 +16,7 @@ export class DebugSessionTracker {
     private _session: vscode.DebugSession;
     public readonly context: vscode.ExtensionContext;;
     public readonly threads: DebugThread[] = [];
+    public readonly debugStartDate: string;
 
     public breakCount: number = 0;
 
@@ -35,6 +36,27 @@ export class DebugSessionTracker {
         this._session = _session;
         this.sessionName = _sessionName;
         this.threads = _threads;
+
+        // Get the current date and time
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1; // getMonth() is zero-based
+        const day = now.getDate();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        const seconds = now.getSeconds();
+        const milliseconds = now.getMilliseconds();
+
+        const monthPadded = month.toString().padStart(2, '0');
+        const dayPadded = day.toString().padStart(2, '0');
+        const hoursPadded = hours.toString().padStart(2, '0');
+        const minutesPadded = minutes.toString().padStart(2, '0');
+        const secondsPadded = seconds.toString().padStart(2, '0');
+        // Ensure milliseconds are three digits
+        const millisecondsPadded = milliseconds.toString().padStart(3, '0');
+
+        // Concatenate the parts with the desired format
+        this.debugStartDate = `${year}-${monthPadded}-${dayPadded}_${hoursPadded}-${minutesPadded}-${secondsPadded}-${millisecondsPadded}`;
     };
 
     // getter
