@@ -18,7 +18,7 @@ export class DebugSessionTracker {
     public readonly threads: DebugThread[] = [];
     public readonly debugStartDate: string;
 
-    public breakCount: number = 0;
+    public static breakCount: number = 0; // FIXME: manage brake count not by a static.
 
     // manage trackers
     private static _trackerIdCounter: number = 0;

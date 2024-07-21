@@ -6,6 +6,7 @@ import sharp from 'sharp';
 // import * as cv from '@techstark/opencv-js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { DebugSessionTracker } from './debugSessionTracker';
 
 export interface IimageInfo<T> {
     [key: string]: T,
@@ -176,14 +177,15 @@ export class ImageVariable extends DebugVariable {
         // Save
         const context = this.frame.thread.tracker.context;
         const storageUri = context.storageUri ? context.storageUri : context.globalStorageUri;
-        const breakCount = this.frame.thread.tracker.breakCount;
+        const breakCount = DebugSessionTracker.breakCount; //FIXME
         const threadId = this.frame.thread.id;
         const frameId = this.frame.meta.name;
         const frameName = this.frame.meta.name;
         const source = `${this.frame.meta.source.name}(${this.frame.meta.line},${this.frame.meta.column})`;
 
         // const session_dir_name = `Session${date}_${this.frame.thread.tracker.session.type}_${this.frame.thread.tracker.session.id}`;
-        const session_dir_name = `Session${this.frame.thread.tracker.debugStartDate}`;
+        // const session_dir_name = `Session${this.frame.thread.tracker.debugStartDate}`;
+        const session_dir_name = `Session${this.frame.thread.tracker.session.id}`;
         this.frame.thread.tracker.debugStartDate;
         // const break_dir_name = `Break${breakCount}_thread${threadId}_frame${frameId}_${frameName}_${source}`;
         const break_dir_name = `Break${breakCount}`;

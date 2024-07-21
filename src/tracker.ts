@@ -16,11 +16,12 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
 
     async proc(message: any) {
         const session = vscode.debug.activeDebugSession;
-        if (DebugSessionTracker.currentTracker === undefined) {
-            DebugSessionTracker.newSessionTracker(this._context, session!);
-        }
+
+        // Create new tracker to manage debug variables every frames and threads,
+        //   not to share them among debug trackers even if they have same session.
+        DebugSessionTracker.newSessionTracker(this._context, session!);
         let sessionTracker = DebugSessionTracker.currentTracker!;
-        sessionTracker.breakCount++;
+        DebugSessionTracker.breakCount++;
         const threadId = message.body.threadId;
 
         // const stackTrace = await session?.customRequest('stackTrace', { threadId });
@@ -126,6 +127,7 @@ export class VariableTrackerRegister implements vscode.DebugAdapterTrackerFactor
         vscode.ProviderResult<vscode.DebugAdapterTracker> {
         console.log("sessoin!", session);
         DebugSessionTracker.newSessionTracker(this.context, session);
+        DebugSessionTracker.breakCount = 0; // FIXME: It should better to manage not by a static.
         return this.variableTracker;
     }
 
