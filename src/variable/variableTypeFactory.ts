@@ -21,9 +21,9 @@ export class VariableTypeFactory {
     public static get MyImageType() {
         return new ImageVariableType("Image", "Image",
             {
-                sizeByte: `width*height*1*4`,
+                sizeByte: `width*height*1*1`, // w*h*c*bytesForPx
                 littleEndian: `true`,
-                signed: `true`,
+                signed: `false`,
                 fixedSize: `false`,
                 isInt: `true`,
             },
@@ -32,11 +32,11 @@ export class VariableTypeFactory {
                 mem_height: `height`,
                 image_width: `width`,
                 image_height: `height`,
-                stride: `width*4`,
+                stride: `width*1`,
                 channels: `1`,
                 data: `String(((d)=> data.split(" ")[0] )(data))`,
                 format: `"GRAY"`,
-                bytesForPx: `4`,
+                bytesForPx: `1`,
             }
         );
     }

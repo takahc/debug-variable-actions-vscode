@@ -3,7 +3,7 @@ import { EvalExpression } from "./evalExpression";
 import { DebugVariable, DebugVariableType, IbinaryInfo } from "./debugVariable";
 import { VariableViewPanel } from '../panel';
 import sharp from 'sharp';
-import * as cv from '@techstark/opencv-js';
+// import * as cv from '@techstark/opencv-js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -146,18 +146,18 @@ export class ImageVariable extends DebugVariable {
 
 
         // refer to https://github.com/Mohamed5341/opencv-image/blob/main/src/myimages.ts
-        console.log("convert array to opencv image");
-        let imageSrc = cv.matFromArray(this.imageInfo.mem_width, this.imageInfo.mem_height, this.type, imageArray);
-        if (this.imageInfo.channels === 1) {
-            console.log("convert image to RGB from gray");
-            cv.cvtColor(imageSrc, imageSrc, cv.COLOR_GRAY2RGB);
-        }
+        // console.log("convert array to opencv image");
+        // let imageSrc = cv.matFromArray(this.imageInfo.mem_width, this.imageInfo.mem_height, this.type, imageArray);
+        // if (this.imageInfo.channels === 1) {
+        //     console.log("convert image to RGB from gray");
+        //     cv.cvtColor(imageSrc, imageSrc, cv.COLOR_GRAY2RGB);
+        // }
 
-        if (this.imageInfo.channels === 3) {
-            cv.cvtColor(imageSrc, imageSrc, cv.COLOR_BGR2RGB);
-        } else if (this.imageInfo.channels === 4) {
-            cv.cvtColor(imageSrc, imageSrc, cv.COLOR_BGRA2RGBA);
-        }
+        // if (this.imageInfo.channels === 3) {
+        //     cv.cvtColor(imageSrc, imageSrc, cv.COLOR_BGR2RGB);
+        // } else if (this.imageInfo.channels === 4) {
+        //     cv.cvtColor(imageSrc, imageSrc, cv.COLOR_BGRA2RGBA);
+        // }
 
         // Save
         if (filename === undefined) {
@@ -196,7 +196,7 @@ export class ImageVariable extends DebugVariable {
                 create: {
                     width: this.imageInfo.mem_width,
                     height: this.imageInfo.mem_height,
-                    channels: this.imageInfo.channels,
+                    channels: 3,
                     background: { r: 0, g: 0, b: 0, alpha: 0 },
                 }
             }).toFile(filePath.fsPath, (err, info) => {
