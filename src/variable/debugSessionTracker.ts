@@ -118,7 +118,12 @@ export class DebugSessionTracker {
                 frame.variables.forEach((variable: DebugVariable) => {
                     gather(variable);
                 });
+
+                // gather for only first frame for debug
+                // break; //FIXME: remove this line
             }
+            // gather for only first thread for debug
+            // break; //FIXME: remove this line
         }
         return allVariables;
     }

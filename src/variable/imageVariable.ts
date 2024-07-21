@@ -65,6 +65,7 @@ export class ImageVariable extends DebugVariable {
     }
 
     async toFile() {
+        console.log("begin toFile", this, this.name, this.expression);
         let buffer = this.buffer;
 
 
@@ -89,8 +90,14 @@ export class ImageVariable extends DebugVariable {
             return result;
         })(this.imageInfo.data);
 
+
+        // check null pointer
         if (parseInt(startAddress, 16) === 0) {
             console.log("toFile skip null pointer image", this.name, this.expression);
+            return;
+        }
+        if (this.binaryInfo.sizeByte === 0 || this.imageInfo.mem_width === 0 || this.imageInfo.mem_height === 0) {
+            console.log("toFile skip zero size image", this.name, this.expression);
             return;
         }
 
@@ -106,7 +113,7 @@ export class ImageVariable extends DebugVariable {
 
 
         let bufferData = Buffer.from(readMemory.data, "base64");
-        const off = this.imageInfo.bytesForPx * this.imageInfo.channels;
+        const byteStrideForPx = this.imageInfo.bytesForPx * this.imageInfo.channels;
 
 
         // Determine the correct TypedArray based on data characteristics
@@ -123,28 +130,30 @@ export class ImageVariable extends DebugVariable {
         );
         for (let i = 0; i < this.imageInfo.mem_height; i++) {
             for (let j = 0; j < this.imageInfo.mem_width; j++) {
-                const offset = off * j;
-                let b;
-                if (this.binaryInfo.isInt) {
-                    if (this.binaryInfo.signed) {
-                        b = bufferData.readIntLE(offset, this.imageInfo.bytesForPx);
+                for (let c = 0; c < this.imageInfo.channels; c++) {
+                    const offset = byteStrideForPx * j;
+                    let b;
+                    if (this.binaryInfo.isInt) {
+                        if (this.binaryInfo.signed) {
+                            b = bufferData.readIntLE(offset, this.imageInfo.bytesForPx);
+                        }
+                        else {
+                            b = bufferData.readUIntLE(offset, this.imageInfo.bytesForPx);
+                        }
                     }
                     else {
-                        b = bufferData.readUIntLE(offset, this.imageInfo.bytesForPx);
+                        if (this.imageInfo.bytesForPx === 4) {
+                            b = bufferData.readFloatLE(offset);
+                        }
+                        else if (this.imageInfo.bytesForPx === 8) {
+                            b = bufferData.readDoubleLE(offset);
+                        }
+                        else {
+                            throw Error;
+                        }
                     }
+                    imageArray[i * this.imageInfo.mem_width + j + c] = b;
                 }
-                else {
-                    if (this.imageInfo.bytesForPx === 4) {
-                        b = bufferData.readFloatLE(offset);
-                    }
-                    else if (this.imageInfo.bytesForPx === 8) {
-                        b = bufferData.readDoubleLE(offset);
-                    }
-                    else {
-                        throw Error;
-                    }
-                }
-                imageArray[i * this.imageInfo.mem_width + j] = b;
             }
         }
         console.log("imageArray:", imageArray);
@@ -175,6 +184,7 @@ export class ImageVariable extends DebugVariable {
 
         // const session_dir_name = `Session${date}_${this.frame.thread.tracker.session.type}_${this.frame.thread.tracker.session.id}`;
         const session_dir_name = `Session${this.frame.thread.tracker.debugStartDate}`;
+        this.frame.thread.tracker.debugStartDate;
         // const break_dir_name = `Break${breakCount}_thread${threadId}_frame${frameId}_${frameName}_${source}`;
         const break_dir_name = `Break${breakCount}`;
         // const filename = `${this.name}_${this.expression}.png`;
@@ -187,29 +197,23 @@ export class ImageVariable extends DebugVariable {
 
         // Check if the directory exists, if not, create it
         if (!fs.existsSync(dirPath)) {
-            fs.mkdirSync(dirPath, { recursive: true });
+            await fs.mkdirSync(dirPath, { recursive: true });
         }
 
         if (filePath) {
             // Use Sharp to process the image data
-            console.log("toFile creating image", this.name, this.expression, filePath.fsPath);
+            console.log("toFile creating image", this, this.name, this.expression, filePath.fsPath);
             await sharp(imageArray, {
                 raw: {
                     width: this.imageInfo.mem_width,
                     height: this.imageInfo.mem_height,
                     channels: this.imageInfo.channels,
-                },
-                create: {
-                    width: this.imageInfo.mem_width,
-                    height: this.imageInfo.mem_height,
-                    channels: 3,
-                    background: { r: 0, g: 0, b: 0, alpha: 0 },
                 }
             }).toFile(filePath.fsPath, (err, info) => {
                 if (err) {
-                    console.error('Error processing image:', err);
+                    console.error('Error processing image:', this.expression, err);
                 } else {
-                    console.log('Image processed and saved:', info);
+                    console.log('Image processed and saved:', this.expression, info);
                 }
             });
 
@@ -224,10 +228,11 @@ export class ImageVariable extends DebugVariable {
             // Display
             // const openPath = vscode.Uri.file(filePath.toString()).toString().replace("/file:", "");
             // vscode.commands.executeCommand('vscode.open', filePath.fsPath);
-            let a = filePath.toString();
+            console.log("rendering panel");
             VariableViewPanel.render(this.frame.thread.tracker.context);
             const panel = VariableViewPanel.currentPanel;
             if (panel) {
+                console.log("showing image on panel", panel);
                 const weburi = panel.getWebViewUrlString(filePath);
                 panel.postMessage({
                     command: "image",
@@ -236,6 +241,9 @@ export class ImageVariable extends DebugVariable {
 
                 });
                 panel.showPanel();
+            }
+            else {
+                console.log("panel is undefined");
             }
 
         }

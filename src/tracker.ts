@@ -8,6 +8,7 @@ import { DebugVariable } from './variable/debugVariable';
 export class VariableTracker implements vscode.DebugAdapterTracker {
     private _context: vscode.ExtensionContext;
     private _panel: VariableViewPanel | undefined;
+    private _sessionTracker: DebugSessionTracker | undefined;
 
     constructor(context: vscode.ExtensionContext) {
         this._context = context;
@@ -15,7 +16,10 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
 
     async proc(message: any) {
         const session = vscode.debug.activeDebugSession;
-        let sessionTracker = DebugSessionTracker.newSessionTracker(this._context, session!);
+        if (DebugSessionTracker.currentTracker === undefined) {
+            DebugSessionTracker.newSessionTracker(this._context, session!);
+        }
+        let sessionTracker = DebugSessionTracker.currentTracker!;
         sessionTracker.breakCount++;
         const threadId = message.body.threadId;
 
