@@ -102,6 +102,9 @@ export class DebugVariable {
                 // delete
                 delete values[key];
             }
+            if (key === "") {
+                delete values[key];
+            }
         };
 
         console.log("values", values);
@@ -120,9 +123,28 @@ export class DebugVariable {
         // if (this.meta === undefined) { return; }
         // if (until.depth === 0) { return; } // break if the depth reaches 0
 
+        console.log(
+            this,
+            this.meta.name,
+            {
+                variablesReference: this.meta.variablesReference,
+                filter: undefined,
+                start: 0,
+                count: 1000
+
+            });
+
+        if (this.meta.variablesReference === 0) { return; }
+
         // fetch child debug variables
         const variables = await this.frame.thread.tracker.session?.customRequest('variables',
-            { variablesReference: this.meta.variablesReference }
+            {
+                variablesReference: this.meta.variablesReference,
+                filter: undefined,
+                // start: 0,
+                count: 1000
+
+            }
         );
         // if (!variables) { return; }
 

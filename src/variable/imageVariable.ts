@@ -46,6 +46,9 @@ export class ImageVariable extends DebugVariable {
                 // delete
                 delete values[key];
             }
+            if (key === "") {
+                delete values[key];
+            }
         };
 
         Object.assign(values, { "$meta": this.meta });
@@ -172,7 +175,8 @@ export class ImageVariable extends DebugVariable {
 
         // const session_dir_name = `Session${date}_${this.frame.thread.tracker.session.type}_${this.frame.thread.tracker.session.id}`;
         const session_dir_name = `Session${this.frame.thread.tracker.debugStartDate}`;
-        const break_dir_name = `Break${breakCount}_thread${threadId}_frame${frameId}_${frameName}_${source}`;
+        // const break_dir_name = `Break${breakCount}_thread${threadId}_frame${frameId}_${frameName}_${source}`;
+        const break_dir_name = `Break${breakCount}`;
         // const filename = `${this.name}_${this.expression}.png`;
         const filename = `${this.expression}.png`;
         const filePath = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, filename);
