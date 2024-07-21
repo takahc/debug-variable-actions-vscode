@@ -52,7 +52,10 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         for (const imageVariable of imageVariables) {
             await imageVariable.toFile();
             // imageVariable.toFile();
+
         }
+
+        console.log("DONE!!");
 
         let wahat = 3;
 
@@ -63,6 +66,9 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
 
         if (message.type === 'event' && message.event === 'stopped') {
             await this.proc(message);
+
+            console.log("DONE!!!!!!!!!!!");
+
         }
 
     }

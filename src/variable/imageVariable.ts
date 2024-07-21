@@ -67,7 +67,6 @@ export class ImageVariable extends DebugVariable {
 
         this.updateImageInfo();
         this.updateBinaryInfo();
-
         let startAddress = ((str: string) => {
             let result = "";
             const hexChars = "0123456789ABCDEFabcdef";
@@ -91,7 +90,10 @@ export class ImageVariable extends DebugVariable {
             console.log("toFile skip null pointer image", this.name, this.expression);
             return;
         }
-        const readMemory = await vscode.debug.activeDebugSession?.customRequest('readMemory', {
+
+
+        console.log("startAddress", startAddress, "sizeByte", this.binaryInfo.sizeByte, this.name, this.expression);
+        const readMemory = await this.frame.thread.tracker.session.customRequest('readMemory', {
             memoryReference: startAddress, offset: 0, count: this.binaryInfo.sizeByte
         });
         console.log("readMemory: ", readMemory);

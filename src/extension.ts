@@ -11,7 +11,7 @@ import * as path from 'path';
 import { VariableTrackerRegister } from './tracker';
 import { VariableViewPanel } from './panel';
 
-process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
+// process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
 
 
 // This method is called when your extension is activated

@@ -162,7 +162,9 @@ export class DebugThread {
     }
 
     async queryFrame(): Promise<DebugFrame[] | undefined> {
-        const stackTrace = await this.tracker.session?.customRequest('stackTrace', { threadId: this.id });
+        const stackTrace = await this.tracker.session?.customRequest('stackTrace',
+            { threadId: this.id, startFrame: 0, levels: 1000 }
+        );
         console.log(stackTrace);
         if (stackTrace) {
             this._frames = [];
