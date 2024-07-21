@@ -1,0 +1,17 @@
+#wrapper {
+}
+
+div .image-content {
+  display: flex;
+  gap: 3px;
+  margin: 4px;
+}
+
+.image {
+  width: 64px;
+  max-height: 64px;
+}
+/* .image > img{
+    width: 100%;
+    height: 100%;
+} */

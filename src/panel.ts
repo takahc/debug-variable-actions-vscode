@@ -307,6 +307,19 @@ export class VariableViewPanel {
         </html>
         `;
 
+        // Image
+        html = dedent`
+        <html>
+        <head>
+            <link rel="stylesheet" href="${publicDir}/style_image.css" type="text/css" />
+        </head>
+        <body>
+            <div id="wrapper"></div>
+            <script src="${publicDir}/index_image.js" />
+        </body></html>
+        `;
+
+
         return html;
 
     }
