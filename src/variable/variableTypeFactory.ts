@@ -2,20 +2,20 @@ import { DebugVariableType } from "./debugVariable";
 import { ImageVariableType } from "./imageVariable";
 
 export class VariableTypeFactory {
-    private static _primitiveTypes: { [key: string]: { sizeByte: number, signed: boolean } } = {
-        "char": { sizeByte: 1, signed: true },
-        "unsigned char": { sizeByte: 1, signed: false },
-        "short": { sizeByte: 2, signed: true },
-        "unsigned short": { sizeByte: 2, signed: false },
-        "int": { sizeByte: 4, signed: true },
-        "unsigned int": { sizeByte: 4, signed: false },
-        "long": { sizeByte: 4, signed: true },
-        "unsigned long": { sizeByte: 4, signed: false },
-        "long long": { sizeByte: 8, signed: true },
-        "unsigned long long": { sizeByte: 8, signed: false },
-        "float": { sizeByte: 4, signed: true },
-        "double": { sizeByte: 8, signed: true },
-        "long double": { sizeByte: 16, signed: true }
+    private static _primitiveTypes: { [key: string]: { sizeByte: number, signed: boolean, isInt: boolean } } = {
+        "char": { sizeByte: 1, signed: true, isInt: true },
+        "unsigned char": { sizeByte: 1, signed: false, isInt: true },
+        "short": { sizeByte: 2, signed: true, isInt: true },
+        "unsigned short": { sizeByte: 2, signed: false, isInt: true },
+        "int": { sizeByte: 4, signed: true, isInt: true },
+        "unsigned int": { sizeByte: 4, signed: false, isInt: true },
+        "long": { sizeByte: 4, signed: true, isInt: true },
+        "unsigned long": { sizeByte: 4, signed: false, isInt: true },
+        "long long": { sizeByte: 8, signed: true, isInt: true },
+        "unsigned long long": { sizeByte: 8, signed: false, isInt: true },
+        "float": { sizeByte: 4, signed: true, isInt: false },
+        "double": { sizeByte: 8, signed: true, isInt: false },
+        "long double": { sizeByte: 16, signed: true, isInt: false },
     };
 
     public static get MyImageType() {
@@ -23,8 +23,9 @@ export class VariableTypeFactory {
             {
                 sizeByte: `width*height*1*4`,
                 littleEndian: `true`,
-                signed: `false`,
+                signed: `true`,
                 fixedSize: `false`,
+                isInt: `true`,
             },
             {
                 mem_width: `width`,
@@ -33,9 +34,9 @@ export class VariableTypeFactory {
                 image_height: `height`,
                 stride: `width*4`,
                 channels: `1`,
-                data: `data`,
+                data: `String(((d)=> data.split(" ")[0] )(data))`,
                 format: `"GRAY"`,
-                pxType: `"int"`,
+                bytesForPx: `4`,
             }
         );
     }
@@ -52,6 +53,7 @@ export class VariableTypeFactory {
                     littleEndian: `${littleEndian}`,
                     signed: `${signed}`,
                     fixedSize: `${signed}`,
+                    isInt: `${signed}`,
                 }
             );
             return type;

@@ -14,6 +14,7 @@ export class DebugSessionTracker {
     private _trackerId: TrackerId | undefined;
     public sessionName: TrackerName;
     private _session: vscode.DebugSession;
+    public readonly context: vscode.ExtensionContext;;
     public readonly threads: DebugThread[] = [];
 
     public breakCount: number = 0;
@@ -25,10 +26,12 @@ export class DebugSessionTracker {
 
     // constructor
     constructor(
+        context: vscode.ExtensionContext,
         _session: vscode.DebugSession,
         _sessionName: string = "My Debug Session",
         _threads: DebugThread[] = [],
     ) {
+        this.context = context;
         this._session = _session;
         this.sessionName = _sessionName;
         this.threads = _threads;
@@ -50,12 +53,11 @@ export class DebugSessionTracker {
     }
 
     // factory
-    public static newSessionTracker(_session: vscode.DebugSession): DebugSessionTracker {
+    public static newSessionTracker(context: vscode.ExtensionContext, _session: vscode.DebugSession): DebugSessionTracker {
         console.log("[DebugSessionTracker]", "Track new session", _session);
 
         // Create a new tracker
-        let new_tracker = new DebugSessionTracker(_session);
-        new_tracker = new DebugSessionTracker(_session);
+        let new_tracker = new DebugSessionTracker(context, _session);
         new_tracker.setNewTrackerId();
 
         // Add new tracker to the list of trackers

@@ -18,7 +18,7 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
 
         if (message.type === 'event' && message.event === 'stopped') {
             const session = vscode.debug.activeDebugSession;
-            let sessionTracker = DebugSessionTracker.newSessionTracker(session!);
+            let sessionTracker = DebugSessionTracker.newSessionTracker(this._context, session!);
             sessionTracker.breakCount++;
             const threadId = message.body.threadId;
 
@@ -52,7 +52,9 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
             const imageVariables = sessionTracker.gatherImageVariables();
             console.log(imageVariables);
 
-            imageVariables[0].toFile("C:\\mytemp\\", "test.png");
+            for (const imageVariable of imageVariables) {
+                await imageVariable.toFile();
+            }
 
             let wahat = 3;
         }
@@ -97,15 +99,17 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
 
 export class VariableTrackerRegister implements vscode.DebugAdapterTrackerFactory {
     private variableTracker: VariableTracker;
+    public readonly context: vscode.ExtensionContext;
 
     constructor(_context: vscode.ExtensionContext) {
         this.variableTracker = new VariableTracker(_context);
+        this.context = _context;
     }
 
     createDebugAdapterTracker(session: vscode.DebugSession):
         vscode.ProviderResult<vscode.DebugAdapterTracker> {
         console.log("sessoin!", session);
-        DebugSessionTracker.newSessionTracker(session);
+        DebugSessionTracker.newSessionTracker(this.context, session);
         return this.variableTracker;
     }
 

@@ -3,6 +3,14 @@ import { EvalExpression } from './evalExpression';
 import { ImageVariable, ImageVariableType } from './imageVariable';
 import { VariableTypeFactory } from './variableTypeFactory';
 
+export interface IbinaryInfo<T> {
+    [key: string]: T,
+    sizeByte: T,
+    littleEndian: T,
+    signed: T,
+    fixedSize: T,
+    isInt: T,
+}
 export class DebugVariable {
     public meta: any;
     public readonly frame: DebugFrame;
@@ -13,7 +21,13 @@ export class DebugVariable {
     public endAddress: string | undefined;
     public sizeByte: string | undefined;
 
-    public binaryInfo: IbinaryInfo<any> | undefined;
+    public binaryInfo: IbinaryInfo<any> = {
+        sizeByte: 0,
+        littleEndian: true,
+        signed: true,
+        fixedSize: false,
+        isInt: true,
+    };
 
 
     // value's type is the variable type or an array of DebugVariable or dictionary of DebugVariable
@@ -77,9 +91,19 @@ export class DebugVariable {
 
     }
 
-    evalBinaryInfo() {
+    updateBinaryInfo() {
         let values = this.getVariableValuesAsDict({});
         Object.assign(values, { "$meta": this.meta });
+        // delete invalid keys
+        for (const key of Object.keys(values)) {
+            try {
+                EvalExpression.eval(`((${key}) => true)(${key})`, { [`${key}`]: true });
+            } catch (error) {
+                // delete
+                delete values[key];
+            }
+        };
+
         console.log("values", values);
         if (this.type) {
             this.binaryInfo = this.type?.evalBinaryInfo(values);
@@ -178,12 +202,12 @@ export class DebugVariable {
     getVariableValuesAsDict(ret: { [key: string]: any } = {}) {
         if (Array.isArray(this.value)) {
             this.value.forEach((variable: DebugVariable) => {
-                let temp = variable.getVariableValuesAsDict({});
-                Object.assign(ret, temp);
+                Object.assign(ret, { [`${this.name}`]: this.startAddress });
+                let temp = variable.getVariableValuesAsDict(ret);
             });
         }
         else {
-            ret[this.name!] = this.value;
+            Object.assign(ret, { [`${this.name}`]: this.value });
         }
         return ret;
     }
@@ -194,15 +218,6 @@ export class DebugVariable {
         }
         return "other";
     }
-}
-
-
-export interface IbinaryInfo<T> {
-    [key: string]: T,
-    sizeByte: T,
-    littleEndian: T,
-    signed: T,
-    fixedSize: T,
 }
 
 export class DebugVariableType {
@@ -224,6 +239,7 @@ export class DebugVariableType {
             littleEndian: new EvalExpression<boolean>(binaryMetaString?.littleEndian || "true"),
             signed: new EvalExpression<boolean>(binaryMetaString?.signed || "true"),
             fixedSize: new EvalExpression<boolean>(binaryMetaString?.fixedSize || "false"),
+            isInt: new EvalExpression<boolean>(binaryMetaString?.isInt || "true"),
         };
     }
 
@@ -233,6 +249,7 @@ export class DebugVariableType {
             littleEndian: false,
             signed: false,
             fixedSize: false,
+            isInt: true
         };
 
         Object.entries(this.binaryMeta).forEach(([key, evalExpression]) => {
