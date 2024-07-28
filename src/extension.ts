@@ -398,6 +398,11 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 
+	context.subscriptions.push(
+		vscode.commands.registerCommand('debug-variable-right-click-actions.autobreak', () => {
+			console.log("autobreak");
+		})
+	);
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('debug-variable-right-click-actions.start', () => {
