@@ -150,7 +150,7 @@ export class DebugVariable {
                 }
             );
         } catch (e) {
-            console.log("error request variables", this, e)
+            console.log("error request variables", this, e);
             return;
         }
         // if (!variables) { return; }

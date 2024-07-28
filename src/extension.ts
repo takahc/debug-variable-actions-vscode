@@ -10,6 +10,7 @@ import * as path from 'path';
 
 import { VariableTrackerRegister } from './tracker';
 import { VariableViewPanel } from './panel';
+import { VariableTypeFactory } from './variable/variableTypeFactory';
 
 // process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
 
@@ -414,6 +415,15 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	);
+
+	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
+		if (e.affectsConfiguration('debug-variable-right-click-actions.config.image-types')) {
+			console.log("changed config: debug-variable-right-click-actions.config.image-types");
+			VariableTypeFactory.loadSettings();
+		}
+	}));
+
+
 }
 
 // This method is called when your extension is deactivated
