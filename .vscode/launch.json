@@ -13,7 +13,9 @@
         "--profile=development2",
         "--extensionDevelopmentPath=${workspaceFolder}"
       ],
-      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "outFiles": [
+        "${workspaceFolder}/out/**/*.js"
+      ],
       "preLaunchTask": "${defaultBuildTask}"
     }
   ]

@@ -1,22 +1,90 @@
-﻿// ConsoleApplication2.cpp : このファイルには 'main' 関数が含まれています。プログラム実行の開始と終了がそこで行われます。
-//
+﻿#include <iostream>
+#include <stdlib.h>
 
-#include <iostream>
+#define WIDTH 512
+#define HEIGHT 512
+
+typedef struct
+{
+    int width;
+    int height;
+    unsigned char* data;
+} Image;
+
+typedef struct
+{
+    int n;
+    Image img[2];
+} Images;
+
+Image createRandomImage(int width, int height)
+{
+    unsigned char* data;
+    data = (unsigned char*)malloc(sizeof(unsigned char) * width * height);
+    bool bw_flag = false;
+    for (int i = 0; i < height; i++)
+    {
+        for (int j = 0; j < width; j++)
+        {
+            if (i % (rand() % 3 + 1) == 0 && j % (rand() % 3 + 1) == 0)
+            {
+                bw_flag = !bw_flag;
+            }
+            data[i * width + j] = bw_flag ? rand() % 256 : 0;
+        }
+    }
+    Image img;
+    img.width = width;
+    img.height = height;
+    img.data = data;
+    return img;
+}
+
+void clearImage(Image* img)
+{
+    for (int i = 0; i < (img->height) * (img->width); i++)
+        img->data[i] = 0;
+}
+
+void freeImage(Image* image)
+{
+    if (image->data != NULL) {
+        free(image->data);
+        image->data = NULL;
+    }
+}
 
 int main()
 {
-    std::cout << "Hello World!\n";
-    int a;
-    std::cin >> a;
+    Image img = createRandomImage(512, 512);
+    std::cout << "img.data = " << std::hex << img.data << std::endl;
+    std::cout << "&(img.data) = " << std::hex << &(img.data) << std::endl;
+
+    Image img2[30];
+    for (int i = 0; i < 30; i++)
+    {
+        img2[i] = createRandomImage(10, 10);
+    }
+
+    for (int i = 0; i < 10; i++)
+    {
+        freeImage(&img);
+        img = createRandomImage(10, 10);
+        for (int i = 0; i < 30; i++)
+        {
+            freeImage(&img2[i]);
+            img2[i] = createRandomImage(10, 10);
+        }
+        std::cout << i << std::endl;
+    }
+
+    // clear
+    clearImage(&img);
+    clearImage(&img2[0]);
+    clearImage(&img2[1]);
+
+    // free
+    freeImage(&img);
+    freeImage(&img2[0]);
+    freeImage(&img2[1]);
 }
-
-// プログラムの実行: Ctrl + F5 または [デバッグ] > [デバッグなしで開始] メニュー
-// プログラムのデバッグ: F5 または [デバッグ] > [デバッグの開始] メニュー
-
-// 作業を開始するためのヒント: 
-//    1. ソリューション エクスプローラー ウィンドウを使用してファイルを追加/管理します 
-//   2. チーム エクスプローラー ウィンドウを使用してソース管理に接続します
-//   3. 出力ウィンドウを使用して、ビルド出力とその他のメッセージを表示します
-//   4. エラー一覧ウィンドウを使用してエラーを表示します
-//   5. [プロジェクト] > [新しい項目の追加] と移動して新しいコード ファイルを作成するか、[プロジェクト] > [既存の項目の追加] と移動して既存のコード ファイルをプロジェクトに追加します
-//   6. 後ほどこのプロジェクトを再び開く場合、[ファイル] > [開く] > [プロジェクト] と移動して .sln ファイルを選択します

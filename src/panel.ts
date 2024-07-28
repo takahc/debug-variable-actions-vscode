@@ -62,6 +62,23 @@ export class VariableViewPanel {
                         return;
                     // Add more switch case statements here as more webview message commands
                     // are created within the webview context (i.e. inside src/webview/main.ts)
+                    case "revealTextFile":
+                        {
+                            const uri = vscode.Uri.file(message.uri);
+                            const _pos = message.pos;
+                            const pos = _pos ? new vscode.Position(_pos[0], _pos[1]) : new vscode.Position(0, 0);
+                            console.log("vscode.executeDocumentHighlights", uri, pos);
+                            vscode.commands.executeCommand("vscode.executeDocumentHighlights", uri, pos);
+                        }
+                        break;
+                    case "open":
+                        {
+                            const uri = vscode.Uri.file(message.uri);
+                            console.log("vscode.open", uri);
+                            vscode.commands.executeCommand("vscode.open", uri);
+                        }
+                        break;
+
                 }
             },
             undefined,
@@ -131,6 +148,28 @@ export class VariableViewPanel {
         }
         else {
             console.log("Error! No panel to post message to!");
+        }
+    }
+
+    static postMessage(message: any) {
+        const panel = VariableViewPanel.currentPanel;
+        if (panel) {
+            panel._panel.webview.postMessage(message);
+        }
+        else {
+            console.log("Error! No panel to post message to!");
+        }
+    }
+
+
+    static sendInstanceMessage(instant_message: string) {
+        const panel = VariableViewPanel.currentPanel;
+        if (panel) {
+            const message = {
+                command: "instant-message",
+                message: instant_message
+            }
+            panel._panel.webview.postMessage(message);
         }
     }
 
@@ -314,9 +353,24 @@ export class VariableViewPanel {
             <link rel="stylesheet" href="${publicDir}/style_image.css" type="text/css" />
         </head>
         <body>
+            <div id="instant-message"></div>
             <div id="wrapper"></div>
             <script src="${publicDir}/index_image.js" />
         </body></html>
+        `;
+
+
+        // Image panel
+        html = dedent`
+                <html>
+                <head>
+                    <link rel="stylesheet" href="${publicDir}/style_image_panel.css" type="text/css" />
+                </head>
+                <body>
+                    <div id="instant-message"></div>
+                    <div id="wrapper"></div>
+                    <script src="${publicDir}/index_image_panel.js" />
+                </body></html>
         `;
 
 

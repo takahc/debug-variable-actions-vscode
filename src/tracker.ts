@@ -55,6 +55,8 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         console.log(imageVariables);
 
         for (const imageVariable of imageVariables) {
+            imageVariable.updateImageInfo();
+            imageVariable.updateBinaryInfo();
             await imageVariable.toFile();
             // imageVariable.toFile();
 
@@ -70,9 +72,12 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         // console.log("onDidSendMessage", Object.assign({}, message));
 
         if (message.type === 'event' && message.event === 'stopped') {
+            VariableViewPanel.sendInstanceMessage("WAIT FOR IMAGES...")
             await this.proc(message);
 
             console.log("DONE!!!!!!!!!!!");
+            VariableViewPanel.postMessage({ command: "capture" });
+            VariableViewPanel.sendInstanceMessage("DONE!")
 
         }
 

@@ -104,9 +104,14 @@ export class ImageVariable extends DebugVariable {
 
 
         console.log("startAddress", startAddress, "sizeByte", this.binaryInfo.sizeByte, this.name, this.expression);
-        const readMemory = await this.frame.thread.tracker.session.customRequest('readMemory', {
-            memoryReference: startAddress, offset: 0, count: this.binaryInfo.sizeByte
-        });
+        let readMemory;
+        try {
+            readMemory = await this.frame.thread.tracker.session.customRequest('readMemory', {
+                memoryReference: startAddress, offset: 0, count: this.binaryInfo.sizeByte
+            });
+        } catch (e) {
+            console.log("error readMemory", this, e);
+        }
         console.log("readMemory: ", readMemory);
 
 
@@ -115,13 +120,15 @@ export class ImageVariable extends DebugVariable {
 
         let bufferData = Buffer.from(readMemory.data, "base64");
         const byteStrideForPx = this.imageInfo.bytesForPx * this.imageInfo.channels;
+        console.log("bufferData", bufferData, this);
 
 
         // Determine the correct TypedArray based on data characteristics
-        const TypedArray = this.imageInfo.bytesForPx === 1 ? Uint8Array :
-            this.imageInfo.bytesForPx === 2 ? (this.binaryInfo.signed ? Int16Array : Uint16Array) :
-                this.imageInfo.bytesForPx === 4 ? (this.binaryInfo.signed ? Int32Array : Uint32Array) : Float64Array;
-        // (isInt ? (this.imageInfo.bytesForPx === 4 : Float32Array : Float64Array;) : 
+        const TypedArray = !(this.binaryInfo.isInt) ? (this.imageInfo.bytesForPx === 4 ? Float32Array : Float64Array) : (
+            this.imageInfo.bytesForPx === 1 ? (this.binaryInfo.signed ? Int8Array : Uint8Array) :
+                this.imageInfo.bytesForPx === 2 ? (this.binaryInfo.signed ? Int16Array : Uint16Array) :
+                    this.imageInfo.bytesForPx === 4 ? (this.binaryInfo.signed ? Int32Array : Uint32Array) : Uint8Array
+        );
 
         // Create a typed array from the buffer data
         let imageArray = new TypedArray(
@@ -129,33 +136,37 @@ export class ImageVariable extends DebugVariable {
             bufferData.byteOffset,
             bufferData.byteLength / this.imageInfo.bytesForPx
         );
-        for (let i = 0; i < this.imageInfo.mem_height; i++) {
-            for (let j = 0; j < this.imageInfo.mem_width; j++) {
-                for (let c = 0; c < this.imageInfo.channels; c++) {
-                    const offset = byteStrideForPx * j;
-                    let b;
-                    if (this.binaryInfo.isInt) {
-                        if (this.binaryInfo.signed) {
-                            b = bufferData.readIntLE(offset, this.imageInfo.bytesForPx);
+        try {
+            for (let i = 0; i < this.imageInfo.mem_height; i++) {
+                for (let j = 0; j < this.imageInfo.mem_width; j++) {
+                    for (let c = 0; c < this.imageInfo.channels; c++) {
+                        const offset = (i * this.imageInfo.mem_width + j) * this.imageInfo.bytesForPx + this.imageInfo.channels;
+                        let b;
+                        if (this.binaryInfo.isInt) {
+                            if (this.binaryInfo.signed) {
+                                b = bufferData.readIntLE(offset, this.imageInfo.bytesForPx);
+                            }
+                            else {
+                                b = bufferData.readUIntLE(offset, this.imageInfo.bytesForPx);
+                            }
                         }
                         else {
-                            b = bufferData.readUIntLE(offset, this.imageInfo.bytesForPx);
+                            if (this.imageInfo.bytesForPx === 4) {
+                                b = bufferData.readFloatLE(offset);
+                            }
+                            else if (this.imageInfo.bytesForPx === 8) {
+                                b = bufferData.readDoubleLE(offset);
+                            }
+                            else {
+                                throw Error;
+                            }
                         }
+                        imageArray[i * this.imageInfo.mem_width + j + c] = b;
                     }
-                    else {
-                        if (this.imageInfo.bytesForPx === 4) {
-                            b = bufferData.readFloatLE(offset);
-                        }
-                        else if (this.imageInfo.bytesForPx === 8) {
-                            b = bufferData.readDoubleLE(offset);
-                        }
-                        else {
-                            throw Error;
-                        }
-                    }
-                    imageArray[i * this.imageInfo.mem_width + j + c] = b;
                 }
             }
+        } catch (e) {
+            console.log("error read array", this, e);
         }
         console.log("imageArray:", imageArray);
 
@@ -190,7 +201,9 @@ export class ImageVariable extends DebugVariable {
         // const break_dir_name = `Break${breakCount}_thread${threadId}_frame${frameId}_${frameName}_${source}`;
         const break_dir_name = `Break${breakCount}`;
         // const filename = `${this.name}_${this.expression}.png`;
-        const filename = `${this.expression}.png`;
+        // const filename = `${this.expression}.png`;
+        const pattern = /[\\\/:\*\?\"<>\|]/;
+        const filename = `${this.expression}.png`.replace(pattern, "-");
         const filePath = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, filename);
         console.log("filePath", filePath);
 
@@ -203,6 +216,9 @@ export class ImageVariable extends DebugVariable {
         }
 
         if (filePath) {
+            // Sanitize path
+            // const filePathSafe = vscode.Uri.parse(filePath.fsPath.replace("[\\\/:\*\?\"<>\|]", "$"))
+
             // Use Sharp to process the image data
             console.log("toFile creating image", this, this.name, this.expression, filePath.fsPath);
             await sharp(imageArray, {
@@ -239,7 +255,16 @@ export class ImageVariable extends DebugVariable {
                 panel.postMessage({
                     command: "image",
                     // url: filePath.toString()
-                    url: weburi
+                    url: weburi,
+                    meta: {
+                        "vscode": {
+                            "workspaceFolder": this.frame.thread.tracker.session.workspaceFolder,
+                            "storageUri": storageUri.fsPath,
+                            "filePath": filePath.fsPath,
+                        },
+                        "imageInfo": this.imageInfo,
+                        ...this.gatherMeta()
+                    }
 
                 });
                 panel.showPanel();

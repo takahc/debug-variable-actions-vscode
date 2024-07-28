@@ -6,6 +6,11 @@
   text-wrap: nowrap;
 }
 
+.image-trace-manager {
+  display: flex;
+  flex-wrap: wrap;
+}
+
 #wrapper {}
 
 div .image-content {
@@ -14,10 +19,21 @@ div .image-content {
   margin: 6px;
 }
 
+.image-item {
+  text-align: center;
+  margin: 8px;
+  margin-bottom: 20px;
+  width: 350px;
+}
+
 .image {
   width: 64px;
   /* max-height: 64px; */
   height: 64px;
+}
+
+.variable-info {
+  text-align: center;
 }
 
 /* .image > img{
@@ -29,4 +45,8 @@ div .image-content {
 
 .hidden {
   display: none;
+}
+
+.evaluate-name {
+  font-family: 'Consolas', 'Courier New', Courier, monospace;
 }

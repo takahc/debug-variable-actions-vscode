@@ -137,15 +137,22 @@ export class DebugVariable {
         if (this.meta.variablesReference === 0) { return; }
 
         // fetch child debug variables
-        const variables = await this.frame.thread.tracker.session?.customRequest('variables',
-            {
-                variablesReference: this.meta.variablesReference,
-                filter: undefined,
-                // start: 0,
-                count: 1000
+        let variables;
+        try{
 
-            }
-        );
+            variables = await this.frame.thread.tracker.session?.customRequest('variables',
+                {
+                    variablesReference: this.meta.variablesReference,
+                    filter: undefined,
+                    // start: 0,
+                    count: 1000
+                    
+                }
+            );
+        }catch(e){
+            console.log("error request variables", this, e)
+            return;
+        }
         // if (!variables) { return; }
 
         // console.log("drillDown", this.meta.name, this.name, variables, "ref:", this.meta.variablesReference);

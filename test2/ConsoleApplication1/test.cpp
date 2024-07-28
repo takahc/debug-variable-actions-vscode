@@ -1,29 +1,36 @@
 #include <iostream>
+#include <stdlib.h>
 
 #define WIDTH 512
 #define HEIGHT 512
 
-typedef struct {
+typedef struct
+{
     int width;
     int height;
-    unsigned char* data;
+    unsigned char *data;
 } Image;
 
-typedef struct {
+typedef struct
+{
     int n;
     Image img[2];
 } Images;
 
-Image createRandomImage(int width, int height){
+Image createRandomImage(int width, int height)
+{
     unsigned char *data;
-    data = (unsigned char*)malloc(sizeof(unsigned char) * width * height);
+    data = (unsigned char *)malloc(sizeof(unsigned char) * width * height);
     bool bw_flag = false;
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            if (i % 3 == 0 && j % 3 == 0){
+    for (int i = 0; i < height; i++)
+    {
+        for (int j = 0; j < width; j++)
+        {
+            if (i % (rand() % 3 + 1) == 0 && j % (rand() % 3 + 1) == 0)
+            {
                 bw_flag = !bw_flag;
             }
-            data[i * width + j] = bw_flag ? 255 : 0;
+            data[i * width + j] = bw_flag ? rand() % 256 : 0;
         }
     }
     Image img;
@@ -33,12 +40,14 @@ Image createRandomImage(int width, int height){
     return img;
 }
 
-void *clearImage(Image* img){
-    for(int i = 0; i < (img->height)*(img->width); i++)
-        img-> data[i] = 0;
+void clearImage(Image *img)
+{
+    for (int i = 0; i < (img->height) * (img->width); i++)
+        img->data[i] = 0;
 }
 
-void freeImage(Image* image){
+void freeImage(Image *image)
+{
     free(image->data);
 }
 
@@ -48,9 +57,23 @@ int main()
     std::cout << "img.data = " << std::hex << img.data << std::endl;
     std::cout << "&(img.data) = " << std::hex << &(img.data) << std::endl;
 
-    Image img2[2];
-    img2[0] = createRandomImage(10, 10);
-    img2[1] = createRandomImage(10, 20);
+    Image img2[30];
+    for (int i = 0; i < 30; i++)
+    {
+        img2[i] = createRandomImage(10, 10);
+    }
+
+    for (int i = 0; i < 10; i++)
+    {
+        freeImage(&img);
+        img = createRandomImage(10, 10);
+        for (int i = 0; i < 30; i++)
+        {
+            freeImage(&img2[i]);
+            img2[i] = createRandomImage(10, 10);
+        }
+        std::cout << i << std::endl;
+    }
 
     // clear
     clearImage(&img);
