@@ -55,6 +55,91 @@
           "when": "true"
         }
       ]
+    },
+    "configuration": {
+      "title": "Debug Variable Right Click Actions",
+      "properties": {
+        "debug-variable-right-click-actions.config.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the extension"
+        },
+        "debug-variable-right-click-actions.config.image-types": {
+          "type": "array",
+          "additionalItems": true,
+          "description": "Additional image types",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "display_name": {
+                "type": "string"
+              },
+              "match_types": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "binary_info": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "sizeByte": {
+                    "type": "string"
+                  },
+                  "littleEndian": {
+                    "type": "string"
+                  },
+                  "signed": {
+                    "type": "string"
+                  },
+                  "fixedSize": {
+                    "type": "string",
+                    "default": "false"
+                  },
+                  "isInt": {
+                    "type": "string"
+                  }
+                }
+              },
+              "image_info": {
+                "additionalProperties": false,
+                "type": "object",
+                "properties": {
+                  "mem_width": {
+                    "type": "string"
+                  },
+                  "mem_height": {
+                    "type": "string"
+                  },
+                  "image_width": {
+                    "type": "string"
+                  },
+                  "image_height": {
+                    "type": "string"
+                  },
+                  "stride": {
+                    "type": "string"
+                  },
+                  "channels": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "string"
+                  },
+                  "format": {
+                    "type": "string"
+                  },
+                  "bytesForPx": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "scripts": {

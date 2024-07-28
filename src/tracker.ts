@@ -4,6 +4,7 @@ import { register } from 'module';
 
 import { DebugSessionTracker } from './variable/debugSessionTracker';
 import { DebugVariable } from './variable/debugVariable';
+import { VariableTypeFactory } from './variable/variableTypeFactory';
 
 export class VariableTracker implements vscode.DebugAdapterTracker {
     private _context: vscode.ExtensionContext;
@@ -72,17 +73,19 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         // console.log("onDidSendMessage", Object.assign({}, message));
 
         if (message.type === 'event' && message.event === 'stopped') {
+            VariableTypeFactory.loadSettings();
+
             VariableViewPanel.render(this._context);
             const panel = VariableViewPanel.currentPanel;
             if (panel) {
                 // panel.showPanel();
             }
-            VariableViewPanel.sendInstanceMessage("WAIT FOR IMAGES...")
+            VariableViewPanel.sendInstanceMessage("WAIT FOR IMAGES...");
             await this.proc(message);
 
             console.log("DONE!!!!!!!!!!!");
             VariableViewPanel.postMessage({ command: "capture" });
-            VariableViewPanel.sendInstanceMessage("DONE!")
+            VariableViewPanel.sendInstanceMessage("DONE!");
 
         }
 

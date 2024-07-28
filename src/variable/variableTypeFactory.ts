@@ -1,7 +1,17 @@
-import { DebugVariableType } from "./debugVariable";
-import { ImageVariableType } from "./imageVariable";
+import * as vscode from 'vscode';
+import { DebugVariableType, IbinaryInfo } from "./debugVariable";
+import { ImageVariableType, IimageInfo } from "./imageVariable";
+
+interface IimageTypeConfig {
+    display_name: string;
+    match_type: string[];
+    binary_info: IbinaryInfo<string>;
+    image_info: IimageInfo<string>;
+}
 
 export class VariableTypeFactory {
+    private static imageTypesConfig: { [key: string]: IimageTypeConfig } = {};
+
     private static _primitiveTypes: { [key: string]: { sizeByte: number, signed: boolean, isInt: boolean } } = {
         "char": { sizeByte: 1, signed: true, isInt: true },
         "unsigned char": { sizeByte: 1, signed: false, isInt: true },
@@ -19,7 +29,7 @@ export class VariableTypeFactory {
     };
 
     public static get ImageTypeNames() {
-        return ["Image"];
+        return ["Image"].concat(Object.keys(this.imageTypesConfig));
     }
 
     public static get MyImageType() {
@@ -63,11 +73,50 @@ export class VariableTypeFactory {
             return type;
         }
 
+        if (this.imageTypesConfig && this.imageTypesConfig[type_name]) {
+            let type = this.imageTypesConfig[type_name];
+            return new ImageVariableType(type_name, type_name,
+                {
+                    sizeByte: `${type.binary_info.sizeByte}`,
+                    littleEndian: `${type.binary_info.littleEndian}`,
+                    signed: `${type.binary_info.signed}`,
+                    fixedSize: `${type.binary_info.fixedSize}`,
+                    isInt: `${type.binary_info.isInt}`,
+                },
+                {
+                    mem_width: `${type.image_info.mem_width}`,
+                    mem_height: `${type.image_info.mem_height}`,
+                    image_width: `${type.image_info.image_width}`,
+                    image_height: `${type.image_info.image_height}`,
+                    stride: `${type.image_info.stride}`,
+                    channels: `${type.image_info.channels}`,
+                    data: `${type.image_info.data}`,
+                    format: `${type.image_info.format}`,
+                    bytesForPx: `${type.image_info.bytesForPx}`,
+                }
+            );
+        }
+
         switch (type_name) {
             case "Image":
                 return VariableTypeFactory.MyImageType;
         }
         return undefined;
+    }
+
+    static loadSettings() {
+        // load user defined types
+        const _configs: IimageTypeConfig[] | undefined = vscode.workspace.getConfiguration().get("debug-variable-right-click-actions.config.image-types");
+        if (_configs) {
+            console.log("Before loading config: imageTypesConfig", this.imageTypesConfig);
+            this.imageTypesConfig = {};
+            for (const config of _configs) {
+                this.imageTypesConfig[config.display_name] = config;
+            }
+            console.log("Load config: imageTypesConfig", this.imageTypesConfig);
+        } else {
+            console.log("No config found: imageTypesConfig");
+        }
     }
 
 }
