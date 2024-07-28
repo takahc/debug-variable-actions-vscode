@@ -30,6 +30,10 @@
       {
         "command": "debug-variable-right-click-actions.topng",
         "title": "To PNG"
+      },
+      {
+        "command": "debug-variable-right-click-actions.topanel",
+        "title": "To Panel"
       }
     ],
     "menus": {
@@ -44,6 +48,10 @@
         },
         {
           "command": "debug-variable-right-click-actions.topng",
+          "when": "true"
+        },
+        {
+          "command": "debug-variable-right-click-actions.topanel",
           "when": "true"
         }
       ]
@@ -69,6 +77,8 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
-    "dedent": "^1.5.3"
+    "dedent": "^1.5.3",
+    "jimp": "^0.22.12",
+    "sharp": "^0.33.4"
   }
 }

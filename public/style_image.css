@@ -1,0 +1,32 @@
+#instant-message {
+  height: 12px;
+  width: 100%;
+  font-size: x-small;
+  padding-bottom: 12px;
+  text-wrap: nowrap;
+}
+
+#wrapper {}
+
+div .image-content {
+  display: flex;
+  gap: 6.5px;
+  margin: 6px;
+}
+
+.image {
+  width: 64px;
+  /* max-height: 64px; */
+  height: 64px;
+}
+
+/* .image > img{
+    width: 100%;
+    height: 100%;
+} */
+
+
+
+.hidden {
+  display: none;
+}

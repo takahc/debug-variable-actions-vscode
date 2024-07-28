@@ -3,15 +3,97 @@ import dedent from 'dedent';
 
 
 export class VariableViewPanel {
-    private _panel: vscode.WebviewPanel | undefined = undefined;
-    private _panels: vscode.WebviewPanel[] = [];
+    public static currentPanel: VariableViewPanel | undefined;
+    private readonly _panel: vscode.WebviewPanel;
     private _disposables: vscode.Disposable[] = [];
     private _context: vscode.ExtensionContext;
 
 
-    constructor(context: vscode.ExtensionContext) {
+    constructor(panel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
         console.log("VariableViewPanel constructor");
+        this._panel = panel;
         this._context = context;
+
+        // Set an event listener to listen for when the panel is disposed (i.e. when the user closes
+        // the panel or when the panel is closed programmatically)
+        this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+
+        // Set the HTML content for the webview panel
+        this._panel.webview.html = this._getWebviewContent();
+
+        // Set an event listener to listen for messages passed from the webview context
+        this._setWebviewMessageListener(this._panel.webview);
+    }
+
+    /**
+   * Cleans up and disposes of webview resources when the webview panel is closed.
+   */
+    public dispose() {
+        VariableViewPanel.currentPanel = undefined;
+
+        // Dispose of the current webview panel
+        this._panel.dispose();
+
+        // Dispose of all disposables (i.e. commands) associated with the current webview panel
+        while (this._disposables.length) {
+            const disposable = this._disposables.pop();
+            if (disposable) {
+                disposable.dispose();
+            }
+        }
+    }
+
+    /**
+   * Sets up an event listener to listen for messages passed from the webview context and
+   * executes code based on the message that is recieved.
+   *
+   * @param webview A reference to the extension webview
+   */
+    private _setWebviewMessageListener(webview: vscode.Webview) {
+        webview.onDidReceiveMessage(
+            (message: any) => {
+                const command = message.command;
+                const text = message.text;
+
+                switch (command) {
+                    case "hello":
+                        // Code that should run in response to the hello message command
+                        vscode.window.showInformationMessage(text);
+                        return;
+                    // Add more switch case statements here as more webview message commands
+                    // are created within the webview context (i.e. inside src/webview/main.ts)
+                    case "revealTextFile":
+                        {
+                            const uri = vscode.Uri.file(message.uri);
+                            const _pos = message.pos;
+                            const pos = _pos ? new vscode.Position(_pos[0], _pos[1]) : new vscode.Position(0, 0);
+                            console.log("vscode.executeDocumentHighlights", uri, pos);
+                            vscode.commands.executeCommand("vscode.executeDocumentHighlights", uri, pos);
+                        }
+                        break;
+                    case "open":
+                        {
+                            const uri = vscode.Uri.file(message.uri);
+                            const _pos = message.pos;
+                            console.log("vscode.open", message, uri, _pos);
+                            // vscode.commands.executeCommand("vscode.open", uri);
+                            vscode.commands.executeCommand("vscode.openWith", uri, "default", vscode.ViewColumn.One);
+
+                            let activeEditor = vscode.window.activeTextEditor;
+                            if (activeEditor) {
+                                const lineToGo = _pos[0];
+                                let range = activeEditor.document.lineAt(lineToGo - 1).range;
+                                activeEditor.selection = new vscode.Selection(range.start, range.end);
+                                activeEditor.revealRange(range);
+                            }
+                        }
+                        break;
+
+                }
+            },
+            undefined,
+            this._disposables
+        );
     }
 
     createPanel(): vscode.WebviewPanel {
@@ -19,18 +101,93 @@ export class VariableViewPanel {
             return this._panel;
         }
         console.log("VariableViewPanel create");
-        this._panel = vscode.window.createWebviewPanel(
-            'variableView',
-            'Variable View',
-            vscode.ViewColumn.One,
-            {
-                enableScripts: true
-            }
-        );
 
-        this._panel.onDidDispose(() => {
-            this._panel = undefined;
-        });
+        return this._panel;
+    }
+
+    showPanel(where: vscode.ViewColumn = vscode.ViewColumn.Two): boolean {
+        console.log("VariableViewPanel show");
+        if (this._panel) {
+            this._panel.reveal(where);
+            return true;
+        }
+        return false;
+    }
+
+    getWebViewUrlString(uri: vscode.Uri) {
+        const weburi = this._panel.webview.asWebviewUri(uri);
+        const weburiStr = weburi.toString();
+        return weburiStr;
+    }
+
+    public static render(context: vscode.ExtensionContext) {
+        if (VariableViewPanel.currentPanel) {
+            // If the webview panel already exists reveal it
+            VariableViewPanel.currentPanel._panel.reveal(vscode.ViewColumn.Two);
+        } else {
+            let localResourceRoots = context.storageUri ? [
+                vscode.Uri.joinPath(context.extensionUri, "public"),
+                vscode.Uri.joinPath(context.storageUri)
+            ] : [vscode.Uri.joinPath(context.extensionUri, "public")];
+
+            // If a webview panel does not already exist create and show a new one
+            const panel = vscode.window.createWebviewPanel(
+                // Panel view type
+                'variableView',
+                // Panel title
+                'Variable View',
+                // The editor column the panel should be displayed in
+                vscode.ViewColumn.Beside,
+                // Extra panel configurations
+                {
+                    // Enable JavaScript in the webview
+                    enableScripts: true,
+                    // Restrict the webview to only load resources from the `out` directory
+                    localResourceRoots: localResourceRoots,
+                    // misc
+                    enableFindWidget: true
+                }
+            );
+
+            VariableViewPanel.currentPanel = new VariableViewPanel(panel, context);
+        }
+    }
+
+
+    postMessage(message: any) {
+        if (this._panel) {
+            this._panel.webview.postMessage(message);
+        }
+        else {
+            console.log("Error! No panel to post message to!");
+        }
+    }
+
+    static postMessage(message: any) {
+        const panel = VariableViewPanel.currentPanel;
+        if (panel) {
+            panel._panel.webview.postMessage(message);
+        }
+        else {
+            console.log("Error! No panel to post message to!");
+        }
+    }
+
+
+    static sendInstanceMessage(instant_message: string) {
+        const panel = VariableViewPanel.currentPanel;
+        if (panel) {
+            const message = {
+                command: "instant-message",
+                message: instant_message
+            }
+            panel._panel.webview.postMessage(message);
+        }
+    }
+
+
+    _getWebviewContent() {
+        let html;
 
         let publicDir = this._panel.webview.asWebviewUri(
             vscode.Uri.joinPath(this._context.extensionUri, "public")
@@ -90,7 +247,7 @@ export class VariableViewPanel {
         //   </html>
         // </head>`;
 
-        this._panel.webview.html = `<!DOCTYPE html>
+        html = `<!DOCTYPE html>
         <html lang="en">
           <head>
             <link
@@ -182,9 +339,9 @@ export class VariableViewPanel {
         // </body>
         // </html>`
 
-        
+
         // jSpreadsheet
-        this._panel.webview.html = dedent`
+        html = dedent`
         <html>
             <script src="https://bossanova.uk/jspreadsheet/v4/jexcel.js"></script>
             <link rel="stylesheet" href="https://bossanova.uk/jspreadsheet/v4/jexcel.css" type="text/css" />
@@ -199,38 +356,37 @@ export class VariableViewPanel {
 
             <script src="${publicDir}/index.js" />
         </html>
-        `
+        `;
 
-        return this._panel;
-    }
+        // Image
+        html = dedent`
+        <html>
+        <head>
+            <link rel="stylesheet" href="${publicDir}/style_image.css" type="text/css" />
+        </head>
+        <body>
+            <div id="instant-message"></div>
+            <div id="wrapper"></div>
+            <script src="${publicDir}/index_image.js" />
+        </body></html>
+        `;
 
-    showPanel(where: vscode.ViewColumn = vscode.ViewColumn.One): boolean {
-        console.log("VariableViewPanel show");
-        if (this._panel) {
-            this._panel.reveal(where);
-            return true;
-        }
-        return false;
-    }
 
-    render(where: vscode.ViewColumn = vscode.ViewColumn.One) {
-        console.log("VariableViewPanel render");
-        if (!this._panel) {
-            this._panel = this.createPanel();
-        }
-        this.showPanel(where);
-    }
+        // Image panel
+        html = dedent`
+                <html>
+                <head>
+                    <link rel="stylesheet" href="${publicDir}/style_image_panel.css" type="text/css" />
+                </head>
+                <body>
+                    <div id="instant-message"></div>
+                    <div id="wrapper"></div>
+                    <script src="${publicDir}/index_image_panel.js" />
+                </body></html>
+        `;
 
-    postMessage(message: any) {
-        if (this._panel) {
-            this._panel.webview.postMessage(message);
-        }
-        else {
-            console.log("Error! No panel to post message to!");
-        }
-    }
 
-    isPanelExist(): boolean {
-        return this._panel ? true : false;
+        return html;
+
     }
 }
