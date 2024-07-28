@@ -34,6 +34,10 @@
       {
         "command": "debug-variable-right-click-actions.topanel",
         "title": "To Panel"
+      },
+      {
+        "command": "debug-variable-right-click-actions.autobreak",
+        "title": "Start with Auto Break"
       }
     ],
     "menus": {
