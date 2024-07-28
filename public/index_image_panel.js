@@ -4,15 +4,22 @@ var sessionDivs = {};
 var breakDivs = {};
 const vscode = acquireVsCodeApi();
 
+
 class ImageTraceManager {
     constructor(parentDomQuery) {
         this.imageTraceList = {};
         this.parentDomQuery = parentDomQuery;
         this.captures = [];
+        this.imageTraceIdsAddedFromLastCapture = {};
+        this.lastRenderedCaptureIdx = 0;
+        this.currentRenderedCaptureIdx = 0;
+        this.lastRenderedImageTraceIds = {};
 
         // Slider to seek captures
         this.slider = this._initial_slider;
-
+        this.frameInfo = document.createElement("span");
+        this.goLineCheckBox = document.createElement("input");
+        this.backNextSpan = this._initial_back_next_span;
         this._dom = this._initial_dom;
         this.addToParentDom();
     }
@@ -21,6 +28,10 @@ class ImageTraceManager {
         // div.image-trace-manager
         let imageTraceManagerDiv = document.createElement("div");
         imageTraceManagerDiv.classList.add("image-trace-manager");
+        this.frameInfo.classList.add("frame-info");
+        this.goLineCheckBox.classList.add("go-line-checkbox");
+        this.goLineCheckBox.type = "checkbox";
+        this.goLineCheckBox.checked = true;
         return imageTraceManagerDiv;
     }
 
@@ -34,12 +45,49 @@ class ImageTraceManager {
         return slider;
     }
 
+    get _initial_back_next_span() {
+        const backNextSpan = document.createElement("span");
+        // Returns a function to add to this.slider.value
+        const buttonClickFunc = (add) => {
+            console.log("clicked add", add)
+            return (e => {
+                console.log("clicked this", this)
+                const valAfter = parseInt(this.slider.value) + add;
+                if (valAfter < this.slider.min || this.slider.max < valAfter) {
+                    console.log("button click was ignored", this.slider.min, this.slider.max, valAfter);
+                    return;
+                }
+                this.slider.value = valAfter;
+                const captureIdx = this.slider.value;
+                this.render(captureIdx, true);
+                this.frameInfo.click();
+            });
+        };
+        const backButton = document.createElement("button");
+        backButton.classList.add("back-button");
+        backButton.classList.add("slider-control-button");
+        backButton.onclick = buttonClickFunc(-1);
+        backButton.innerHTML = "<";
+        const nextButton = document.createElement("button");
+        nextButton.classList.add("next-button");
+        nextButton.classList.add("slider-control-button");
+        nextButton.onclick = buttonClickFunc(1);
+        nextButton.innerHTML = ">";
+
+        backNextSpan.appendChild(backButton);
+        backNextSpan.appendChild(nextButton);
+        return backNextSpan;
+    }
+
     get dom() {
         return this._dom;
     }
 
     addToParentDom() {
+        document.querySelector(this.parentDomQuery).appendChild(this.backNextSpan);
         document.querySelector(this.parentDomQuery).appendChild(this.slider);
+        document.querySelector(this.parentDomQuery).appendChild(this.goLineCheckBox);
+        document.querySelector(this.parentDomQuery).appendChild(this.frameInfo);
         document.querySelector(this.parentDomQuery).appendChild(this.dom);
     }
 
@@ -52,9 +100,14 @@ class ImageTraceManager {
     }
 
     addImageTrace(id) {
+        if (!(id in this.imageTraceIdsAddedFromLastCapture)) {
+            // This imageTrace did not exist in the last capture
+            this.imageTraceIdsAddedFromLastCapture[id] = true;
+        }
         if (!this.has(id)) {
             let imageTrace = new ImageTrace(this, id);
             this.imageTraceList[id] = imageTrace;
+            this.imageTraceIdsAddedFromLastCapture[id] = true;
             this.dom.appendChild(imageTrace.dom)
         }
         return this.imageTraceList[id];
@@ -72,19 +125,32 @@ class ImageTraceManager {
         this.slider.max = this.captures.length - 1;
         this.slider.value = this.captures.length - 1;
 
+        this.imageTraceIdsAddedFromLastCapture = {};
         console.log("captured", cap, this.captures);
     }
 
     render(captureIdx = -1, isSliderEvent = false) {
-        let cap = undefined;;
-        if (captureIdx < 0) {
-            cap = this.captures[this.captures.length - 1];
+        console.log("ImageTraceManager.render", captureIdx, isSliderEvent, this);
+        // Get capture to render
+        let cap;
+        if (this.captures.length === 0) {
+            // No capture at first rendering
+            cap = undefined;
         } else {
-            if (captureIdx > this.captures.length - 1) {
-                displayInstanceMessage(`Error! captureIdx = ${captureIdx} is over captures.length-1 = ${this.captures.length - 1}`);
-                return;
+            if (captureIdx < 0) {
+                // Render the latest imageItem in imageTrace, so set cap to undefined
+                // this.currentRenderedCaptureIdx = this.captures.length - 1;
+                cap = undefined
+            } else {
+                if (captureIdx > this.captures.length - 1) {
+                    // Error over index
+                    displayInstantMessage(`Error! captureIdx = ${captureIdx} is over captures.length-1 = ${this.captures.length - 1}`);
+                    return;
+                }
+                // Get capture at captureIdx
+                this.currentRenderedCaptureIdx = captureIdx;
+                cap = this.captures[this.currentRenderedCaptureIdx];
             }
-            cap = this.captures[captureIdx];
         }
 
         if (!isSliderEvent && captureIdx === -1) {
@@ -93,26 +159,62 @@ class ImageTraceManager {
         }
 
         Object.entries(this.imageTraceList).forEach(([id, imageTrace]) => {
-            let idx;
+            let imageIdxToRender;
+            let captureIdxToRefresh;
             if (cap !== undefined) {
-                const idx = cap[imageTrace.id];
-                if (idx !== undefined) {
-                    imageTrace.show();
-                    imageTrace.render(idx);
+                // Render imageTrace at the captureIdx
+                imageIdxToRender = cap[imageTrace.id];
+                if (imageIdxToRender !== undefined) {
+                    captureIdxToRefresh = captureIdx;
                 } else {
                     // Here comes imageTrace, which did not exist at this captureIdx
-                    imageTrace.hide();
+                    captureIdxToRefresh = undefined;
                 }
             } else {
-                imageTrace.render(imageTrace.lastIdx);
+                // First rendering, then render the last imageTrace
+                imageIdxToRender = imageTrace.lastIdx;
+                captureIdxToRefresh = undefined;
+            }
+
+            // FIXME: temporary implementation
+            // let hide = !(imageTrace.id in this.imageTraceIdsAddedFromLastCapture);
+            let hide = false;
+
+            // Render imageTrace
+            if (imageIdxToRender === undefined || hide) {
+                imageTrace.hide();
+            } else {
+                imageTrace.show();
+                imageTrace.render(imageIdxToRender);
+                this.lastRenderedImageTraceIds[id] = true;
+                this._refreshFrameInfo(imageTrace, imageIdxToRender, captureIdxToRefresh)
             }
         });
 
+        this.lastRenderedCaptureIdx = this.currentRenderedCaptureIdx;
+    }
+
+    _refreshFrameInfo(imageTrace, idx, captureIdx) {
+        const meta = imageTrace.imageItemList[idx].meta;
+        const workspaceFolder = meta.vscode.workspaceFolder.uri.fsPath;
+        const sourcePathRelative = meta.frame.source.path.replace(workspaceFolder, ".");
+        const breakCount = captureIdx >= 0 ? captureIdx : "";
+        const sourcePathExp = `Break ${parseInt(captureIdx) + 1}: ${sourcePathRelative}:${meta.frame.line}:${meta.frame.column}`;
+        const imageFileFsPath = `file:\\\\\\${meta.vscode.filePath}`;
+        this.frameInfo.innerHTML = `${sourcePathExp}`;
+        this.frameInfo.onclick = () => {
+            console.log("Open file", meta.frame.source.path, "pos:", [meta.frame.line, meta.frame.column]);
+            // revealTextFile(meta.frame.source.path, [meta.frame.line, meta.frame.column]);
+            vscodeOpen(meta.frame.source.path, [meta.frame.line, meta.frame.column]);
+        };
     }
 
     _handleSliderEvent(e) {
         let captureIdx = e.target.value;
         this.render(captureIdx, true);
+        if (this.goLineCheckBox.checked) {
+            this.frameInfo.click();
+        }
     }
 }
 
@@ -142,6 +244,7 @@ class ImageTrace {
     }
 
     render(idx = this.lastIdx) {
+        console.log("ImageTrace.render", idx, this);
         const newRenderMode = this.opt.showAll ? "showAll" : "single";
         if (this.renderMode !== newRenderMode) {
             console.log("Intermediate initialization of imageTrace's dom!");
@@ -177,16 +280,45 @@ class ImageTrace {
         if (this.renderMode != "single" || this.renderMode === undefined) {
             // Add a single imageItemDom in this.dom when the last renderMode is not single or first rendering
             const imdom = this.imageItemFactory.create()
-            console.log("imdom", imdom, this.dom)
+            console.log("imdom", imdom, this.dom, this.renderMode)
             this.dom.appendChild(imdom);
             console.log("imdom after", imdom, this.dom)
         }
-        else if (idx === this.lastRenderedIdx) {
+
+        // Update the imageItemDom, imageUrl, meta, changedState will be updated
+        const imageItem = this.imageItemList[idx];
+        console.log("_renderSingle changedState", imageItem.changedState, imageItem);
+        this.imageItemFactory.update(imageItem.imageUrl, imageItem.meta, imageItem.changedState);
+
+        if (idx === this.lastRenderedIdx) {
             return;
         }
-        const imageItem = this.imageItemList[idx];
-        this.imageItemFactory.update(imageItem.imageUrl, imageItem.meta);
+
+        // Compare a rendered image with last rendered image, and set new/changed/same image class
+        // FIXME: Only supports single image mode, because the lastRenderedIdx is not an array
+        // FIXME: This should not be here, because this compare current rendering image by the last "rendered" image, not "captured" image.
+        //        This should be done in ImageTrace.addImage() and the result of diff saved in ImageItem.
+        // const compare = this.compareImageWithLastRenderedImage(idx);
+        // console.log("compare", compare, idx, this.lastRenderedIdx, this);
+        // if (compare === undefined) {
+        //     // new image
+        //     this._setImageDiffClass("is-new-image");
+        // } else if (compare === true) {
+        //     // changed image
+        //     this._setImageDiffClass("is-changed-image");
+        // } else {
+        //     // same image
+        //     this._setImageDiffClass("is-same-image");
+        // }
+
         this.lastRenderedIdx = idx;
+    }
+
+    _setImageDiffClass(cls) {
+        this.dom.classList.remove("is-new-image");
+        this.dom.classList.remove("is-changed-image");
+        this.dom.classList.remove("is-same-image");
+        this.dom.classList.add(cls);
     }
 
     get lastIdx() {
@@ -195,8 +327,28 @@ class ImageTrace {
 
     addImage(imageUrl, meta) {
         let imageItem = new ImageItem(imageUrl, meta, this.lastIdx + 1);  // TODO: allow inserting
+        if (this.lastIdx >= 0) {
+            // Set link between imageItems
+            imageItem.setLink(this.imageItemList[this.lastIdx], undefined);
+        }
         this.imageItemList.push(imageItem);
         // this._dom.appendChild(imageItem.dom);
+    }
+
+    compareImageWithLastRenderedImage(idx) {
+        // Returns
+        //  - undefined: new image
+        //  - true: changed image
+        //  - false: same image
+        const imageItem = this.imageItemList[idx];
+        if (this.lastIdx < 0 || this.lastRenderedIdx === undefined) {
+            // When did not rendered yet, or the last rendered image is not exist
+            return undefined;
+        }
+        else {
+            const lastImageItem = this.imageItemList[this.lastRenderedIdx];
+            return (imageItem.meta.imageHash !== lastImageItem.meta.imageHash);
+        }
     }
 }
 
@@ -206,6 +358,9 @@ class ImageItem {
         this.idx = idx;
         this.meta = meta;
         this.imageItemFactory = new ImageItemDomFactory(imageUrl, meta);
+        this.previousImageItem = undefined;
+        this.nextImageItem = undefined;
+        this.isChangedFromPreviousImageItem = null; // undefined:new, true:changed, false:same
         this._dom = this._initial_dom;
     }
 
@@ -215,6 +370,71 @@ class ImageItem {
 
     get dom() {
         return this._dom;
+    }
+
+    get isFirstImage() {
+        return (this.previousImageItem === undefined);
+    }
+    get isLastImage() {
+        return (this.nextImageItem === undefined);
+    }
+
+    get changedState() {
+        if (this.isChangedFromPreviousImageItem === null) {
+            // Compre with previous imageItem if the imageItem instance did not created by ImageTrace.addImage()
+            // This is because the comparison is done in ImageItem.setLink() in ImageTrace.addImage()
+            this._compareImageWithPreviousImage();
+        }
+        // Returns "new", "changed", "same"
+        switch (this.isChangedFromPreviousImageItem) {
+            case undefined:
+                return "new";
+            case true:
+                return "changed";
+            case false:
+                return "same";
+            default:
+                console.log("Error: invalid changedState", this.isChangedFromPreviousImageItem), "in", this, ", but return 'new'";
+                return "new";
+        }
+    }
+
+    setLink(prev, next) {
+        // Update previous
+        if (prev !== undefined) {
+            this.setPreviousImageItem(prev);
+        }
+        // Update next
+        if (next !== undefined) {
+            this.setNextImageItem(next);
+        }
+    }
+    setPreviousImageItem(prev) {
+        this.previousImageItem = prev;
+        prev.nextImageItem = this;
+        this.isChangedFromPreviousImageItem = this._compareImageWithPreviousImage();
+    }
+
+    setNextImageItem(next) {
+        this.nextImageItem = next;
+        next.previousImageItem = this;
+        next.changedFromPrevious = next._compareImageWithPreviousImage();
+    }
+
+    _compareImageWithPreviousImage() {
+        // Returns
+        //  - undefined: new image
+        //  - true: changed image
+        //  - false: same image
+        if (this.previousImageItem === undefined) {
+            // The new image, which does not have previous image
+            this.changedFromPrevious = undefined;
+        }
+        else {
+            // Compare with the hash of previous image, and return true(changed) or false(same)
+            this.changedFromPrevious = (this.meta.imageHash !== this.previousImageItem.meta.imageHash);
+        }
+        return this.changedFromPrevious;
     }
 }
 
@@ -260,7 +480,7 @@ class ImageItemDomFactory {
         return this.imageItemDiv;
     }
 
-    update(imageUrl, meta) {
+    update(imageUrl, meta, changedState) {
         this.imageUrl = imageUrl;
         this.meta = meta;
 
@@ -278,6 +498,7 @@ class ImageItemDomFactory {
         const sourcePathRelative = meta.frame.source.path.replace(workspaceFolder, ".");
         const sourcePathExp = `${sourcePathRelative}:${meta.frame.line}:${meta.frame.column}`;
         const imageFileFsPath = `file:\\\\\\${meta.vscode.filePath}`;
+        this.a_source.classList.add("source-info");
         this.a_source.innerHTML = `${sourcePathExp}`;
         this.a_source.onclick = () => {
             console.log("Open file", meta.frame.source.path, "pos:", [meta.frame.line, meta.frame.column]);
@@ -290,7 +511,14 @@ class ImageItemDomFactory {
         const filename = decodeURI(imageUrl.split('/').pop());
         const imageSizeString = `${meta.imageInfo.mem_width}x${meta.imageInfo.mem_height}`;
         // variableInfoDiv.innerHTML = `<b><a onclick="copyPngImageToClipboard(${imageUrl})" href="${imageFileFsPath}">${meta.variable.evaluateName}</a></b>
-        this.variableInfoDiv.innerHTML = `<span>${meta.variable.type}</span> <span> ${imageSizeString}</span> <span> <i>${filename}</i></span>`;
+        // this.variableInfoDiv.innerHTML = `<span>${meta.variable.type}</span> <span> ${imageSizeString}</span> <span> <i>${filename}</i></span>`;
+        this.variableInfoDiv.innerHTML = `<span>${meta.variable.type}</span> <span> ${imageSizeString}</span></span>`;
+
+        // Update is-***-image class
+        this.imageItemDiv.classList.remove(`is-new-image`);
+        this.imageItemDiv.classList.remove(`is-changed-image`);
+        this.imageItemDiv.classList.remove(`is-same-image`);
+        this.imageItemDiv.classList.add(`is-${changedState}-image`);
     }
 }
 
@@ -309,8 +537,8 @@ class ImageDomFactory {
     }
 }
 
-
 const manager = new ImageTraceManager("#wrapper");
+
 
 // Handle the message inside the webview
 window.addEventListener('message', event => {
@@ -335,7 +563,11 @@ window.addEventListener('message', event => {
         manager.capture();
     }
     else if (message.command === 'instant-message') {
-        displayInstanceMessage(message.message);
+        let duration = 1000;
+        if (message.message === "WAIT FOR IMAGES...") {
+            duration = -1;
+        }
+        displayInstantMessage(message.message, duration);
     }
 });
 
@@ -353,7 +585,7 @@ function copyPngImageToClipboard(imageUrl) {
                     'image/png': blob
                 })
             ]);
-            displayInstanceMessage(`Copied ${imageUrl}`);
+            displayInstantMessage(`Copied ${imageUrl}`);
         } catch (error) {
             console.error(error);
         }
@@ -395,17 +627,19 @@ function revealTextFile(uri, pos = undefined) {
     })
 }
 
-function vscodeOpen(uri) {
+function vscodeOpen(uri, pos = undefined) {
     vscode.postMessage({
         command: "open",
         text: "",
-        uri
+        uri, pos
     })
 }
 
-function displayInstanceMessage(s) {
+function displayInstantMessage(s, duration = 1000) {
     document.querySelector("#instant-message").innerHTML = s;
-    setTimeout(() => {
-        document.querySelector("#instant-message").innerHTML = "";
-    }, 1500);
+    if (duration > 0) {
+        setTimeout(() => {
+            document.querySelector("#instant-message").innerHTML = "";
+        }, duration);
+    }
 }

@@ -6,6 +6,7 @@ import sharp from 'sharp';
 // import * as cv from '@techstark/opencv-js';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 import { DebugSessionTracker } from './debugSessionTracker';
 
 export interface IimageInfo<T> {
@@ -36,6 +37,8 @@ export class ImageVariable extends DebugVariable {
 
     declare public type: ImageVariableType | undefined;
     public buffer: Buffer | undefined;
+    private metaWide: any; // FIXME: temporal implementation. It should be merged in DebugVariable.meta
+    public imageHash: string | undefined;
 
     updateImageInfo() {
         let values = this.getVariableValuesAsDict({});
@@ -140,7 +143,7 @@ export class ImageVariable extends DebugVariable {
             for (let i = 0; i < this.imageInfo.mem_height; i++) {
                 for (let j = 0; j < this.imageInfo.mem_width; j++) {
                     for (let c = 0; c < this.imageInfo.channels; c++) {
-                        const offset = (i * this.imageInfo.mem_width + j) * this.imageInfo.bytesForPx + this.imageInfo.channels;
+                        const offset = (i * this.imageInfo.mem_width + j) * this.imageInfo.bytesForPx + this.imageInfo.channels - 1;
                         let b;
                         if (this.binaryInfo.isInt) {
                             if (this.binaryInfo.signed) {
@@ -204,6 +207,7 @@ export class ImageVariable extends DebugVariable {
         // const filename = `${this.expression}.png`;
         const pattern = /[\\\/:\*\?\"<>\|]/;
         const filename = `${this.expression}.png`.replace(pattern, "-");
+        // const filename = `${this.expression}.tif`.replace(pattern, "-");
         const filePath = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, filename);
         console.log("filePath", filePath);
 
@@ -243,6 +247,21 @@ export class ImageVariable extends DebugVariable {
             // console.log("delete opencv image");
             // imageSrc.delete();
 
+            // Calc image hash
+            // this.imageHash = crypto.createHash('blake2b512').update(bufferData).digest('hex');
+            this.imageHash = crypto.createHash('md5').update(bufferData).digest('hex');
+
+            this.metaWide = {
+                "vscode": {
+                    "workspaceFolder": this.frame.thread.tracker.session.workspaceFolder,
+                    "storageUri": storageUri.fsPath,
+                    "filePath": filePath.fsPath,
+                },
+                "imageInfo": this.imageInfo,
+                "imageHash": this.imageHash,
+                ...this.gatherMeta()
+            };
+
             // Display
             // const openPath = vscode.Uri.file(filePath.toString()).toString().replace("/file:", "");
             // vscode.commands.executeCommand('vscode.open', filePath.fsPath);
@@ -256,15 +275,7 @@ export class ImageVariable extends DebugVariable {
                     command: "image",
                     // url: filePath.toString()
                     url: weburi,
-                    meta: {
-                        "vscode": {
-                            "workspaceFolder": this.frame.thread.tracker.session.workspaceFolder,
-                            "storageUri": storageUri.fsPath,
-                            "filePath": filePath.fsPath,
-                        },
-                        "imageInfo": this.imageInfo,
-                        ...this.gatherMeta()
-                    }
+                    meta: this.metaWide
 
                 });
                 panel.showPanel();
@@ -272,8 +283,12 @@ export class ImageVariable extends DebugVariable {
             else {
                 console.log("panel is undefined");
             }
-
         }
+
+        // Save .meta.json
+        const metaPath = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, `${filename}.meta.json`);
+        console.log("metaPath", metaPath);
+        fs.writeFileSync(metaPath.fsPath, JSON.stringify(this.metaWide, null, 4));
     }
 
 

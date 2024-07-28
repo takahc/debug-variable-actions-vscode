@@ -20,20 +20,22 @@ div .image-content {
 }
 
 .image-item {
-  text-align: center;
+  text-align: left;
   margin: 8px;
-  margin-bottom: 20px;
-  width: 350px;
+  margin-bottom: 10px;
+  width: 300px;
 }
 
 .image {
-  width: 64px;
+  /* width: 64px;
+  height: 64px; */
   /* max-height: 64px; */
-  height: 64px;
+  /* width: 100px; */
+  height: 100px;
 }
 
 .variable-info {
-  text-align: center;
+  text-align: left;
 }
 
 /* .image > img{
@@ -41,7 +43,9 @@ div .image-content {
     height: 100%;
 } */
 
-
+.source-info {
+  display: none;
+}
 
 .hidden {
   display: none;
@@ -49,4 +53,26 @@ div .image-content {
 
 .evaluate-name {
   font-family: 'Consolas', 'Courier New', Courier, monospace;
+}
+
+.slider-control-button {
+  width: 40px;
+  height: auto;
+}
+
+.next-button {
+  margin-left: 3px;
+  margin-right: 20px;
+}
+
+.is-new-image {
+  background-color: rgb(25 93 41 / 80%);
+}
+
+.is-changed-image {
+  background-color: rgb(109 15 15 / 80%);
+}
+
+.is-same-image {
+  background-color: rgb(39 39 39 / 80%);
 }

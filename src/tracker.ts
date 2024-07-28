@@ -72,6 +72,11 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         // console.log("onDidSendMessage", Object.assign({}, message));
 
         if (message.type === 'event' && message.event === 'stopped') {
+            VariableViewPanel.render(this._context);
+            const panel = VariableViewPanel.currentPanel;
+            if (panel) {
+                // panel.showPanel();
+            }
             VariableViewPanel.sendInstanceMessage("WAIT FOR IMAGES...")
             await this.proc(message);
 

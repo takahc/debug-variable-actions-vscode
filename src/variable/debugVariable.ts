@@ -138,7 +138,7 @@ export class DebugVariable {
 
         // fetch child debug variables
         let variables;
-        try{
+        try {
 
             variables = await this.frame.thread.tracker.session?.customRequest('variables',
                 {
@@ -146,10 +146,10 @@ export class DebugVariable {
                     filter: undefined,
                     // start: 0,
                     count: 1000
-                    
+
                 }
             );
-        }catch(e){
+        } catch (e) {
             console.log("error request variables", this, e)
             return;
         }

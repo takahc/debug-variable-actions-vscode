@@ -74,8 +74,18 @@ export class VariableViewPanel {
                     case "open":
                         {
                             const uri = vscode.Uri.file(message.uri);
-                            console.log("vscode.open", uri);
-                            vscode.commands.executeCommand("vscode.open", uri);
+                            const _pos = message.pos;
+                            console.log("vscode.open", message, uri, _pos);
+                            // vscode.commands.executeCommand("vscode.open", uri);
+                            vscode.commands.executeCommand("vscode.openWith", uri, "default", vscode.ViewColumn.One);
+
+                            let activeEditor = vscode.window.activeTextEditor;
+                            if (activeEditor) {
+                                const lineToGo = _pos[0];
+                                let range = activeEditor.document.lineAt(lineToGo - 1).range;
+                                activeEditor.selection = new vscode.Selection(range.start, range.end);
+                                activeEditor.revealRange(range);
+                            }
                         }
                         break;
 
@@ -95,7 +105,7 @@ export class VariableViewPanel {
         return this._panel;
     }
 
-    showPanel(where: vscode.ViewColumn = vscode.ViewColumn.Beside): boolean {
+    showPanel(where: vscode.ViewColumn = vscode.ViewColumn.Two): boolean {
         console.log("VariableViewPanel show");
         if (this._panel) {
             this._panel.reveal(where);
@@ -113,7 +123,7 @@ export class VariableViewPanel {
     public static render(context: vscode.ExtensionContext) {
         if (VariableViewPanel.currentPanel) {
             // If the webview panel already exists reveal it
-            VariableViewPanel.currentPanel._panel.reveal(vscode.ViewColumn.Beside);
+            VariableViewPanel.currentPanel._panel.reveal(vscode.ViewColumn.Two);
         } else {
             let localResourceRoots = context.storageUri ? [
                 vscode.Uri.joinPath(context.extensionUri, "public"),
@@ -134,6 +144,8 @@ export class VariableViewPanel {
                     enableScripts: true,
                     // Restrict the webview to only load resources from the `out` directory
                     localResourceRoots: localResourceRoots,
+                    // misc
+                    enableFindWidget: true
                 }
             );
 
