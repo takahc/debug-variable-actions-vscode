@@ -41,7 +41,7 @@ class ImageTraceManager {
         slider.min = 0;
         slider.max = 0;
         slider.step = 0;
-        slider.oninput = (e) => { this._handleSliderEvent(e) };
+        slider.oninput = (e) => { this._handleSliderEvent(e); };
         return slider;
     }
 
@@ -49,9 +49,9 @@ class ImageTraceManager {
         const backNextSpan = document.createElement("span");
         // Returns a function to add to this.slider.value
         const buttonClickFunc = (add) => {
-            console.log("clicked add", add)
+            console.log("clicked add", add);
             return (e => {
-                console.log("clicked this", this)
+                console.log("clicked this", this);
                 const valAfter = parseInt(this.slider.value) + add;
                 if (valAfter < this.slider.min || this.slider.max < valAfter) {
                     console.log("button click was ignored", this.slider.min, this.slider.max, valAfter);
@@ -108,7 +108,7 @@ class ImageTraceManager {
             let imageTrace = new ImageTrace(this, id);
             this.imageTraceList[id] = imageTrace;
             this.imageTraceIdsAddedFromLastCapture[id] = true;
-            this.dom.appendChild(imageTrace.dom)
+            this.dom.appendChild(imageTrace.dom);
         }
         return this.imageTraceList[id];
     }
@@ -140,7 +140,7 @@ class ImageTraceManager {
             if (captureIdx < 0) {
                 // Render the latest imageItem in imageTrace, so set cap to undefined
                 // this.currentRenderedCaptureIdx = this.captures.length - 1;
-                cap = undefined
+                cap = undefined;
             } else {
                 if (captureIdx > this.captures.length - 1) {
                     // Error over index
@@ -187,7 +187,7 @@ class ImageTraceManager {
                 imageTrace.show();
                 imageTrace.render(imageIdxToRender);
                 this.lastRenderedImageTraceIds[id] = true;
-                this._refreshFrameInfo(imageTrace, imageIdxToRender, captureIdxToRefresh)
+                this._refreshFrameInfo(imageTrace, imageIdxToRender, captureIdxToRefresh);
             }
         });
 
@@ -198,8 +198,8 @@ class ImageTraceManager {
         const meta = imageTrace.imageItemList[idx].meta;
         const workspaceFolder = meta.vscode.workspaceFolder.uri.fsPath;
         const sourcePathRelative = meta.frame.source.path.replace(workspaceFolder, ".");
-        const breakCount = captureIdx >= 0 ? captureIdx : "";
-        const sourcePathExp = `Break ${parseInt(captureIdx) + 1}: ${sourcePathRelative}:${meta.frame.line}:${meta.frame.column}`;
+        const breakCountStr = captureIdx >= 0 ? " " + String(parseInt(captureIdx) + 1) : "";
+        const sourcePathExp = `Break${breakCountStr}: ${sourcePathRelative}:${meta.frame.line}:${meta.frame.column}`;
         const imageFileFsPath = `file:\\\\\\${meta.vscode.filePath}`;
         this.frameInfo.innerHTML = `${sourcePathExp}`;
         this.frameInfo.onclick = () => {
@@ -227,7 +227,7 @@ class ImageTrace {
         this._dom = this._initial_dom;
         this.opt = {
             showAll: false
-        }
+        };
         this.lastRenderedIdx = undefined;
         this.renderMode = undefined;  // "single" or "showAll", but initialy undefined
     }
@@ -252,8 +252,8 @@ class ImageTrace {
         }
         switch (newRenderMode) {
             case "single":
-                this._renderSingle(idx)
-                break
+                this._renderSingle(idx);
+                break;
             case "showAll":
                 this._renderShowAll(idx);
                 break;
@@ -279,10 +279,10 @@ class ImageTrace {
     _renderSingle(idx) {
         if (this.renderMode != "single" || this.renderMode === undefined) {
             // Add a single imageItemDom in this.dom when the last renderMode is not single or first rendering
-            const imdom = this.imageItemFactory.create()
-            console.log("imdom", imdom, this.dom, this.renderMode)
+            const imdom = this.imageItemFactory.create();
+            console.log("imdom", imdom, this.dom, this.renderMode);
             this.dom.appendChild(imdom);
-            console.log("imdom after", imdom, this.dom)
+            console.log("imdom after", imdom, this.dom);
         }
 
         // Update the imageItemDom, imageUrl, meta, changedState will be updated
@@ -466,8 +466,8 @@ class ImageItemDomFactory {
         const adiv = document.createElement("div");
         adiv.style.padding = "3px";
         adiv.style.paddingTop = "0px";
-        adiv.appendChild(this.a_filename)
-        adiv.appendChild(this.a_source)
+        adiv.appendChild(this.a_filename);
+        adiv.appendChild(this.a_source);
         this.imageItemDiv.appendChild(adiv);
 
         // div.variable-info
@@ -599,14 +599,14 @@ function loadXHR(url) {
             var xhr = new XMLHttpRequest();
             xhr.open("GET", url);
             xhr.responseType = "blob";
-            xhr.onerror = function () { reject("Network error.") };
+            xhr.onerror = function () { reject("Network error."); };
             xhr.onload = function () {
-                if (xhr.status === 200) { resolve(xhr.response) }
-                else { reject("Loading error:" + xhr.statusText) }
+                if (xhr.status === 200) { resolve(xhr.response); }
+                else { reject("Loading error:" + xhr.statusText); }
             };
             xhr.send();
         }
-        catch (err) { reject(err.message) }
+        catch (err) { reject(err.message); }
     });
 }
 
@@ -624,7 +624,7 @@ function revealTextFile(uri, pos = undefined) {
         command: "revealTextFile",
         text: "",
         uri, pos
-    })
+    });
 }
 
 function vscodeOpen(uri, pos = undefined) {
@@ -632,7 +632,7 @@ function vscodeOpen(uri, pos = undefined) {
         command: "open",
         text: "",
         uri, pos
-    })
+    });
 }
 
 function displayInstantMessage(s, duration = 1000) {
