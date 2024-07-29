@@ -4,13 +4,14 @@ import { ImageVariableType, IimageInfo } from "./imageVariable";
 
 interface IimageTypeConfig {
     display_name: string;
-    match_type: string[];
+    match_types: string[];
     binary_info: IbinaryInfo<string>;
     image_info: IimageInfo<string>;
 }
 
 export class VariableTypeFactory {
     private static imageTypesConfig: { [key: string]: IimageTypeConfig } = {};
+    private static imageMatchTypeStrs: string[] = [];
 
     private static _primitiveTypes: { [key: string]: { sizeByte: number, signed: boolean, isInt: boolean } } = {
         "char": { sizeByte: 1, signed: true, isInt: true },
@@ -29,7 +30,7 @@ export class VariableTypeFactory {
     };
 
     public static get ImageTypeNames() {
-        return ["Image"].concat(Object.keys(this.imageTypesConfig));
+        return ["Image"].concat(this.imageMatchTypeStrs);
     }
 
     public static get MyImageType() {
@@ -110,8 +111,12 @@ export class VariableTypeFactory {
         if (_configs) {
             console.log("Before loading config: imageTypesConfig", this.imageTypesConfig);
             this.imageTypesConfig = {};
+            this.imageMatchTypeStrs = [];
             for (const config of _configs) {
-                this.imageTypesConfig[config.display_name] = config;
+                for (const match_type of config.match_types) {
+                    this.imageTypesConfig[match_type] = config;
+                }
+                this.imageMatchTypeStrs = this.imageMatchTypeStrs.concat(config.match_types);
             }
             console.log("Load config: imageTypesConfig", this.imageTypesConfig);
         } else {
