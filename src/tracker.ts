@@ -16,7 +16,25 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         this._context = context;
     }
 
-    async proc(message: any) {
+    public async onDidSendMessage(message: any) {
+        // console.log("onDidSendMessage", Object.assign({}, message));
+
+        if (message.type === 'event' && message.event === 'stopped') {
+            await this.procImagePanel(message);
+        }
+    }
+
+    async procImagePanel(message: any) {
+        VariableTypeFactory.loadSettings();
+
+        VariableViewPanel.render(this._context);
+        const panel = VariableViewPanel.currentPanel;
+        if (panel) {
+            // panel.showPanel();
+        }
+        VariableViewPanel.sendInstanceMessage("WAIT FOR IMAGES...");
+
+
         const session = vscode.debug.activeDebugSession;
 
         // Create new tracker to manage debug variables every frames and threads,
@@ -69,9 +87,7 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
 
 
         console.log("rendering panel");
-        VariableViewPanel.render(this._context);
-        const panel = VariableViewPanel.currentPanel;
-
+        VariableViewPanel.render(this._context, "image-panel");
         if (panel) {
             // Set web url
             for (const metaWide of imageMetaWides) {
@@ -98,28 +114,9 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
             console.log("panel is undefined");
         }
 
-    }
-
-    public async onDidSendMessage(message: any) {
-        // console.log("onDidSendMessage", Object.assign({}, message));
-
-        if (message.type === 'event' && message.event === 'stopped') {
-            VariableTypeFactory.loadSettings();
-
-            VariableViewPanel.render(this._context);
-            const panel = VariableViewPanel.currentPanel;
-            if (panel) {
-                // panel.showPanel();
-            }
-            VariableViewPanel.sendInstanceMessage("WAIT FOR IMAGES...");
-            await this.proc(message);
-
-            console.log("DONE!!!!!!!!!!!");
-            VariableViewPanel.postMessage({ command: "capture" });
-            VariableViewPanel.sendInstanceMessage("DONE!");
-
-        }
-
+        console.log("DONE!!!!!!!!!!!");
+        VariableViewPanel.postMessage({ command: "capture" });
+        VariableViewPanel.sendInstanceMessage("DONE!");
     }
 
     //     public onDidSendMessage(message: any) {
