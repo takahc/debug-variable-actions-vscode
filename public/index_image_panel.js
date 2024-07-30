@@ -1,7 +1,7 @@
 console.log("hey yo");
 
+const vscode = acquireVsCodeApi();
 window.addEventListener('DOMContentLoaded', () => {
-    const vscode = acquireVsCodeApi();
     const manager = new ImageTraceManager("#wrapper");
 
     // Handle the message inside the webview
