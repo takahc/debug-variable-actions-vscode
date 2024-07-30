@@ -5,6 +5,7 @@ import { register } from 'module';
 import { DebugSessionTracker } from './variable/debugSessionTracker';
 import { DebugVariable } from './variable/debugVariable';
 import { VariableTypeFactory } from './variable/variableTypeFactory';
+import { ImageVariable } from './variable/imageVariable';
 
 export class VariableTracker implements vscode.DebugAdapterTracker {
     private _context: vscode.ExtensionContext;
@@ -52,7 +53,7 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         const allVariables = sessionTracker.gatherAllVariables();
         console.log(allVariables);
 
-        const imageVariables = sessionTracker.gatherImageVariables();
+        const imageVariables: ImageVariable[] = sessionTracker.gatherImageVariables();
         console.log(imageVariables);
 
         const imageMetaWides = [];
