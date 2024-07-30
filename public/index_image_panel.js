@@ -548,6 +548,17 @@ window.addEventListener('message', event => {
     if (!message) { message = event; }
     console.log("message received", message);
 
+    if (message.command === 'images') {
+        const metas = message.metas;
+        for (const meta of metas) {
+            const imageUrl = meta.imageWebUrl;
+            console.log("image", imageUrl, meta);
+            const imageTraceId = meta.variable.evaluateName;
+            const imageTrace = manager.addImageTrace(imageTraceId);
+            imageTrace.addImage(imageUrl, meta);
+        }
+        manager.render();
+    }
     if (message.command === 'image') {
         const imageUrl = message.url;
         const meta = message.meta;

@@ -55,17 +55,44 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         const imageVariables = sessionTracker.gatherImageVariables();
         console.log(imageVariables);
 
+        const imageMetaWides = [];
         for (const imageVariable of imageVariables) {
             imageVariable.updateImageInfo();
             imageVariable.updateBinaryInfo();
-            await imageVariable.toFile();
+            const metaWide = await imageVariable.toFile(); // toFile() may return undefined if the image could not read properly.
+            if (metaWide) {
+                imageMetaWides.push(metaWide);
+            }
             // imageVariable.toFile();
-
         }
 
-        console.log("DONE!!");
 
-        let wahat = 3;
+        console.log("rendering panel");
+        VariableViewPanel.render(this._context);
+        const panel = VariableViewPanel.currentPanel;
+
+        if (panel) {
+            // Set web url
+            for (const metaWide of imageMetaWides) {
+                metaWide.imageWebUrl = panel.getWebViewUrlString(vscode.Uri.file(metaWide.vscode.filePath));
+            }
+            console.log("imageMetaWides", imageMetaWides);
+
+            // Display
+            // const openPath = vscode.Uri.file(filePath.toString()).toString().replace("/file:", "");
+            // vscode.commands.executeCommand('vscode.open', filePath.fsPath);
+            console.log("showing images on panel", panel);
+            panel.postMessage({
+                command: "images",
+                metas: imageMetaWides
+
+            });
+            panel.showPanel();
+
+            console.log("DONE!!");
+        } else {
+            console.log("panel is undefined");
+        }
 
     }
 

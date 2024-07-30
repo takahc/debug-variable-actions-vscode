@@ -251,7 +251,7 @@ export class ImageVariable extends DebugVariable {
             // this.imageHash = crypto.createHash('blake2b512').update(bufferData).digest('hex');
             this.imageHash = crypto.createHash('md5').update(bufferData).digest('hex');
 
-            this.metaWide = {
+            this.metaWide = await {
                 "vscode": {
                     "workspaceFolder": this.frame.thread.tracker.session.workspaceFolder,
                     "storageUri": storageUri.fsPath,
@@ -259,36 +259,39 @@ export class ImageVariable extends DebugVariable {
                 },
                 "imageInfo": this.imageInfo,
                 "imageHash": this.imageHash,
+                "imagewebUrl": "",
                 ...this.gatherMeta()
             };
 
             // Display
             // const openPath = vscode.Uri.file(filePath.toString()).toString().replace("/file:", "");
             // vscode.commands.executeCommand('vscode.open', filePath.fsPath);
-            console.log("rendering panel");
-            VariableViewPanel.render(this.frame.thread.tracker.context);
-            const panel = VariableViewPanel.currentPanel;
-            if (panel) {
-                console.log("showing image on panel", panel);
-                const weburi = panel.getWebViewUrlString(filePath);
-                panel.postMessage({
-                    command: "image",
-                    // url: filePath.toString()
-                    url: weburi,
-                    meta: this.metaWide
+            // console.log("rendering panel");
+            // VariableViewPanel.render(this.frame.thread.tracker.context);
+            // const panel = VariableViewPanel.currentPanel;
+            // if (panel) {
+            //     console.log("showing image on panel", panel);
+            //     const weburi = panel.getWebViewUrlString(filePath);
+            //     panel.postMessage({
+            //         command: "image",
+            //         // url: filePath.toString()
+            //         url: weburi,
+            //         meta: this.metaWide
 
-                });
-                panel.showPanel();
-            }
-            else {
-                console.log("panel is undefined");
-            }
+            //     });
+            //     panel.showPanel();
+            // }
+            // else {
+            //     console.log("panel is undefined");
+            // }
         }
 
         // Save .meta.json
         const metaPath = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, `${filename}.meta.json`);
         console.log("metaPath", metaPath);
         fs.writeFileSync(metaPath.fsPath, JSON.stringify(this.metaWide, null, 4));
+
+        return this.metaWide;
     }
 
 
