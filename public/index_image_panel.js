@@ -14,14 +14,17 @@ window.addEventListener('DOMContentLoaded', () => {
 
         if (message.command === 'images') {
             const metas = message.metas;
+            const breakpointCapture = new BreakpointCapture(message.breakpointMeta, message.vscodeMeta);
+            manager.addBreakpointCapture(breakpointCapture);
             for (const meta of metas) {
                 const imageUrl = meta.imageWebUrl;
                 console.log("image", imageUrl, meta);
                 const imageTraceId = meta.variable.evaluateName;
                 const imageTrace = manager.addImageTrace(imageTraceId);
                 imageTrace.addImage(imageUrl, meta);
+                breakpointCapture.addImageIdxCapture(imageTraceId, imageTrace.lastIdx);
             }
-            manager.render();
+            manager.renderAtBreakpoint(breakpointCapture);
         }
         if (message.command === 'image') {
             const imageUrl = message.url;
@@ -56,6 +59,8 @@ class ImageTraceManager {
         this.lastRenderedCaptureIdx = 0;
         this.currentRenderedCaptureIdx = 0;
         this.lastRenderedImageTraceIds = {};
+        this.breakpointCaptureList = [];
+        this.lastRenderedBreakpointCapture = undefined;
 
         // Slider to seek captures
         this.slider = this._initial_slider;
@@ -101,7 +106,9 @@ class ImageTraceManager {
                 }
                 this.slider.value = valAfter;
                 const captureIdx = this.slider.value;
-                this.render(captureIdx, true);
+                // this.render(captureIdx, true);
+                const breakpointCapture = this.breakpointCaptureList[captureIdx];
+                this.renderAtBreakpoint(breakpointCapture);
                 this.frameInfo.click();
             });
         };
@@ -171,6 +178,11 @@ class ImageTraceManager {
         console.log("captured", cap, this.captures);
     }
 
+    addBreakpointCapture(breakpointCapture) {
+        breakpointCapture.setFrameInfoDom(this.frameInfo);
+        this.breakpointCaptureList.push(breakpointCapture);
+    }
+
     render(captureIdx = -1, isSliderEvent = false) {
         console.log("ImageTraceManager.render", captureIdx, isSliderEvent, this);
         // Get capture to render
@@ -236,6 +248,33 @@ class ImageTraceManager {
         this.lastRenderedCaptureIdx = this.currentRenderedCaptureIdx;
     }
 
+    renderAtBreakpoint(breakpointCapture) {
+        console.log("renderAtBreakpoint", breakpointCapture);
+
+        // Render imageTraces in the given breakpointCapture
+        const imageTraceIds = Object.keys(breakpointCapture.imageTraceIdxDict);
+        for (const imageTraceId of imageTraceIds) {
+            const idx = breakpointCapture.imageTraceIdxDict[imageTraceId];
+            const imageTrace = this.imageTraceList[imageTraceId];
+            imageTrace.show();
+            imageTrace.render(idx);
+            breakpointCapture.updateFrameInfoDom();
+        }
+
+        // Hide imageTraces which are not in the current breakpointCapture
+        if (this.lastRenderedBreakpointCapture !== undefined) {
+            for (const pastImageTraceId of Object.keys(this.lastRenderedBreakpointCapture.imageTraceIdxDict)) {
+                if (!imageTraceIds.includes(pastImageTraceId)) {
+                    const imageTrace = this.imageTraceList[pastImageTraceId];
+                    imageTrace.hide();
+                }
+            }
+        }
+
+        this._refreshFrameInfoByBreakpointCapture(breakpointCapture);
+        this.lastRenderedBreakpointCapture = breakpointCapture;
+    }
+
     _refreshFrameInfo(imageTrace, idx, captureIdx) {
         const meta = imageTrace.imageItemList[idx].meta;
         const workspaceFolder = meta.vscode.workspaceFolder.uri.fsPath;
@@ -251,9 +290,25 @@ class ImageTraceManager {
         };
     }
 
+    _refreshFrameInfoByBreakpointCapture(breakpointCapture) {
+        const meta = breakpointCapture.meta;
+        const workspaceFolder = breakpointCapture.vscodeMeta.workspaceFolders[0].uri.fsPath;
+        const sourcePathRelative = meta.source.path.replace(workspaceFolder, ".");
+        const sourcePathExp = `${sourcePathRelative}:${meta.line}:${meta.column}`;
+        console.log("sourcePathExp", sourcePathExp);
+        this.frameInfo.innerHTML = `${sourcePathExp}`;
+        this.frameInfo.onclick = () => {
+            console.log("Open file", meta.source.path, "pos:", [meta.line, meta.column]);
+            // revealTextFile(meta.source.path, [meta.line, meta.column]);
+            vscodeOpen(meta.source.path, [meta.line, meta.column]);
+        };
+    }
+
     _handleSliderEvent(e) {
         let captureIdx = e.target.value;
-        this.render(captureIdx, true);
+        // this.render(captureIdx, true);
+        const breakpointCapture = this.breakpointCaptureList[captureIdx];
+        this.renderAtBreakpoint(breakpointCapture);
         if (this.goLineCheckBox.checked) {
             this.frameInfo.click();
         }
@@ -261,10 +316,41 @@ class ImageTraceManager {
 }
 
 class BreakpointCapture {
-    constructor(meta) {
+    constructor(meta, vscodeMeta) {
         this.meta = meta;
+        this.vscodeMeta = vscodeMeta;
+        this.frameInfoDom = undefined;
         this.prev = undefined;
         this.next = undefined;
+
+        this.imageTraceIdxDict = [];
+    }
+
+    setFrameInfoDom(frameInfoDom) {
+        this.frameInfoDom = frameInfoDom;
+        // this.frameInfoDom.classList.add("frame-info");
+    }
+
+    updateFrameInfoDom() {
+        const meta = this.meta;
+        const workspaceFolder = this.vscodeMeta.workspaceFolder;
+        const sourcePathRelative = this.meta.source.path.replace(workspaceFolder, ".");
+        const sourcePathExp = `${sourcePathRelative}:${meta.line}:${meta.column}`;
+        this.frameInfoDom.innerHTML = `${sourcePathExp}`;
+        this.frameInfoDom.onclick = () => {
+            console.log("Open file", meta.source.path, "pos:", [meta.line, meta.column]);
+            // revealTextFile(meta.frame.source.path, [meta.frame.line, meta.frame.column]);
+            vscodeOpen(meta.source.path, [meta.line, meta.column]);
+        };
+
+        this.frameInfoDom.innerHTML = `${this.meta.source.path}:${this.meta.line}:${this.meta.column}`;
+    }
+    addImageIdxCapture(imageTraceId, imageIdx) {
+        this.imageTraceIdxDict[imageTraceId] = imageIdx;
+    }
+
+    vscodeOpen(uri, pos = undefined) {
+        vscodeOpen(uri, pos);
     }
 
     setLink(prev, next) {
@@ -567,11 +653,11 @@ class ImageItemDomFactory {
         const imageFileFsPath = `file:\\\\\\${meta.vscode.filePath}`;
         this.a_source.classList.add("source-info");
         this.a_source.innerHTML = `${sourcePathExp}`;
-        this.a_source.onclick = () => {
+        this.a_source.onclick = (() => () => {
             console.log("Open file", meta.frame.source.path, "pos:", [meta.frame.line, meta.frame.column]);
             // revealTextFile(meta.frame.source.path, [meta.frame.line, meta.frame.column]);
-            vscodeOpen(meta.frame.source.path);
-        };
+            vscodeOpen(meta.frame.source.path, [meta.frame.line, meta.frame.column]);
+        })(meta);
         // this.a_source.innerHTML = ``;
 
         // div.variable-info

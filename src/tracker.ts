@@ -82,9 +82,12 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
             // const openPath = vscode.Uri.file(filePath.toString()).toString().replace("/file:", "");
             // vscode.commands.executeCommand('vscode.open', filePath.fsPath);
             console.log("showing images on panel", panel);
+            const workspaceFolders = vscode.workspace.workspaceFolders;
             panel.postMessage({
                 command: "images",
-                metas: imageMetaWides
+                metas: imageMetaWides,
+                breakpointMeta: message.body,
+                vscodeMeta: { workspaceFolders }
 
             });
             panel.showPanel();
