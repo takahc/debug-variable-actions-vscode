@@ -1,9 +1,51 @@
 console.log("hey yo");
 
-var sessionDivs = {};
-var breakDivs = {};
-const vscode = acquireVsCodeApi();
+window.addEventListener('DOMContentLoaded', () => {
+    const vscode = acquireVsCodeApi();
+    const manager = new ImageTraceManager("#wrapper");
 
+    // Handle the message inside the webview
+    window.addEventListener('message', event => {
+
+        let message = event.data; // The JSON data our extension sent
+        if (!message) { message = event.message; }
+        if (!message) { message = event; }
+        console.log("message received", message);
+
+        if (message.command === 'images') {
+            const metas = message.metas;
+            for (const meta of metas) {
+                const imageUrl = meta.imageWebUrl;
+                console.log("image", imageUrl, meta);
+                const imageTraceId = meta.variable.evaluateName;
+                const imageTrace = manager.addImageTrace(imageTraceId);
+                imageTrace.addImage(imageUrl, meta);
+            }
+            manager.render();
+        }
+        if (message.command === 'image') {
+            const imageUrl = message.url;
+            const meta = message.meta;
+            console.log("image", imageUrl, meta);
+            const imageTraceId = meta.variable.evaluateName;
+            const imageTrace = manager.addImageTrace(imageTraceId);
+            imageTrace.addImage(imageUrl, meta);
+            manager.render();
+            console.log("manager", manager);
+        }
+        else if (message.command === 'capture') {
+            console.log("capturing", manager);
+            manager.capture();
+        }
+        else if (message.command === 'instant-message') {
+            let duration = 1000;
+            if (message.message === "WAIT FOR IMAGES...") {
+                duration = -1;
+            }
+            displayInstantMessage(message.message, duration);
+        }
+    });
+});
 
 class ImageTraceManager {
     constructor(parentDomQuery) {
@@ -215,6 +257,31 @@ class ImageTraceManager {
         if (this.goLineCheckBox.checked) {
             this.frameInfo.click();
         }
+    }
+}
+
+class BreakpointCapture {
+    constructor(meta) {
+        this.meta = meta;
+        this.prev = undefined;
+        this.next = undefined;
+    }
+
+    setLink(prev, next) {
+        if (prev !== undefined) {
+            this.setPrev(prev);
+        }
+        if (next !== undefined) {
+            this.setNext(next);
+        }
+    }
+    setPrev(prev) {
+        this.prev = prev;
+        prev.next = this;
+    }
+    setNext(next) {
+        this.next = next;
+        next.prev = this;
     }
 }
 
@@ -536,53 +603,6 @@ class ImageDomFactory {
 
     }
 }
-
-const manager = new ImageTraceManager("#wrapper");
-
-
-// Handle the message inside the webview
-window.addEventListener('message', event => {
-
-    let message = event.data; // The JSON data our extension sent
-    if (!message) { message = event.message; }
-    if (!message) { message = event; }
-    console.log("message received", message);
-
-    if (message.command === 'images') {
-        const metas = message.metas;
-        for (const meta of metas) {
-            const imageUrl = meta.imageWebUrl;
-            console.log("image", imageUrl, meta);
-            const imageTraceId = meta.variable.evaluateName;
-            const imageTrace = manager.addImageTrace(imageTraceId);
-            imageTrace.addImage(imageUrl, meta);
-        }
-        manager.render();
-    }
-    if (message.command === 'image') {
-        const imageUrl = message.url;
-        const meta = message.meta;
-        console.log("image", imageUrl, meta);
-        const imageTraceId = meta.variable.evaluateName;
-        const imageTrace = manager.addImageTrace(imageTraceId);
-        imageTrace.addImage(imageUrl, meta);
-        manager.render();
-        console.log("manager", manager);
-    }
-    else if (message.command === 'capture') {
-        console.log("capturing", manager);
-        manager.capture();
-    }
-    else if (message.command === 'instant-message') {
-        let duration = 1000;
-        if (message.message === "WAIT FOR IMAGES...") {
-            duration = -1;
-        }
-        displayInstantMessage(message.message, duration);
-    }
-});
-
-
 
 function copyPngImageToClipboard(imageUrl) {
     console.log("fetching blob of png");
