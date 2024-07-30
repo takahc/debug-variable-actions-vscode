@@ -7,9 +7,11 @@ export class VariableViewPanel {
     private readonly _panel: vscode.WebviewPanel;
     private _disposables: vscode.Disposable[] = [];
     private _context: vscode.ExtensionContext;
+    public static DefaultRenderMode = "image-panel";
+    private static lastRenderMode: string | undefined = undefined;
 
 
-    constructor(panel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
+    constructor(panel: vscode.WebviewPanel, context: vscode.ExtensionContext, renderMode?: string) {
         console.log("VariableViewPanel constructor");
         this._panel = panel;
         this._context = context;
@@ -19,7 +21,7 @@ export class VariableViewPanel {
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
         // Set the HTML content for the webview panel
-        this._panel.webview.html = this._getWebviewContent();
+        this._panel.webview.html = this._getWebviewContent(renderMode);
 
         // Set an event listener to listen for messages passed from the webview context
         this._setWebviewMessageListener(this._panel.webview);
@@ -30,6 +32,7 @@ export class VariableViewPanel {
    */
     public dispose() {
         VariableViewPanel.currentPanel = undefined;
+        VariableViewPanel.lastRenderMode = undefined;
 
         // Dispose of the current webview panel
         this._panel.dispose();
@@ -120,7 +123,7 @@ export class VariableViewPanel {
         return weburiStr;
     }
 
-    public static render(context: vscode.ExtensionContext) {
+    public static render(context: vscode.ExtensionContext, renderMode?: string) {
         if (VariableViewPanel.currentPanel) {
             // If the webview panel already exists reveal it
             VariableViewPanel.currentPanel._panel.reveal(vscode.ViewColumn.Two);
@@ -149,8 +152,9 @@ export class VariableViewPanel {
                 }
             );
 
-            VariableViewPanel.currentPanel = new VariableViewPanel(panel, context);
+            VariableViewPanel.currentPanel = new VariableViewPanel(panel, context, renderMode);
         }
+        VariableViewPanel.lastRenderMode = renderMode;
     }
 
 
@@ -180,74 +184,84 @@ export class VariableViewPanel {
             const message = {
                 command: "instant-message",
                 message: instant_message
-            }
+            };
             panel._panel.webview.postMessage(message);
         }
     }
 
 
-    _getWebviewContent() {
+    _getWebviewContent(renderMode?: string): string {
         let html;
 
         let publicDir = this._panel.webview.asWebviewUri(
             vscode.Uri.joinPath(this._context.extensionUri, "public")
         );
 
-        // this._panel.webview.html = `<!DOCTYPE html>
-        // <head>
-        //   <html>
-        //     <meta charset="utf-8"/>
-        //     <body>
-        //       Test Chart
-        //       <canvas id="myChart" style="background-color: #FFF"></canvas>
-        //       <script
-        //         type="text/javascript"
-        //         src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.2.0/chart.min.js">
-        //         </script>
-        //       <script type="text/javascript">
-        //         const ctx = document.getElementById("myChart");
-        //         const myChart = new Chart(ctx, {
-        //           type: "bar",
-        //           data: {
-        //             labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
-        //             datasets: [
-        //               {
-        //                 label: "# of Votes",
-        //                 data: [12, 19, 3, 5, 2, 3],
-        //                 backgroundColor: [
-        //                   "rgba(255, 99, 132, 0.2)",
-        //                   "rgba(54, 162, 235, 0.2)",
-        //                   "rgba(255, 206, 86, 0.2)",
-        //                   "rgba(75, 192, 192, 0.2)",
-        //                   "rgba(153, 102, 255, 0.2)",
-        //                   "rgba(255, 159, 64, 0.2)",
-        //                 ],
-        //                 borderColor: [
-        //                   "rgba(255, 99, 132, 1)",
-        //                   "rgba(54, 162, 235, 1)",
-        //                   "rgba(255, 206, 86, 1)",
-        //                   "rgba(75, 192, 192, 1)",
-        //                   "rgba(153, 102, 255, 1)",
-        //                   "rgba(255, 159, 64, 1)",
-        //                 ],
-        //                 borderWidth: 1,
-        //               },
-        //             ],
-        //           },
-        //           options: {
-        //             scales: {
-        //               y: {
-        //                 beginAtZero: true,
-        //               },
-        //             },
-        //           },
-        //         });
-        //       </script>
-        //     </body>
-        //   </html>
-        // </head>`;
+        if (renderMode === undefined && VariableViewPanel.lastRenderMode === undefined) {
+            renderMode = VariableViewPanel.DefaultRenderMode;
+        }
+        else if (renderMode === undefined) {
+            renderMode = VariableViewPanel.lastRenderMode;
+        }
 
-        html = `<!DOCTYPE html>
+        switch (renderMode) {
+            case "test-chart":
+                return dedent`<!DOCTYPE html>
+                <head>
+                <html>
+                    <meta charset="utf-8"/>
+                    <body>
+                    Test Chart
+                    <canvas id="myChart" style="background-color: #FFF"></canvas>
+                    <script
+                        type="text/javascript"
+                        src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.2.0/chart.min.js">
+                        </script>
+                    <script type="text/javascript">
+                        const ctx = document.getElementById("myChart");
+                        const myChart = new Chart(ctx, {
+                        type: "bar",
+                        data: {
+                            labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
+                            datasets: [
+                            {
+                                label: "# of Votes",
+                                data: [12, 19, 3, 5, 2, 3],
+                                backgroundColor: [
+                                "rgba(255, 99, 132, 0.2)",
+                                "rgba(54, 162, 235, 0.2)",
+                                "rgba(255, 206, 86, 0.2)",
+                                "rgba(75, 192, 192, 0.2)",
+                                "rgba(153, 102, 255, 0.2)",
+                                "rgba(255, 159, 64, 0.2)",
+                                ],
+                                borderColor: [
+                                "rgba(255, 99, 132, 1)",
+                                "rgba(54, 162, 235, 1)",
+                                "rgba(255, 206, 86, 1)",
+                                "rgba(75, 192, 192, 1)",
+                                "rgba(153, 102, 255, 1)",
+                                "rgba(255, 159, 64, 1)",
+                                ],
+                                borderWidth: 1,
+                            },
+                            ],
+                        },
+                        options: {
+                            scales: {
+                            y: {
+                                beginAtZero: true,
+                            },
+                            },
+                        },
+                        });
+                    </script>
+                    </body>
+                </html>
+                </head>`;
+
+            case "test-mermaid":
+                return `<!DOCTYPE html>
         <html lang="en">
           <head>
             <link
@@ -278,70 +292,72 @@ export class VariableViewPanel {
 
 
 
+            case "test-gridjs":
+                return this._panel.webview.html = `<!DOCTYPE html>
+                <head>
+                  <html>
+                    <meta charset="utf-8"/>
+                    <body>
+                    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/gridjs@latest/dist/gridjs.production.min.js"></script>
+                    <div id="wrapper"></div>
 
-        // this._panel.webview.html = `<!DOCTYPE html>
-        // <head>
-        //   <html>
-        //     <meta charset="utf-8"/>
-        //     <body>
-        //     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/gridjs@latest/dist/gridjs.production.min.js"></script>
-        //     <div id="wrapper"></div>
+                    <script type="text/javascript">
+                        const grid = new Grid({
+                            data: [
+                            ["John", 30, "Engineer"],
+                            ["Jane", 25, "Designer"]
+                            ],
+                            columns: ["Name", "Age", "Occupation"]
+                            });
+                    </script>
 
-        //     <script type="text/javascript">
-        //         const grid = new Grid({
-        //             data: [
-        //             ["John", 30, "Engineer"],
-        //             ["Jane", 25, "Designer"]
-        //             ],
-        //             columns: ["Name", "Age", "Occupation"]
-        //             });
-        //     </script>
-
-        //     </body>
-        //   </html>
-        // </head>`;
-
-
+                    </body>
+                  </html>
+                </head>`;
 
 
-        // this._panel.webview.html = dedent`
-        //     <!DOCTYPE html>
-        //         <html lang="en">
-        //         <head>
-        //             <meta charset="UTF-8">
-        //             <meta name="viewport" content="width=device-width, initial-scale=1.0"
-        //             <link rel="stylesheet" href="${publicDir}/tabulator/css/style.css" />
 
-        //             <title>Cat Coding</title>
-        //         </head>
-        //         <body>
+            case "test-tabulator":
+                return dedent`
+                    <!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0"
+                            <link rel="stylesheet" href="${publicDir}/tabulator/css/style.css" />
 
-        //             <div id="example-table"></div>
+                            <title>Cat Coding</title>
+                        </head>
+                        <body>
 
-        //             <script src="${publicDir}/tabulator.min.js" />
-        //             <script src="${publicDir}/index.js" />
-        //         </body>
-        //     </html>`;
+                            <div id="example-table"></div>
 
-        // this._panel.webview.html = dedent`
-        // <!DOCTYPE html>
-        // <html lang="en">
-        // <head>
-        //     <meta charset="UTF-8">
-        //     <meta name="viewport" content="width=device-width, initial-scale=1.0" <link rel="stylesheet" href="${publicDir}/tabulator/css/style.css" />
-        //     <title>View Variable</title>
-        //     <link href="https://unpkg.com/tabulator-tables@6.2.1/dist/css/tabulator.min.css" rel="stylesheet">
-        //     <script type="text/javascript" src="https://unpkg.com/tabulator-tables@6.2.1/dist/js/tabulator.min.js"></script>
-        // </head>
-        // <body>
-        //     <div id="example-table"></div>
-        //     <script src="${publicDir}/index.js" />
-        // </body>
-        // </html>`
+                            <script src="${publicDir}/tabulator.min.js" />
+                            <script src="${publicDir}/index.js" />
+                        </body>
+                    </html>`;
+
+            case "test-jspreadsheet":
+                return dedent`
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0" <link rel="stylesheet" href="${publicDir}/tabulator/css/style.css" />
+                    <title>View Variable</title>
+                    <link href="https://unpkg.com/tabulator-tables@6.2.1/dist/css/tabulator.min.css" rel="stylesheet">
+                    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@6.2.1/dist/js/tabulator.min.js"></script>
+                </head>
+                <body>
+                    <div id="example-table"></div>
+                    <script src="${publicDir}/index.js" />
+                </body>
+                </html>`;
 
 
-        // jSpreadsheet
-        html = dedent`
+            case "test-jspreadsheet2":
+                // jSpreadsheet
+                return dedent`
         <html>
             <script src="https://bossanova.uk/jspreadsheet/v4/jexcel.js"></script>
             <link rel="stylesheet" href="https://bossanova.uk/jspreadsheet/v4/jexcel.css" type="text/css" />
@@ -358,8 +374,9 @@ export class VariableViewPanel {
         </html>
         `;
 
-        // Image
-        html = dedent`
+            case "image-simple":
+                // Image
+                return dedent`
         <html>
         <head>
             <link rel="stylesheet" href="${publicDir}/style_image.css" type="text/css" />
@@ -372,8 +389,9 @@ export class VariableViewPanel {
         `;
 
 
-        // Image panel
-        html = dedent`
+            case "image-panel":
+                // Image panel
+                return dedent`
                 <html>
                 <head>
                     <link rel="stylesheet" href="${publicDir}/style_image_panel.css" type="text/css" />
@@ -385,8 +403,9 @@ export class VariableViewPanel {
                 </body></html>
         `;
 
-
-        return html;
+            default:
+                return dedent`Rendering error. renderMode: ${renderMode}`;
+        }
 
     }
 }
