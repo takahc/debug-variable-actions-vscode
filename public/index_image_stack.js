@@ -12,7 +12,21 @@ window.addEventListener('DOMContentLoaded', () => {
         if (!message) { message = event; }
         console.log("message received", message);
 
-        if (message.command === 'images') {
+        if (message.command === 'images-stack') {
+            const metas = message.metas;
+            const breakpointCapture = new BreakpointCapture(message.breakpointMeta, message.vscodeMeta);
+            manager.addBreakpointCapture(breakpointCapture);
+            for (const meta of metas) {
+                const imageUrl = meta.imageWebUrl;
+                console.log("image", imageUrl, meta);
+                const imageTraceId = meta.variable.evaluateName;
+                const imageTrace = manager.addImageTrace(imageTraceId);
+                imageTrace.addImage(imageUrl, meta);
+                breakpointCapture.addImageIdxCapture(imageTraceId, imageTrace.lastIdx);
+            }
+            manager.renderAtBreakpoint(breakpointCapture);
+        }
+        else if (message.command === 'images') {
             const metas = message.metas;
             const breakpointCapture = new BreakpointCapture(message.breakpointMeta, message.vscodeMeta);
             manager.addBreakpointCapture(breakpointCapture);
