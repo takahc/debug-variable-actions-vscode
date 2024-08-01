@@ -22,6 +22,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 console.log("images-stack", imageUrl, meta);
                 const imageTraceId = meta.variable.evaluateName;
                 const imageTrace = manager.addImageTrace(imageTraceId);
+                imageTrace.renderMode = "stack";
                 imageTrace.addImage(imageUrl, meta);
                 breakpointCapture.addImageIdxCapture(imageTraceId, imageTrace.lastIdx);
             }
@@ -401,7 +402,8 @@ class ImageTrace {
             showAll: false
         };
         this.lastRenderedIdx = undefined;
-        this.renderMode = undefined;  // "single" or "showAll", but initialy undefined
+        this._renderMode = undefined;  // "single" or "showAll", but initialy undefined
+        this._doInitDomNextRender = false;
     }
     get _initial_dom() {
         // div.image-trace
@@ -415,14 +417,31 @@ class ImageTrace {
         return this._dom;
     }
 
+    get renderMode() {
+        return this._renderMode;
+    }
+    set renderMode(newRenderMode) {
+        if (this._renderMode !== undefined) {
+            // this._renderMode is undefined only at the first rendering
+            //   No need to initialize dom at the first rendering
+            if (newRenderMode !== undefined && this._renderMode === newRenderMode) {
+                // Set flag to initialize dom at next render
+                this._doInitDomNextRender = true;
+            }
+        }
+
+        this._renderMode = newRenderMode;
+    }
+
     render(idx = this.lastIdx) {
         console.log("ImageTrace.render", idx, this);
-        const newRenderMode = this.opt.showAll ? "showAll" : "single";
-        if (this.renderMode !== newRenderMode) {
+        // const newRenderMode = this.opt.showAll ? "showAll" : "single";
+        if (this._doInitDomNextRender) {
             console.log("Intermediate initialization of imageTrace's dom!");
-            // this._dom = this._initial_dom; // initialize dom if renderMode is changed
+            this._dom = this._initial_dom; // initialize dom if renderMode is changed
+            this._doInitDomNextRender = false;
         }
-        switch (newRenderMode) {
+        switch (this.renderMode) {
             case "single":
                 this._renderSingle(idx);
                 break;
@@ -433,7 +452,6 @@ class ImageTrace {
                 this._renderStack(idx);
                 break;
         }
-        this.renderMode = newRenderMode;
     }
 
     show() {
@@ -452,7 +470,7 @@ class ImageTrace {
     }
 
     _renderSingle(idx) {
-        if (this.renderMode != "single" || this.renderMode === undefined) {
+        if (this.renderMode !== "single" || this.renderMode === undefined) {
             // Add a single imageItemDom in this.dom when the last renderMode is not single or first rendering
             const imdom = this.imageItemFactory.create();
             console.log("imdom", imdom, this.dom, this.renderMode);
@@ -492,7 +510,8 @@ class ImageTrace {
     _renderStack(currentBreakIdx) {
         for (let breakIdx = 0; breakIdx < this.imageItemList.length; breakIdx++) {
             const imdom = this.imageItemFactory.create();
-
+            this.imageItemFactory.update(this.imageItemList[breakIdx].imageUrl, this.imageItemList[breakIdx].meta, this.imageItemList[breakIdx].changedState, "stack");
+            this.dom.appendChild(imdom);
         }
     }
 
