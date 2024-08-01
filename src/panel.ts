@@ -3,17 +3,19 @@ import dedent from 'dedent';
 import * as ejs from 'ejs';
 import { existsSync } from 'fs';
 
+// export type VariableVeiewRenderMode = "image-panel" | "image-stack";
+export type VariableVeiewRenderMode = string;
 
 export class VariableViewPanel {
     public static currentPanel: VariableViewPanel | undefined;
     private readonly _panel: vscode.WebviewPanel;
     private _disposables: vscode.Disposable[] = [];
     private _context: vscode.ExtensionContext;
-    public static DefaultRenderMode = "image-panel";
-    private static lastRenderMode: string | undefined = undefined;
+    public static DefaultRenderMode: VariableVeiewRenderMode = "image-panel";
+    private static lastRenderMode: VariableVeiewRenderMode | undefined = undefined;
 
 
-    constructor(panel: vscode.WebviewPanel, context: vscode.ExtensionContext, renderMode?: string) {
+    constructor(panel: vscode.WebviewPanel, context: vscode.ExtensionContext, renderMode?: VariableVeiewRenderMode) {
         console.log("VariableViewPanel constructor");
         this._panel = panel;
         this._context = context;
@@ -125,7 +127,7 @@ export class VariableViewPanel {
         return weburiStr;
     }
 
-    public static render(context: vscode.ExtensionContext, renderMode?: string) {
+    public static render(context: vscode.ExtensionContext, renderMode?: VariableVeiewRenderMode) {
         if (VariableViewPanel.currentPanel) {
             // If the webview panel already exists reveal it
             VariableViewPanel.currentPanel._panel.reveal(vscode.ViewColumn.Two);
@@ -180,7 +182,7 @@ export class VariableViewPanel {
     }
 
 
-    static sendInstanceMessage(instant_message: string) {
+    sendInstanceMessage(instant_message: string) {
         const panel = VariableViewPanel.currentPanel;
         if (panel) {
             const message = {
@@ -192,7 +194,7 @@ export class VariableViewPanel {
     }
 
 
-    _getWebviewContent(renderMode?: string): string {
+    _getWebviewContent(renderMode?: VariableVeiewRenderMode): string {
 
         let publicDir = this._panel.webview.asWebviewUri(
             vscode.Uri.joinPath(this._context.extensionUri, "public")
