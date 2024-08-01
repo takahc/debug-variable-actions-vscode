@@ -34,9 +34,11 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         VariableTypeFactory.loadSettings();
 
         // Render panel
-        VariableViewPanel.render(this._context);
+        VariableViewPanel.render(this._context, "image-stack");
         const panel = VariableViewPanel.currentPanel;
-        VariableViewPanel.sendInstanceMessage("WAIT FOR IMAGES...");
+        if (panel) {
+            panel.sendInstanceMessage("WAIT FOR IMAGES...");
+        }
 
         // Get active debug session
         const session = vscode.debug.activeDebugSession;
@@ -95,24 +97,27 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
             // vscode.commands.executeCommand('vscode.open', filePath.fsPath);
             console.log("showing images on panel", panel);
             const workspaceFolders = vscode.workspace.workspaceFolders;
-            panel.postMessage({
-                command: "images",
+            const _msg = {
+                command: "images-stack",
                 metas: imageMetaWides,
                 breakpointMeta: message.body,
+                frames: thread.frames.map(frame => frame.getSerializable()),
                 vscodeMeta: { workspaceFolders }
-
-            });
+            };
+            panel.postMessage(_msg);
             panel.showPanel();
 
             console.log("DONE!!");
+            panel.postMessage({ command: "capture" });
+            panel.sendInstanceMessage("DONE!");
+
         } else {
             console.log("panel is undefined");
+
         }
 
         // Post message
         console.log("DONE!!!!!!!!!!!");
-        VariableViewPanel.postMessage({ command: "capture" });
-        VariableViewPanel.sendInstanceMessage("DONE!");
     }
 
     async procImagePanel(message: any) {
@@ -122,8 +127,8 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         const panel = VariableViewPanel.currentPanel;
         if (panel) {
             // panel.showPanel();
+            panel.sendInstanceMessage("WAIT FOR IMAGES...");
         }
-        VariableViewPanel.sendInstanceMessage("WAIT FOR IMAGES...");
 
 
         const session = vscode.debug.activeDebugSession;
@@ -201,13 +206,13 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
             panel.showPanel();
 
             console.log("DONE!!");
+            panel.postMessage({ command: "capture" });
+            panel.sendInstanceMessage("DONE!");
         } else {
             console.log("panel is undefined");
         }
 
         console.log("DONE!!!!!!!!!!!");
-        VariableViewPanel.postMessage({ command: "capture" });
-        VariableViewPanel.sendInstanceMessage("DONE!");
     }
 
     //     public onDidSendMessage(message: any) {
