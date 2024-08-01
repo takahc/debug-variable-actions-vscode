@@ -294,6 +294,15 @@ export class ImageVariable extends DebugVariable {
         return this.metaWide;
     }
 
+    getSerializable() {
+        return {
+            ...super.getSerializable(),
+            imageInfo: this.imageInfo,
+            imageHash: this.imageHash,
+            metaWide: this.metaWide,
+        };
+    }
+
 
 }
 
