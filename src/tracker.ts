@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 import { VariableViewPanel } from './panel';
 import { register } from 'module';
 
@@ -115,6 +116,13 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
             console.log("panel is undefined");
 
         }
+
+        // Save tracker.json
+        const breakCount = DebugSessionTracker.breakCount; //FIXME
+        const break_dir_name = `Break${breakCount}`;
+        const trackerPath = vscode.Uri.joinPath(sessionTracker.saveDirUri, break_dir_name, `tracker.json`);
+        console.log("trackerPath", trackerPath);
+        fs.writeFileSync(trackerPath.fsPath, JSON.stringify(sessionTracker.getSerializable(), null, 4));
 
         // Post message
         console.log("DONE!!!!!!!!!!!");
