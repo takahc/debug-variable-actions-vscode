@@ -247,6 +247,33 @@ export class DebugVariable {
         }
         return "other";
     }
+
+    getSerializable() {
+        let ret: any = {
+            name: this.name,
+            meta: this.meta,
+            expression: this.expression,
+            type: this.type,
+            startAddress: this.startAddress,
+            endAddress: this.endAddress,
+            sizeByte: this.sizeByte,
+            binaryInfo: this.binaryInfo,
+            value: this.value,
+            isVisualizable: this.isVisualizable,
+            isArray: this.isArray,
+            isStruct: this.isStruct,
+            parentName: this.parent?.name,
+        };
+
+        if (this.value instanceof Array) {
+            ret.value = [];
+            this.value.forEach((variable: DebugVariable) => {
+                ret.value.push(variable.getSerializable());
+            });
+        }
+
+        return ret;
+    }
 }
 
 export class DebugVariableType {

@@ -134,6 +134,14 @@ export class DebugSessionTracker {
         );
         return imageVariables;
     }
+
+    getSerializable() {
+        return {
+            trackerId: this.trackerId,
+            session: this.sessionName,
+            threads: this.threads.map(thread => thread.getSerializable())
+        };
+    }
 }
 
 export class DebugThread {
@@ -216,6 +224,13 @@ export class DebugThread {
         return frame.variables;
     }
 
+    getSerializable() {
+        return {
+            threadId: this.id,
+            meta: this.meta,
+            frames: this.frames.map(frame => frame.getSerializable())
+        };
+    }
 }
 
 export class DebugFrame {
@@ -247,6 +262,14 @@ export class DebugFrame {
         }
         this.variables.push(variable);
         return variable;
+    }
+
+    getSerializable() {
+        return {
+            frameId: this.id,
+            meta: this.meta,
+            variables: this.variables.map(variable => variable.getSerializable())
+        };
     }
 
 }
