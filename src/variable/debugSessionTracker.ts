@@ -1,5 +1,5 @@
-import { constants } from 'buffer';
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 import { ImageVariable, ImageVariableType } from './imageVariable';
 import { DebugVariable, DebugVariableType } from './debugVariable';
 import { VariableTypeFactory } from './variableTypeFactory';
@@ -17,6 +17,7 @@ export class DebugSessionTracker {
     public readonly context: vscode.ExtensionContext;;
     public readonly threads: DebugThread[] = [];
     public readonly debugStartDate: string;
+    private _saveDirUri: vscode.Uri;
 
     public static breakCount: number = 0; // FIXME: manage brake count not by a static.
 
@@ -57,6 +58,21 @@ export class DebugSessionTracker {
 
         // Concatenate the parts with the desired format
         this.debugStartDate = `${year}-${monthPadded}-${dayPadded}_${hoursPadded}-${minutesPadded}-${secondsPadded}-${millisecondsPadded}`;
+
+        // Set the save directory uri
+        const session_dir_name = `Session_${this.session.id}`;
+        if (context.storageUri !== undefined) {
+            this._saveDirUri = vscode.Uri.joinPath(context.storageUri, session_dir_name);
+        } else {
+            this._saveDirUri = vscode.Uri.joinPath(context.globalStorageUri, `Session${_session.id}`);
+        }
+        // If not exist context.globalStorageUri directory, create directory
+        ((dirpath: string) => {
+            if (!fs.existsSync(dirpath)) {
+                fs.mkdirSync(dirpath, { recursive: true });
+            }
+
+        })(this._saveDirUri.fsPath);
     };
 
     // getter
@@ -72,6 +88,9 @@ export class DebugSessionTracker {
         } else {
             return DebugSessionTracker.trackers.find(tracker => tracker.trackerId === _trackerQuery);
         }
+    }
+    get saveDirUri(): vscode.Uri {
+        return this._saveDirUri;
     }
 
     // factory

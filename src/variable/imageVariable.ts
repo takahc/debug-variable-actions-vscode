@@ -197,26 +197,19 @@ export class ImageVariable extends DebugVariable {
         const frameName = this.frame.meta.name;
         const source = `${this.frame.meta.source.name}(${this.frame.meta.line},${this.frame.meta.column})`;
 
-        // const session_dir_name = `Session${date}_${this.frame.thread.tracker.session.type}_${this.frame.thread.tracker.session.id}`;
-        // const session_dir_name = `Session${this.frame.thread.tracker.debugStartDate}`;
-        const session_dir_name = `Session${this.frame.thread.tracker.session.id}`;
-        this.frame.thread.tracker.debugStartDate;
-        // const break_dir_name = `Break${breakCount}_thread${threadId}_frame${frameId}_${frameName}_${source}`;
         const break_dir_name = `Break${breakCount}`;
-        // const filename = `${this.name}_${this.expression}.png`;
-        // const filename = `${this.expression}.png`;
         const pattern = /[\\\/:\*\?\"<>\|]/;
         const filename = `${this.expression}.png`.replace(pattern, "-");
-        // const filename = `${this.expression}.tif`.replace(pattern, "-");
-        const filePath = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, filename);
+        const dirPath = vscode.Uri.joinPath(this.frame.thread.tracker.saveDirUri, break_dir_name);
+        const filePath = vscode.Uri.joinPath(dirPath, filename);
         console.log("filePath", filePath);
 
         // Extract the directory path from filePath
-        const dirPath = path.dirname(filePath.fsPath);
 
         // Check if the directory exists, if not, create it
-        if (!fs.existsSync(dirPath)) {
-            await fs.mkdirSync(dirPath, { recursive: true });
+        if (!fs.existsSync(dirPath.fsPath
+        )) {
+            await fs.mkdirSync(dirPath.fsPath, { recursive: true });
         }
 
         if (filePath) {
@@ -287,7 +280,7 @@ export class ImageVariable extends DebugVariable {
         }
 
         // Save .meta.json
-        const metaPath = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, `${filename}.meta.json`);
+        const metaPath = vscode.Uri.joinPath(dirPath, `${filename}.meta.json`);
         console.log("metaPath", metaPath);
         fs.writeFileSync(metaPath.fsPath, JSON.stringify(this.metaWide, null, 4));
 
