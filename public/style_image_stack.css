@@ -77,3 +77,10 @@ div .image-content {
 .is-same-image {
     background-color: rgb(39 39 39 / 80%);
 }
+
+.toolbar {
+    background-color: var(--vscode-editor-background);
+    position: sticky;
+    left: 0;
+    top: 0;
+}

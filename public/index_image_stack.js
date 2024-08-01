@@ -16,9 +16,10 @@ window.addEventListener('DOMContentLoaded', () => {
             const metas = message.metas;
             const breakpointCapture = new BreakpointCapture(message.breakpointMeta, message.vscodeMeta);
             manager.addBreakpointCapture(breakpointCapture);
+            console.log("images-stack", metas);
             for (const meta of metas) {
                 const imageUrl = meta.imageWebUrl;
-                console.log("image", imageUrl, meta);
+                console.log("images-stack", imageUrl, meta);
                 const imageTraceId = meta.variable.evaluateName;
                 const imageTrace = manager.addImageTrace(imageTraceId);
                 imageTrace.addImage(imageUrl, meta);
@@ -77,6 +78,7 @@ class ImageTraceManager {
         this.lastRenderedBreakpointCapture = undefined;
 
         // Slider to seek captures
+        this.toolbar = document.createElement("div");
         this.slider = this._initial_slider;
         this.frameInfo = document.createElement("span");
         this.goLineCheckBox = document.createElement("input");
@@ -89,6 +91,8 @@ class ImageTraceManager {
         // div.image-trace-manager
         let imageTraceManagerDiv = document.createElement("div");
         imageTraceManagerDiv.classList.add("image-trace-manager");
+
+        this.toolbar.classList.add("toolbar");
         this.frameInfo.classList.add("frame-info");
         this.goLineCheckBox.classList.add("go-line-checkbox");
         this.goLineCheckBox.type = "checkbox";
@@ -147,10 +151,11 @@ class ImageTraceManager {
     }
 
     addToParentDom() {
-        document.querySelector(this.parentDomQuery).appendChild(this.backNextSpan);
-        document.querySelector(this.parentDomQuery).appendChild(this.slider);
-        document.querySelector(this.parentDomQuery).appendChild(this.goLineCheckBox);
-        document.querySelector(this.parentDomQuery).appendChild(this.frameInfo);
+        this.toolbar.appendChild(this.backNextSpan);
+        this.toolbar.appendChild(this.slider);
+        this.toolbar.appendChild(this.goLineCheckBox);
+        this.toolbar.appendChild(this.frameInfo);
+        document.querySelector(this.parentDomQuery).appendChild(this.toolbar);
         document.querySelector(this.parentDomQuery).appendChild(this.dom);
     }
 
@@ -424,6 +429,9 @@ class ImageTrace {
             case "showAll":
                 this._renderShowAll(idx);
                 break;
+            case "stack":
+                this._renderStack(idx);
+                break;
         }
         this.renderMode = newRenderMode;
     }
@@ -455,7 +463,7 @@ class ImageTrace {
         // Update the imageItemDom, imageUrl, meta, changedState will be updated
         const imageItem = this.imageItemList[idx];
         console.log("_renderSingle changedState", imageItem.changedState, imageItem);
-        this.imageItemFactory.update(imageItem.imageUrl, imageItem.meta, imageItem.changedState);
+        this.imageItemFactory.update(imageItem.imageUrl, imageItem.meta, imageItem.changedState, "single");
 
         if (idx === this.lastRenderedIdx) {
             return;
@@ -479,6 +487,13 @@ class ImageTrace {
         // }
 
         this.lastRenderedIdx = idx;
+    }
+
+    _renderStack(currentBreakIdx) {
+        for (let breakIdx = 0; breakIdx < this.imageItemList.length; breakIdx++) {
+            const imdom = this.imageItemFactory.create();
+
+        }
     }
 
     _setImageDiffClass(cls) {
@@ -647,7 +662,60 @@ class ImageItemDomFactory {
         return this.imageItemDiv;
     }
 
-    update(imageUrl, meta, changedState) {
+    update(imageUrl, meta, changedState, renderMode = "stack") {
+        switch (renderMode) {
+            case "single":
+                this._updateSingle(imageUrl, meta, changedState);
+                break;
+            case "stack":
+                this._updateStack(imageUrl, meta, changedState);
+                break;
+        }
+    }
+
+    _updateSingle(imageUrl, meta, changedState) {
+        this.imageUrl = imageUrl;
+        this.meta = meta;
+
+        // img.image
+        this.img.src = imageUrl;
+
+        // a
+        this.a_filename.href = "#";
+        this.a_filename.onclick = () => copyPngImageToClipboard(`${imageUrl}`);
+        // this.a_filename.innerHTML = `<b>${meta.variable.evaluateName}</b><br>`;
+        this.a_filename.innerHTML = `${meta.variable.evaluateName}<br>`;
+        this.a_filename.classList.add("evaluate-name");
+
+        const workspaceFolder = meta.vscode.workspaceFolder.uri.fsPath;
+        const sourcePathRelative = meta.frame.source.path.replace(workspaceFolder, ".");
+        const sourcePathExp = `${sourcePathRelative}:${meta.frame.line}:${meta.frame.column}`;
+        const imageFileFsPath = `file:\\\\\\${meta.vscode.filePath}`;
+        this.a_source.classList.add("source-info");
+        this.a_source.innerHTML = `${sourcePathExp}`;
+        this.a_source.onclick = (() => () => {
+            console.log("Open file", meta.frame.source.path, "pos:", [meta.frame.line, meta.frame.column]);
+            // revealTextFile(meta.frame.source.path, [meta.frame.line, meta.frame.column]);
+            vscodeOpen(meta.frame.source.path, [meta.frame.line, meta.frame.column]);
+        })(meta);
+        // this.a_source.innerHTML = ``;
+
+        // div.variable-info
+        const filename = decodeURI(imageUrl.split('/').pop());
+        const imageSizeString = `${meta.imageInfo.mem_width}x${meta.imageInfo.mem_height}`;
+        // variableInfoDiv.innerHTML = `<b><a onclick="copyPngImageToClipboard(${imageUrl})" href="${imageFileFsPath}">${meta.variable.evaluateName}</a></b>
+        // this.variableInfoDiv.innerHTML = `<span>${meta.variable.type}</span> <span> ${imageSizeString}</span> <span> <i>${filename}</i></span>`;
+        this.variableInfoDiv.innerHTML = `<span>${meta.variable.type}</span> <span> ${imageSizeString}</span></span>`;
+
+        // Update is-***-image class
+        this.imageItemDiv.classList.remove(`is-new-image`);
+        this.imageItemDiv.classList.remove(`is-changed-image`);
+        this.imageItemDiv.classList.remove(`is-same-image`);
+        this.imageItemDiv.classList.add(`is-${changedState}-image`);
+    }
+
+
+    _updateStack(imageUrl, meta, changedState) {
         this.imageUrl = imageUrl;
         this.meta = meta;
 
@@ -688,6 +756,7 @@ class ImageItemDomFactory {
         this.imageItemDiv.classList.add(`is-${changedState}-image`);
     }
 }
+
 
 class ImageDomFactory {
     constructor(imageUrl) {
