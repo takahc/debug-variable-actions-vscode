@@ -3,6 +3,8 @@ import { EvalExpression } from './evalExpression';
 import { ImageVariable, ImageVariableType } from './imageVariable';
 import { VariableTypeFactory } from './variableTypeFactory';
 
+export type DebugEntity = DebugVariable | ImageVariable;
+
 export interface IbinaryInfo<T> {
     [key: string]: T,
     sizeByte: T,
