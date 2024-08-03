@@ -1,12 +1,13 @@
 {
-    "name": "debug-variable-right-click-actions",
-    "displayName": "debug-variable-right-click-actions",
-    "description": "",
+    "name": "debug-variable-actions-vscode",
+    "displayName": "debug-variable-actions-vscode",
+    "description": "A VSCode extension for debugging variables",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.89.0"
     },
     "categories": [
+        "Debuggers",
         "Other"
     ],
     "activationEvents": [
@@ -16,42 +17,42 @@
     "contributes": {
         "commands": [
             {
-                "command": "debug-variable-right-click-actions.start",
+                "command": "debug-variable-actions.start",
                 "title": "Start"
             },
             {
-                "command": "debug-variable-right-click-actions.action",
+                "command": "debug-variable-actions.action",
                 "title": "Action"
             },
             {
-                "command": "debug-variable-right-click-actions.tocsv",
+                "command": "debug-variable-actions.tocsv",
                 "title": "To CSV"
             },
             {
-                "command": "debug-variable-right-click-actions.topng",
+                "command": "debug-variable-actions.topng",
                 "title": "To PNG"
             },
             {
-                "command": "debug-variable-right-click-actions.topanel",
+                "command": "debug-variable-actions.topanel",
                 "title": "To Panel"
             }
         ],
         "menus": {
             "debug/variables/context": [
                 {
-                    "command": "debug-variable-right-click-actions.action",
+                    "command": "debug-variable-actions.action",
                     "when": "true"
                 },
                 {
-                    "command": "debug-variable-right-click-actions.tocsv",
+                    "command": "debug-variable-actions.tocsv",
                     "when": "true"
                 },
                 {
-                    "command": "debug-variable-right-click-actions.topng",
+                    "command": "debug-variable-actions.topng",
                     "when": "true"
                 },
                 {
-                    "command": "debug-variable-right-click-actions.topanel",
+                    "command": "debug-variable-actions.topanel",
                     "when": "true"
                 }
             ]
@@ -59,12 +60,12 @@
         "configuration": {
             "title": "Debug Variable Right Click Actions",
             "properties": {
-                "debug-variable-right-click-actions.config.enable": {
+                "debug-variable-actions.config.enable": {
                     "type": "boolean",
                     "default": true,
                     "description": "Enable the extension"
                 },
-                "debug-variable-right-click-actions.config.image-types": {
+                "debug-variable-actions.config.image-types": {
                     "type": "array",
                     "additionalItems": true,
                     "description": "Additional image types",

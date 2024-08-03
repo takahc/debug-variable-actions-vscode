@@ -107,7 +107,7 @@ export class VariableTypeFactory {
 
     static loadSettings() {
         // load user defined types
-        const _configs: IimageTypeConfig[] | undefined = vscode.workspace.getConfiguration().get("debug-variable-right-click-actions.config.image-types");
+        const _configs: IimageTypeConfig[] | undefined = vscode.workspace.getConfiguration().get("debug-variable-actions.config.image-types");
         if (_configs) {
             console.log("Before loading config: imageTypesConfig", this.imageTypesConfig);
             this.imageTypesConfig = {};
