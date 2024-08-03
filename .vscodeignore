@@ -9,3 +9,9 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 **/.vscode-test.*
+
+*.pptx
+cflow.exe
+msys-2.0.dll
+test/** 
+test2/**
