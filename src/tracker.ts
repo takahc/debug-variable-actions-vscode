@@ -20,7 +20,12 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         // console.log("onDidSendMessage", Object.assign({}, message));
 
         if (message.type === 'event' && message.event === 'stopped') {
-            await this.procImagePanel(message);
+            const enable = await vscode.workspace.getConfiguration().get('debug-variable-actions.config.enable');
+            if (enable) {
+                await this.procImagePanel(message);
+            } else {
+                console.log("debug-variable-actions.config.enable is", enable);
+            }
         }
     }
 
