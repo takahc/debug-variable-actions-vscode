@@ -8,7 +8,8 @@
 
 .image-trace-manager {
     display: flex;
-    flex-wrap: wrap;
+    /* flex-wrap: wrap; */
+    flex-wrap: nowrap;
 }
 
 #wrapper {
@@ -83,4 +84,45 @@ div .image-content {
     position: sticky;
     left: 0;
     top: 0;
+}
+
+.image-trace {
+    display: flex;
+    margin: 13px;
+    border: 1px #8c11e4 solid;
+    border-radius: 10px;
+    padding: 2px 4px;
+}
+
+.frame-item {
+    padding: 10px 0px;
+    margin: 6px 0px;
+    border: 4px aquamarine solid;
+    background-color: rgba(
+        calc(attr("data-frame-depth-max") * 200),
+        198,
+        223,
+        0.427
+    );
+    display: flex;
+    gap: 6.5px;
+    margin: 6px;
+}
+
+.trace-images {
+    display: flex;
+}
+
+.frame-content {
+}
+
+.frame-bar {
+    width: 80px;
+    height: 100%;
+    background-color: #8c11e4;
+    border: 3px red;
+}
+
+.frame-info {
+    display: none;
 }
