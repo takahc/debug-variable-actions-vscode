@@ -58,7 +58,7 @@
             ]
         },
         "configuration": {
-            "title": "Debug Variable Right Click Actions",
+            "title": "Debug Variable Actions",
             "properties": {
                 "debug-variable-actions.config.enable": {
                     "type": "boolean",
