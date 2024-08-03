@@ -13,6 +13,11 @@
     "activationEvents": [
         "onDebug"
     ],
+    "publisher": "akipg",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/akipg/debug-variable-actions-vscode.git"
+    },
     "main": "./out/extension.js",
     "contributes": {
         "commands": [
