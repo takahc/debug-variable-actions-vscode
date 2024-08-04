@@ -1,0 +1,21 @@
+name: "Update version"
+description: "update versiona"
+
+inputs:
+    update_semantic:
+        description: "Version to update"
+        required: true
+        default: "patch"
+outputs:
+    tag:
+        description: "New tag"
+        value: ${{ steps.update-version-do.outputs.tag }}
+
+runs:
+    using: "composite"
+    steps:
+        - name: Update version in package.json
+          id: update-version-do
+          run: |
+              tag = $(npm --no-git-tag-version version ${{ inputs.update_semantic }})
+              echo "tag=$tag" >> $GITHUB_OUTPUT

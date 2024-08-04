@@ -1,0 +1,49 @@
+name: Sample CI
+
+on:
+    push:
+        branches: ["pre-release"]
+    pull_request:
+        branches: ["pre-release"]
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: ./.github/actions/install-nodejs-and-packages
+
+            - name: Update version
+              id: update-version
+              uses: ./.github/actions/update-version
+              with:
+                  update_semantic: "patch"
+
+            - name: Build
+              id: build
+              run: |
+                  mkdir -p artifacts
+                  filename = $(json -f package.json name)-$(json -f package.json version)-pre-release.vsix
+                  vsce package -o artifacts/${filename} --pre-release --no-git-tag-version ${{ steps.update-version.outputs.tag }}
+                  echo "::set-output name=filename::${filename}"
+              with:
+                  VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+            - name: Save extension artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ${{ steps.build.outputs.filename }}
+                  path: "./artifacts/*.vsix"
+
+            # - name: Push to GitHub
+            #   run: |
+            #       git add .
+            #       git commit -m "Automated commit by GitHub Actions"
+            #       git tag -a ${{ steps.update-version.outputs.tag }} -m "${{ steps.update-version.outputs.tag }}-pre-release"
+            #       git push
+            #       git push origin --tags
+            #   env:
+            #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

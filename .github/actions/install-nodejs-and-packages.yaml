@@ -1,0 +1,16 @@
+name: "Install Node.js and Packages"
+description: "Install Node Packages"
+
+runs:
+    using: "composite"
+    steps:
+        - name: Install Node.js
+          uses: actions/setup-node@v4
+          with:
+              node-version: 20.14.0
+
+        - name: Install packages
+          run: |
+              npm install
+              npm install -g @vscode/vsce
+              ./setup.sh

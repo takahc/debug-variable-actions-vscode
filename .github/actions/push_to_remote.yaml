@@ -1,0 +1,39 @@
+name: "Push to remote"
+description: "Push to remote"
+
+inputs:
+    message:
+        description: "Commit message"
+        required: true
+        default: "Automated commit by GitHub Actions"
+    tag:
+        description: "New tag"
+        required: false
+        default: ""
+    is_pre_release:
+        description: "Is pre-release"
+        required: false
+        default: true
+
+runs:
+    using: "composite"
+    steps:
+        - name: Git push
+          run: |
+              if [ -n "$(git status --porcelain)" ]; then
+                echo "Working directory is not clean. Committing changes..."
+                git add .
+                git commit -m "Automated commit by GitHub Actions"
+              fi
+              git push
+          env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+        - name: Push tag to remote
+          if: ${{ inputs.tag != "" }}
+          run: |
+              commit_message = ${{ inputs.is_pre_release }} ? "%s-pre-release" : "%s"
+              git tag -a v${{ steps.update-version.outputs.tag }} -m "$commit_message"
+              git push origin --tags
+          env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
