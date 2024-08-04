@@ -60,8 +60,8 @@ jobs:
                   git config user.name "github-actions[bot]"
                   git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
                   git status
-                  if git status --porcelain | findstr . >nul; then
-                    echo Working directory is not clean. Committing changes...
+                  if [ -n "$(git status --porcelain)" ]; then
+                    echo "Working directory is not clean. Committing changes..."
                     git add .
                     git commit -m "Automated commit by GitHub Actions"
                   fi
