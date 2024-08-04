@@ -1,7 +1,7 @@
-name: Build (pre-release)
+name: "Build and Publish (pre-release)"
 
 on:
-    pull_request:
+    push:
         branches: ["pre-release"]
 
 jobs:
@@ -26,5 +26,5 @@ jobs:
               with:
                   is_pre_release: true
                   save_artifacts: true
-                  push_changes: false
-                  tag: false
+                  push_changes: true
+                  tag: ${{ steps.update-version.outputs.tag }}
