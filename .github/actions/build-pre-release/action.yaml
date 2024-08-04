@@ -51,6 +51,7 @@ runs:
               vsce package -o artifacts/${filename} --pre-release --no-git-tag-version ${build_version}
               echo "build_version=${build_version}" >> $GITHUB_OUTPUT
               echo "filename=${filename}" >> $GITHUB_OUTPUT
+          shell: bash
 
         - name: Save extension artifacts
           if: ${{ inputs.save_artifacts }}
@@ -68,6 +69,7 @@ runs:
               git push
           env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          shell: bash
 
         - name: Push tag
           if: ${{ inputs.tag != "false" }}
@@ -83,3 +85,4 @@ runs:
               git push origin --tags
           env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          shell: bash

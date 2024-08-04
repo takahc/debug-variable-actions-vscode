@@ -28,6 +28,7 @@ runs:
               git push
           env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          shell: bash
 
         - name: Push tag to remote
           if: ${{ inputs.tag != "" }}
@@ -37,3 +38,4 @@ runs:
               git push origin --tags
           env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          shell: bash

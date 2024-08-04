@@ -18,3 +18,4 @@ runs:
           env:
               VSCE_PAT: ${{ secrets.VSCE_PAT }}
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          shell: bash
