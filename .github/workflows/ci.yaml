@@ -37,8 +37,8 @@ jobs:
 
     publish:
         # needs: build
-        # runs-on: ubuntu-latest
-        runs-on: windows-latest
+        runs-on: ubuntu-latest
+        # runs-on: windows-latest
         steps:
             - name: Checkout
               uses: actions/checkout@v4
@@ -52,22 +52,23 @@ jobs:
               run: |
                   npm install
                   npm install -g @vscode/vsce
+                  ./setup.sh
 
             - name: Publish to marketplace
-              shell: cmd
-              # run: |
-              #     git config user.name "github-actions[bot]"
-              #     git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-              #     git status
-              #     if git status --porcelain | findstr . >nul; then
-              #       echo Working directory is not clean. Committing changes...
-              #       git add .
-              #       git commit -m "Automated commit by GitHub Actions"
-              #     fi
-              #     git status
-              #     vsce publish patch -m "%s-pre-release" --pre-release
-              #     git push origin --tags
+              # shell: cmd
               run: |
-                  vsce publish --pre-release
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git status
+                  if git status --porcelain | findstr . >nul; then
+                    echo Working directory is not clean. Committing changes...
+                    git add .
+                    git commit -m "Automated commit by GitHub Actions"
+                  fi
+                  git status
+                  vsce publish patch -m "%s-pre-release" --pre-release
+                  git push origin --tags
+              # run: |
+              #     vsce publish --pre-release
               env:
                   VSCE_PAT: ${{ secrets.VSCE_PAT }}
