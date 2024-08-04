@@ -8,10 +8,7 @@ on:
 
 jobs:
     build:
-        strategy:
-            matrix:
-                os: [macos-latest, ubuntu-latest, windows-latest]
-        runs-on: ${{ matrix.os }}
+        runs-on: ubuntu-latest
 
         steps:
             - name: Checkout
@@ -40,7 +37,7 @@ jobs:
 
     publish:
         needs: build
-        runs-on: ubuntu-latests
+        runs-on: ubuntu-latest
         steps:
             - name: Publish to marketplace
               run: vsce publish patch -m "%s-pre-release" --pre-release
