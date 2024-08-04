@@ -57,6 +57,9 @@ jobs:
                   git config user.name "github-actions[bot]"
                   git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
                   git status
+                  echo "ignore changes in package-lock.json"
+                  git checkout package-lock.json
+                  git status
                   vsce publish patch -m "%s-pre-release" --pre-release
               env:
                   VSCE_PAT: ${{ secrets.VSCE_PAT }}
