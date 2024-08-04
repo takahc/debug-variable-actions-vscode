@@ -2,7 +2,7 @@
     "name": "debug-variable-actions-vscode",
     "displayName": "debug-variable-actions-vscode",
     "description": "A VSCode extension for debugging variables",
-    "version": "0.0.16",
+    "version": "0.0.17",
     "engines": {
         "vscode": "^1.89.0"
     },
