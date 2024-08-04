@@ -37,7 +37,8 @@ jobs:
 
     publish:
         # needs: build
-        runs-on: ubuntu-latest
+        # runs-on: ubuntu-latest
+        runs-on: windows-latest
         steps:
             - name: Checkout
               uses: actions/checkout@v4
@@ -53,19 +54,18 @@ jobs:
                   npm install -g @vscode/vsce
 
             - name: Publish to marketplace
+              shell: cmd
               run: |
                   git config user.name "github-actions[bot]"
                   git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
                   git status
-                  if [ -n "$(git status --porcelain)" ]; then
-                    echo "Working directory is not clean. Committing changes..."
+                  if git status --porcelain | findstr . >nul; then
+                    echo Working directory is not clean. Committing changes...
                     git add .
                     git commit -m "Automated commit by GitHub Actions"
                   fi
                   git status
                   vsce publish patch -m "%s-pre-release" --pre-release
+                  git push origin --tags
               env:
                   VSCE_PAT: ${{ secrets.VSCE_PAT }}
-
-            - name: Push tag to git
-              run: git push origin --tags
