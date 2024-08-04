@@ -29,7 +29,7 @@ jobs:
                   filename = $(json -f package.json name)-$(json -f package.json version)-pre-release.vsix
                   vsce package -o artifacts/${filename} --pre-release --no-git-tag-version ${{ steps.update-version.outputs.tag }}
                   echo "::set-output name=filename::${filename}"
-              with:
+              env:
                   VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
             - name: Save extension artifacts
