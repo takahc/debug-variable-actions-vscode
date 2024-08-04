@@ -6,13 +6,12 @@ runs:
     steps:
         - name: Install Node.js
           uses: actions/setup-node@v4
-          shell: bash
           with:
               node-version: 20.14.0
 
         - name: Install packages
-          shell: bash
           run: |
               npm install
               npm install -g @vscode/vsce
               ./setup.sh
+          shell: bash
