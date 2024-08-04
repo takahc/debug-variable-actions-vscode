@@ -17,6 +17,6 @@ runs:
         - name: Update version in package.json
           id: update-version-do
           run: |
-              tag = $(npm --no-git-tag-version version ${{ inputs.update_semantic }})
+              tag=$(npm --no-git-tag-version version ${{ inputs.update_semantic }})
               echo "tag=$tag" >> $GITHUB_OUTPUT
           shell: bash
