@@ -17,7 +17,10 @@ inputs:
     tag:
         description: "Push tag"
         required: false
-        default: "false"
+        default: null
+    github_token:
+        description: "GitHub token"
+        required: false
 
 outputs:
     build_version:
@@ -68,11 +71,11 @@ runs:
               git commit -m "Automated commit by GitHub Actions"
               git push
           env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              GITHUB_TOKEN: ${{ inputs.github_token }}
           shell: bash
 
         - name: Push tag
-          if: ${{ inputs.tag != "false" }}
+          if: ${{ inputs.tag != null }}
           run: |
               tag=v${{ steps.build.outputs.build_version }}
               if [ "${{ inputs.is_pre_release }}" = "true" ]; then
@@ -84,5 +87,5 @@ runs:
               git tag -a ${tag} -m ${tag_message}
               git push origin --tags
           env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              GITHUB_TOKEN: ${{ inputs.github_token }}
           shell: bash
