@@ -7,7 +7,7 @@ on:
         branches: ["pre-release"]
 
 jobs:
-    build:
+    setup:
         runs-on: ubuntu-latest
 
         steps:
@@ -24,19 +24,23 @@ jobs:
                   npm install
                   npm install -g @vscode/vsce
 
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
             - name: Build
               run: |
                   tag=$(npm --no-git-tag-version version patch)
                   vsce package --pre-release
 
-            - name: Save vsix
+            - name: Save extension artifacts
               uses: actions/upload-artifact@v4
               with:
-                  name: vsix
+                  name: Extension file (VSIX)
                   path: "./*.vsix"
 
     publish:
-        needs: build
+        needs: [setup, build]
         runs-on: ubuntu-latest
         steps:
             - name: Publish to marketplace
