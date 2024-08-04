@@ -13,5 +13,6 @@ runs:
           run: |
               npm install
               npm install -g @vscode/vsce
+              npm install -g json
               ./setup.sh
           shell: bash

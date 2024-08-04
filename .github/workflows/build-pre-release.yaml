@@ -26,11 +26,10 @@ jobs:
               id: build
               run: |
                   mkdir -p artifacts
-                  filename = $(json -f package.json name)-$(json -f package.json version)-pre-release.vsix
-                  vsce package -o artifacts/${filename} --pre-release --no-git-tag-version ${{ steps.update-version.outputs.tag }}
+                  build_version=$(json -f package.json version)
+                  filename=$(json -f package.json name)-v${build_version}-pre-release.vsix
+                  vsce package -o artifacts/${filename} --pre-release --no-git-tag-version ${build_version}
                   echo "::set-output name=filename::${filename}"
-              env:
-                  VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
             - name: Save extension artifacts
               uses: actions/upload-artifact@v4
