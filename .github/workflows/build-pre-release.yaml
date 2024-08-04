@@ -29,12 +29,12 @@ jobs:
                   build_version=$(json -f package.json version)
                   filename=$(json -f package.json name)-v${build_version}-pre-release.vsix
                   vsce package -o artifacts/${filename} --pre-release --no-git-tag-version ${build_version}
-                  echo "::set-output name=filename::${filename}"
+                  echo "filename=${filename}" >> $GITHUB_OUTPUT
 
             - name: Save extension artifacts
               uses: actions/upload-artifact@v4
               with:
-                  name: ${{ steps.build.outputs.filename }}
+                  name: ${{ steps.build.outputs.filename }}.zip
                   path: "./artifacts/*.vsix"
 
             # - name: Push to GitHub
