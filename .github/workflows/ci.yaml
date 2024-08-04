@@ -8,22 +8,44 @@ on:
 
 jobs:
     build:
-        runs-on: ubuntu-latest
-
         strategy:
             matrix:
-                node-version: [18.x, 20.x, 22.x]
+                os: [macos-latest, ubuntu-latest, windows-latest]
+            runs-on: ${{ matrix.os }}
 
         steps:
-            - uses: actions/checkout@v4
+            - name: Checkout
+              uses: actions/checkout@v4
 
-            - name: Use Node.js ${{ matrix.node-version }}
-              uses: actions/setup-node@v4
+            - name: Install Node.js
+              uses: actions/setup-node@v2
               with:
-                  node-version: ${{ matrix.node-version }}
+                  node-version: 18.x
 
-            - name: Build
+            - name: Install packages
               run: |
                   npm install
                   npm install -g @vscode/vsce
+
+            - name: Build
+              run: |
+                  tag=$(npm --no-git-tag-version version patch)
                   vsce package --pre-release
+
+            - name: Save vsix
+              uses: actions/upload-artifact@v4
+              with:
+                  name: vsix
+                  path: "./*.vsix"
+
+    publish:
+        needs: build
+        runs-on: ubuntu-latests
+        steps:
+            - name: Publish to marketplace
+              run: vsce publish patch -m "%s-pre-release" --pre-release
+              env:
+                  VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+            - name: Push tag to git
+              run: git push
