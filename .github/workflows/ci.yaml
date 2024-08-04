@@ -68,4 +68,4 @@ jobs:
                   VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
             - name: Push tag to git
-              run: git push
+              run: git push origin --tags
