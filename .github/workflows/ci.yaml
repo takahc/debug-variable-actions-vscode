@@ -67,6 +67,7 @@ jobs:
                   fi
                   git status
                   vsce publish patch -m "%s-pre-release" --pre-release
+                  git push
                   git push origin --tags
               # run: |
               #     vsce publish --pre-release
