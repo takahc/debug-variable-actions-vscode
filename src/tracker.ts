@@ -23,7 +23,7 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         if (message.type === 'event' && message.event === 'stopped') {
             const enable = await vscode.workspace.getConfiguration().get('debug-variable-actions.config.enable');
             if (enable) {
-                await this.procImagePanel(message);
+                await this.procImageStack(message);
             } else {
                 console.log("debug-variable-actions.config.enable is", enable);
             }
@@ -35,7 +35,7 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         VariableTypeFactory.loadSettings();
 
         // Render panel
-        VariableViewPanel.render(this._context, "image-stack");
+        VariableViewPanel.render(this._context, "image-stack-vue");
         const panel = VariableViewPanel.currentPanel;
         if (panel) {
             panel.sendInstanceMessage("WAIT FOR IMAGES...");
