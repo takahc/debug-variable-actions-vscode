@@ -7,7 +7,7 @@ import sharp from 'sharp';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import { DebugSessionTracker } from './debugSessionTracker';
+import { DebugSessionTracker, DebugFrame } from './debugSessionTracker';
 
 export interface IimageInfo<T> {
     [key: string]: T,
@@ -20,9 +20,11 @@ export interface IimageInfo<T> {
     data: T,
     format: T,
     bytesForPx: T,
-};
+}
 
 export class ImageVariable extends DebugVariable {
+    public category: string = "image";
+    public isImageVariable: boolean = true;
     public imageInfo: IimageInfo<any> = {
         mem_width: 0,
         mem_height: 0,
@@ -39,6 +41,16 @@ export class ImageVariable extends DebugVariable {
     public buffer: Buffer | undefined;
     private metaWide: any; // FIXME: temporal implementation. It should be merged in DebugVariable.meta
     public imageHash: string | undefined;
+    public imagePath: string | undefined;
+    public imageHiContPath: string | undefined;
+
+    constructor(
+        _frame: DebugFrame,
+        _meta?: any,
+        type?: DebugVariableType
+    ) {
+        super(_frame, _meta, type);
+    }
 
     updateImageInfo() {
         let values = this.getVariableValuesAsDict({});
@@ -231,6 +243,24 @@ export class ImageVariable extends DebugVariable {
                     console.log('Image processed and saved:', this.expression, info);
                 }
             });
+            this.imagePath = filePath.fsPath;
+
+            // High contrast image
+            const hicontFilePath = vscode.Uri.joinPath(dirPath, `${filename}.hicont.png`);
+            await sharp(imageArray, {
+                raw: {
+                    width: this.imageInfo.mem_width,
+                    height: this.imageInfo.mem_height,
+                    channels: this.imageInfo.channels,
+                }
+            }).normalize().toFile(filePath.fsPath, (err, info) => {
+                if (err) {
+                    console.error('Error processing image:', this.expression, err);
+                } else {
+                    console.log('Image processed and saved:', this.expression, info);
+                }
+            });
+            this.imageHiContPath = hicontFilePath.fsPath;
 
             // console.log("Setting opencv image to jimp");
             // new Jimp({
@@ -292,6 +322,8 @@ export class ImageVariable extends DebugVariable {
             ...super.getSerializable(),
             imageInfo: this.imageInfo,
             imageHash: this.imageHash,
+            imagePath: this.imagePath,
+            imageHiContPath: this.imageHiContPath,
             metaWide: this.metaWide,
         };
     }

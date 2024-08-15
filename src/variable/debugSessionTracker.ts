@@ -18,6 +18,7 @@ export class DebugSessionTracker {
     public readonly threads: DebugThread[] = [];
     public readonly debugStartDate: string;
     private _saveDirUri: vscode.Uri;
+    public breakpoints: any[] = [];
 
     public static breakCount: number = 0; // FIXME: manage brake count not by a static.
 
@@ -37,6 +38,7 @@ export class DebugSessionTracker {
         this._session = _session;
         this.sessionName = _sessionName;
         this.threads = _threads;
+        this.breakpoints = [];
 
         // Get the current date and time
         const now = new Date();

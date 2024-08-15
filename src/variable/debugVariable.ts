@@ -14,6 +14,8 @@ export interface IbinaryInfo<T> {
     isInt: T,
 }
 export class DebugVariable {
+    public category: string = "primitive";
+    public isImageVariable: boolean = false;
     public meta: any;
     public readonly frame: DebugFrame;
     public name: string | undefined;
@@ -252,6 +254,8 @@ export class DebugVariable {
 
     getSerializable() {
         let ret: any = {
+            category: this.category,
+            isImageVariable: this.isImageVariable,
             name: this.name,
             meta: this.meta,
             expression: this.expression,
