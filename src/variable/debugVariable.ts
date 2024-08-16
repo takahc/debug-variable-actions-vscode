@@ -128,13 +128,15 @@ export class DebugVariable {
         // if (until.depth === 0) { return; } // break if the depth reaches 0
 
         console.log(
+            "drillDown",
             this,
             this.meta.name,
             {
                 variablesReference: this.meta.variablesReference,
                 filter: undefined,
                 start: 0,
-                count: 1000
+                // count: 1000
+                count: 0
 
             });
 
@@ -149,7 +151,8 @@ export class DebugVariable {
                     variablesReference: this.meta.variablesReference,
                     filter: undefined,
                     // start: 0,
-                    count: 1000
+                    // count: 1000
+                    count: 0
 
                 }
             );

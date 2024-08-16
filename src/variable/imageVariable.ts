@@ -108,11 +108,11 @@ export class ImageVariable extends DebugVariable {
 
 
         // check null pointer
-        if (parseInt(startAddress, 16) === 0) {
+        if (parseInt(startAddress, 16) <= 0) {
             console.log("toFile skip null pointer image", this.name, this.expression);
             return;
         }
-        if (this.binaryInfo.sizeByte === 0 || this.imageInfo.mem_width === 0 || this.imageInfo.mem_height === 0) {
+        if (this.binaryInfo.sizeByte <= 0 || this.imageInfo.mem_width <= 0 || this.imageInfo.mem_height <= 0) {
             console.log("toFile skip zero size image", this.name, this.expression);
             return;
         }
