@@ -11,6 +11,7 @@ import * as path from 'path';
 import { VariableTrackerRegister } from './tracker';
 import { VariableViewPanel } from './panel';
 import { VariableTypeFactory } from './variable/variableTypeFactory';
+import { ImageVariable } from './variable/imageVariable';
 
 // process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
 
@@ -420,6 +421,10 @@ export function activate(context: vscode.ExtensionContext) {
 		if (e.affectsConfiguration('debug-variable-actions.config.image-types')) {
 			console.log("changed config: debug-variable-actions.config.image-types");
 			VariableTypeFactory.loadSettings();
+		}
+		else if (e.affectsConfiguration('debug-variable-actions.config.image-sizebyte-limit')) {
+			console.log("changed config: debug-variable-actions.config.image-sizebyte-limit");
+			ImageVariable.sizeByteLimit = vscode.workspace.getConfiguration().get("debug-variable-actions.config.image-sizebyte-limit");
 		}
 	}));
 

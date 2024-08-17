@@ -44,6 +44,8 @@ export class ImageVariable extends DebugVariable {
     public imagePath: string | undefined;
     public imageHiContPath: string | undefined;
 
+    static sizeByteLimit = vscode.workspace.getConfiguration().get("debug-variable-actions.config.image-sizebyte-limit");
+
     constructor(
         _frame: DebugFrame,
         _meta?: any,
@@ -113,7 +115,11 @@ export class ImageVariable extends DebugVariable {
             return;
         }
         if (this.binaryInfo.sizeByte <= 0 || this.imageInfo.mem_width <= 0 || this.imageInfo.mem_height <= 0) {
-            console.log("toFile skip zero size image", this.name, this.expression);
+            console.log("toFile skip zero size image", this.name, this.expression, this.binaryInfo.sizeByte);
+            return;
+        }
+        if (this.binaryInfo.sizeByte > 1024 * 1024 * 1024) {
+            console.log("toFile skip too large image", this.name, this.expression, this.binaryInfo.sizeByte);
             return;
         }
 

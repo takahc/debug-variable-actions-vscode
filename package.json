@@ -80,6 +80,11 @@
                         "Stack trace visualization"
                     ]
                 },
+                "debug-variable-actions.config.image-sizebyte-limit": {
+                    "type": "number",
+                    "default": 4294967295,
+                    "description": "Image size limit (in bytes)"
+                },
                 "debug-variable-actions.config.image-types": {
                     "type": "array",
                     "additionalItems": true,
