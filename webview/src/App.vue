@@ -1,15 +1,16 @@
 <template>
-  <ImagePanel/>
+  <RootView/>
 </template>
 
 <script>
 // import ImageStack from './components/ImageStack.vue'
-import ImagePanel from './components/ImagePanel.vue'
+// import ImagePanel from './components/ImagePanel.vue'
+import RootView from './RootView.vue'
 
 export default {
   name: 'App',
   components: {
-    ImagePanel
+    RootView
   }
 }
 </script>
