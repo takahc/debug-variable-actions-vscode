@@ -74,7 +74,10 @@
                     "type": "string",
                     "default": "panel",
                     "description": "Render mode",
-                    "enum": ["panel", "stack"],
+                    "enum": [
+                        "panel",
+                        "stack"
+                    ],
                     "enumDescriptions": [
                         "Simple visualization",
                         "Stack trace visualization"
@@ -180,6 +183,7 @@
         "@typescript-eslint/parser": "^7.11.0",
         "@vscode/test-cli": "^0.0.9",
         "@vscode/test-electron": "^2.4.0",
+        "cross-env": "^7.0.3",
         "eslint": "^8.57.0",
         "typescript": "^5.4.5"
     },

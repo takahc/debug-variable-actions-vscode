@@ -9,7 +9,7 @@ module.exports = {
       minimizer: [new TerserPlugin()],
     },
     output: {
-      filename: '../../public/webview/main.js',
+      filename: process.env.FILENAME || '../../public/webview/main.js',
     },
   },
   css: {

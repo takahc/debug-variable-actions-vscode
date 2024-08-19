@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="panel-view-root" v-if="breakpoints !== undefined">
+    <div class="panel-view-root" v-if="breakpoints !== undefined && breakpoints.length > 0">
 
       <div class="controller">
         <div class="instant-message" style="width: 100px;">{{ instantMessage }}</div>
@@ -206,8 +206,12 @@ export default {
   created() {
     console.log("[vue] created", this, this.breakpoints)
 
-    // eslint-disable-next-line no-undef
-    this.vscode = acquireVsCodeApi();
+    try{
+      // eslint-disable-next-line no-undef
+      this.vscode = acquireVsCodeApi();
+    } catch(e) {
+      console.warn("Failed to acquireVsCodeApi", e)
+    }
 
     // Handle the message inside the webview
     window.addEventListener('message', event => {
