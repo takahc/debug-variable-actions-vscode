@@ -195,10 +195,16 @@ export class VariableViewPanel {
 
 
     _getWebviewContent(renderMode?: VariableVeiewRenderMode): string {
-
-        let publicDir = this._panel.webview.asWebviewUri(
-            vscode.Uri.joinPath(this._context.extensionUri, "public")
-        );
+        let publicDir;
+        if (1) {
+            publicDir = this._panel.webview.asWebviewUri(
+                vscode.Uri.joinPath(this._context.extensionUri, "public")
+            );
+        }
+        else {
+            // Vue dev server
+            publicDir = "http://localhost:8080";
+        }
         console.log("publicDir", publicDir);
 
         if (renderMode === undefined && VariableViewPanel.lastRenderMode === undefined) {
