@@ -217,7 +217,8 @@ export class ImageVariable extends DebugVariable {
 
         const break_dir_name = `Break${breakCount}`;
         const pattern = /[\\\/:\*\?\"<>\|]/;
-        const filename = `${this.expression}.png`.replace(pattern, "-");
+        const filenameStem = `${this.expression}`.replace(pattern, "-");
+        const filename = `${filenameStem}.png`;
         const dirPath = vscode.Uri.joinPath(this.frame.thread.tracker.saveDirUri, break_dir_name);
         const filePath = vscode.Uri.joinPath(dirPath, filename);
         console.log("filePath", filePath);
@@ -244,26 +245,26 @@ export class ImageVariable extends DebugVariable {
                 }
             }).toFile(filePath.fsPath, (err, info) => {
                 if (err) {
-                    console.error('Error processing image:', this.expression, err);
+                    console.error('Error processing image:', this.expression, filePath.toString(), err);
                 } else {
-                    console.log('Image processed and saved:', this.expression, info);
+                    console.log('Image processed and saved:', this.expression, filePath.toString(), info);
                 }
             });
             this.imagePath = filePath.fsPath;
 
             // High contrast image
-            const hicontFilePath = vscode.Uri.joinPath(dirPath, `${filename}.hicont.png`);
+            const hicontFilePath = vscode.Uri.joinPath(dirPath, `${filenameStem}.hicont.png`);
             await sharp(imageArray, {
                 raw: {
                     width: this.imageInfo.mem_width,
                     height: this.imageInfo.mem_height,
                     channels: this.imageInfo.channels,
                 }
-            }).normalize().toFile(filePath.fsPath, (err, info) => {
+            }).normalize().toFile(hicontFilePath.fsPath, (err, info) => {
                 if (err) {
-                    console.error('Error processing image:', this.expression, err);
+                    console.error('Error processing image:', this.expression, hicontFilePath.toString(), err);
                 } else {
-                    console.log('Image processed and saved:', this.expression, info);
+                    console.log('Image processed and saved:', this.expression, hicontFilePath.toString(), info);
                 }
             });
             this.imageHiContPath = hicontFilePath.fsPath;
