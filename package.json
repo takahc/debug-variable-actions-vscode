@@ -88,6 +88,16 @@
                     "default": 4294967295,
                     "description": "Image size limit (in bytes)"
                 },
+                "debug-variable-actions.config.post-server": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Post messages to the frontend server"
+                },
+                "debug-variable-actions.config.serv-url": {
+                    "type": "string",
+                    "default": "http://localhost:8080",
+                    "description": "Frontend server URL"
+                },
                 "debug-variable-actions.config.image-types": {
                     "type": "array",
                     "additionalItems": true,

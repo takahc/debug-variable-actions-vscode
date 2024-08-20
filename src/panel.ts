@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import dedent from 'dedent';
 import * as ejs from 'ejs';
 import { existsSync } from 'fs';
+import * as https from 'https';
 
 // export type VariableVeiewRenderMode = "image-panel" | "image-stack";
 export type VariableVeiewRenderMode = string;
@@ -168,6 +169,30 @@ export class VariableViewPanel {
         }
         else {
             console.log("Error! No panel to post message to!");
+        }
+
+        if (vscode.workspace.getConfiguration().get("debug-variable-actions.config.post-server")) {
+            // Post http request for frontend
+            const options = {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            };
+            let url = vscode.workspace.getConfiguration().get("variable-view-debugger.serverUrl");
+            if (!url) {
+                if (process.env.NODE_ENV === "development") {
+                    url = "http://localhost:8080";
+                } else {
+                    url = "http://localhost:8080"; // default
+                }
+            }
+            console.log("postMessage to", url, message);
+            const request = https.request(url as string, options, response => {
+                console.log(`statusCode: ${response.statusCode}`);
+            });
+            request.write(JSON.stringify(message));
+            request.end();
         }
     }
 
