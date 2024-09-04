@@ -19,9 +19,10 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
     }
 
     public async onDidSendMessage(message: any) {
-        // console.log("onDidSendMessage", Object.assign({}, message));
+        console.log("onDidSendMessage", Object.assign({}, message));
 
-        if (message.type === 'event' && message.event === 'stopped') {
+        // if (message.type === 'event' && (message.event === 'stopped' || message.event === 'continued')) {
+        if (message.type === 'event' && (message.event === 'stopped')) {
             const enable = await vscode.workspace.getConfiguration().get('debug-variable-actions.config.enable');
             if (enable) {
                 const renderMode = await vscode.workspace.getConfiguration().get('debug-variable-actions.config.render-mode');
@@ -29,6 +30,30 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
                     await this.procImagePanelVue(message);
                 } else if (renderMode === "stack") {
                     await this.procImageStack(message);
+                }
+
+                // Save breakpoints JSON
+                const tracker = DebugSessionTracker.currentTracker;
+                if (tracker) {
+                    const breakpointsPath = vscode.Uri.joinPath(tracker.saveDirUri, `breakpoints.json`);
+                    fs.writeFileSync(breakpointsPath.fsPath, JSON.stringify(this.breakpoints, null, 4));
+                    console.log("Saved breakpoints.json to ", breakpointsPath.fsPath);
+                }
+
+                // Auto-continue
+                let sessionTracker = DebugSessionTracker.currentTracker;
+                if (sessionTracker) {
+                    const funcName = sessionTracker.threads[0].frames[0].meta.name.match(/.*[!](.*)?\(/mi)[1]
+                    if (DebugSessionTracker.autoContinueEnable && DebugSessionTracker.autoConintueFrameName === funcName) {
+                        console.log("autoContinueEnable is true");
+                        await sessionTracker.stepOver();
+                    } else {
+                        if (DebugSessionTracker.autoContinueEnable) {
+                            console.log("autoContinueEnable is true but frame name is different");
+                            vscode.window.showInformationMessage("End auto-continue.");
+                            DebugSessionTracker.autoContinueEnable = false;
+                        }
+                    }
                 }
             } else {
                 console.log("debug-variable-actions.config.enable is", enable);

@@ -40,6 +40,14 @@
             {
                 "command": "debug-variable-actions.topanel",
                 "title": "To Panel"
+            },
+            {
+                "command": "debug-variable-actions.autocontinueframe",
+                "title": "DebugVariableActions: Auto continue for frame"
+            },
+            {
+                "command": "debug-variable-actions.autocontinueframe-stop",
+                "title": "DebugVariableActions: Stop auto continue for frame"
             }
         ],
         "menus": {

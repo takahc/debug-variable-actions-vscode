@@ -12,6 +12,7 @@ import { VariableTrackerRegister } from './tracker';
 import { VariableViewPanel } from './panel';
 import { VariableTypeFactory } from './variable/variableTypeFactory';
 import { ImageVariable } from './variable/imageVariable';
+import { DebugSessionTracker } from './variable/debugSessionTracker';
 
 // process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
 
@@ -416,6 +417,34 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	);
+
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('debug-variable-actions.autocontinueframe', async () => {
+			if (DebugSessionTracker.currentTracker) {
+				// Get current frame
+				const frameName = DebugSessionTracker.currentTracker.threads[0].frames[0].meta.name
+				const funcName = frameName.match(/.*[!](.*)?\(/mi)[1];
+				DebugSessionTracker.autoContinueEnable = true;
+				DebugSessionTracker.autoConintueFrameName = funcName;
+				vscode.window.showInformationMessage(`Start auto continue frame: ${funcName}`);
+				await DebugSessionTracker.currentTracker.stepOver();
+			}
+			else {
+				vscode.window.showErrorMessage("No active debug session");
+			}
+		})
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('debug-variable-actions.autocontinueframe-stop', async () => {
+			DebugSessionTracker.autoContinueEnable = false;
+			DebugSessionTracker.autoConintueFrameName = "";
+		})
+	);
+
+
+
 
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
 		if (e.affectsConfiguration('debug-variable-actions.config.image-types')) {

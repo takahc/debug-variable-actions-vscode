@@ -19,6 +19,8 @@ export class DebugSessionTracker {
     public readonly debugStartDate: string;
     private _saveDirUri: vscode.Uri;
     public breakpoints: any[] = [];
+    public static autoContinueEnable: boolean = false;
+    public static autoConintueFrameName: string = "";
 
     public static breakCount: number = 0; // FIXME: manage brake count not by a static.
 
@@ -149,11 +151,26 @@ export class DebugSessionTracker {
         return allVariables;
     }
 
-    gatherImageVariables(): ImageVariable[] {
-        const imageVariables = this.gatherAllVariables().filter(
+    gatherImageVariables(searched?: DebugEntity[], gathered?: ImageVariable[]): ImageVariable[] {
+        if (searched === undefined) {
+            searched = this.gatherAllVariables();
+        }
+        if (gathered === undefined) {
+            gathered = [];
+        }
+        // recursive gather
+        const imageVariables = searched.filter(
             (variable): variable is ImageVariable => variable instanceof ImageVariable
         );
-        return imageVariables;
+        gathered.push(...imageVariables); // Add imageVariables to gathered
+
+        for (let variable of imageVariables) {
+            if (variable.value instanceof Array) {
+                this.gatherImageVariables(variable.value, gathered);
+            }
+        }
+
+        return gathered;
     }
 
     getSerializable() {
@@ -162,6 +179,23 @@ export class DebugSessionTracker {
             session: this.sessionName,
             threads: this.threads.map(thread => thread.getSerializable())
         };
+    }
+
+    async continue() {
+        const threadId = this.threads[0].id;
+        await this.session.customRequest('continue', { threadId });
+    }
+    async stepOver() {
+        const threadId = this.threads[0].id;
+        await this.session.customRequest('next', { threadId });
+    }
+    async stepIn() {
+        const threadId = this.threads[0].id;
+        await this.session.customRequest('stepIn', { threadId });
+    }
+    async stepOut() {
+        const threadId = this.threads[0].id;
+        await this.session.customRequest('stepOut', { threadId });
     }
 }
 
