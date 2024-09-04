@@ -201,7 +201,7 @@ export class VariableViewPanel {
     public postWebSocketMessage(message: string) {
         this._wss.clients.forEach((client: WebSocket) => {
             if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({ command: 'updateText', text: message }));
+                client.send(message);
             }
         });
     }
