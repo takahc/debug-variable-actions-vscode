@@ -127,20 +127,39 @@ export class DebugVariable {
         // if (this.meta === undefined) { return; }
         // if (until.depth === 0) { return; } // break if the depth reaches 0
 
-        console.log(
-            "drillDown",
-            this,
-            this.meta.name,
-            {
-                variablesReference: this.meta.variablesReference,
-                filter: undefined,
-                start: 0,
-                // count: 1000
-                count: 0
+        // too much logs
+        if (0) {
+            console.log(
+                "drillDown",
+                this,
+                this.meta.name,
+                {
+                    variablesReference: this.meta.variablesReference,
+                    filter: undefined,
+                    start: 0,
+                    count: 1000
+                    // count: 0
 
-            });
+                });
+        }
 
         if (this.meta.variablesReference === 0) { return; }
+
+        // check prevent drill down
+        for (const cond of VariableTypeFactory.preventDrillDownConditions) {
+            if (VariableTypeFactory.preventDrillDownConditions) {
+                const args = {
+                    value: this.getVariableValuesAsDict({}),
+                    meta: this.gatherMeta(),
+                };
+                const check = EvalExpression.eval(cond, args);
+                if (check) {
+                    // console.log("skip drill down by cond", cond, check, this.meta.name);
+                    return;
+                }
+            }
+
+        }
 
         // fetch child debug variables
         let variables;
@@ -151,8 +170,8 @@ export class DebugVariable {
                     variablesReference: this.meta.variablesReference,
                     filter: undefined,
                     // start: 0,
-                    // count: 1000
-                    count: 0
+                    count: 1000
+                    // count: 0
 
                 }
             );

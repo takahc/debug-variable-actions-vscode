@@ -78,6 +78,13 @@
                     "default": true,
                     "description": "Enable the extension"
                 },
+                "debug-variable-actions.config.prevent-drilldown-conditions": {
+                    "type": "array",
+                    "description": "Prevent drilldown types",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "debug-variable-actions.config.render-mode": {
                     "type": "string",
                     "default": "panel",

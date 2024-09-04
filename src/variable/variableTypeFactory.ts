@@ -12,6 +12,7 @@ interface IimageTypeConfig {
 export class VariableTypeFactory {
     private static imageTypesConfig: { [key: string]: IimageTypeConfig } = {};
     private static imageMatchTypeStrs: string[] = [];
+    public static preventDrillDownConditions: string[] = [];
 
     private static _primitiveTypes: { [key: string]: { sizeByte: number, signed: boolean, isInt: boolean } } = {
         "char": { sizeByte: 1, signed: true, isInt: true },
@@ -122,6 +123,10 @@ export class VariableTypeFactory {
         } else {
             console.log("No config found: imageTypesConfig");
         }
+
+        // load preventDrillDownConditions
+        this.preventDrillDownConditions = vscode.workspace.getConfiguration().get<string[]>('debug-variable-actions.config.prevent-drilldown-conditions') || [];
+        console.log("preventDrillDownConditions", this.preventDrillDownConditions);
     }
 
 }
