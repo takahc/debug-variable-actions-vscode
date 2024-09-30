@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<head>
+    <html>
+        <meta charset="utf-8" />
+        <body>
+            <script
+                type="text/javascript"
+                src="https://cdn.jsdelivr.net/npm/gridjs@latest/dist/gridjs.production.min.js"
+            ></script>
+            <div id="wrapper"></div>
+
+            <script type="text/javascript">
+                const grid = new Grid({
+                    data: [
+                        ["John", 30, "Engineer"],
+                        ["Jane", 25, "Designer"],
+                    ],
+                    columns: ["Name", "Age", "Occupation"],
+                });
+            </script>
+        </body>
+    </html>
+</head>

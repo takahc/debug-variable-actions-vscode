@@ -1,0 +1,97 @@
+name: "Build"
+description: "Build"
+
+inputs:
+    is_pre_release:
+        description: "Is pre-release"
+        required: false
+        default: false
+    save_artifacts:
+        description: "Save artifacts"
+        required: false
+        default: true
+    push_changes:
+        description: "Push to remote"
+        required: false
+        default: false
+    tag:
+        description: "Push tag"
+        required: false
+        default: null
+    github_token:
+        description: "GitHub token"
+        required: false
+
+outputs:
+    build_version:
+        description: "Build version"
+        value: ${{ steps.build.outputs.build_version }}
+    filename:
+        description: "Filename"
+        value: ${{ steps.build.outputs.filename }}
+    artifact_id:
+        description: "Artifact ID"
+        value: ${{ steps.upload-artifact.outputs.artifact-id }}
+    artifact_url:
+        description: "Artifact URL"
+        value: ${{ steps.upload-artifact.outputs.artifact-url }}
+
+runs:
+    using: "composite"
+    steps:
+        - name: Build
+          id: build
+          run: |
+              mkdir -p artifacts
+              build_version=$(json -f package.json version)
+              filename_base=$(json -f package.json name)-v${build_version}
+              if [ "${{ inputs.is_pre_release }}" = "true" ]; then
+                filename="${filename_base}-pre-release.vsix"
+              else
+                filename="${filename_base}.vsix"
+              fi
+              echo "Building ${filename}"
+              vsce package -o artifacts/${filename} --pre-release --no-git-tag-version ${build_version}
+              echo "build_version=${build_version}" >> $GITHUB_OUTPUT
+              echo "filename=${filename}" >> $GITHUB_OUTPUT
+          shell: bash
+
+        - name: Save extension artifacts
+          if: ${{ inputs.save_artifacts == 'true' }}
+          uses: actions/upload-artifact@v4
+          id: upload-artifact
+          with:
+              name: ${{ steps.build.outputs.filename }}
+              path: "./artifacts/${{ steps.build.outputs.filename }}"
+
+        - name: Push to remote
+          if: ${{ inputs.push_changes == 'true' }}
+          run: |
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+              git add .
+              git commit -m "Automated commit by GitHub Actions"
+              git push
+          env:
+              GITHUB_TOKEN: ${{ inputs.github_token }}
+          shell: bash
+
+        - name: Push tag
+          if: ${{ inputs.tag != null }}
+          run: |
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+              tag=v${{ steps.build.outputs.build_version }}
+              if [ "${{ inputs.is_pre_release }}" = "true" ]; then
+                tag_message=${tag}-pre-release
+              else
+                tag_message=${tag}
+              fi
+              echo "Creating tag ${tag} (${tag_message})"
+              git tag -a ${tag} -m ${tag_message}
+              git push origin --tags
+          env:
+              GITHUB_TOKEN: ${{ inputs.github_token }}
+          shell: bash

@@ -1,0 +1,50 @@
+name: Sample CI
+
+on:
+    push:
+        branches: ["pre-release"]
+    pull_request:
+        branches: ["pre-release"]
+
+jobs:
+    # build:
+    #     runs-on: ubuntu-latest
+
+    #     steps:
+    #         - name: Checkout
+    #           uses: actions/checkout@v4
+
+    #         - name: Install Node.js
+    #           uses: actions/setup-node@v4
+    #           with:
+    #               node-version: 18.x
+
+    #         - name: Install packages
+    #           run: |
+    #               npm install
+    #               npm install -g @vscode/vsce
+
+    #         - name: Build
+    #           run: |
+    #               tag=$(npm --no-git-tag-version version patch)
+    #               vsce package --pre-release
+
+    #         - name: Save extension artifacts
+    #           uses: actions/upload-artifact@v4
+    #           with:
+    #               name: Extension file (VSIX)
+    #               path: "./*.vsix"
+
+    publish:
+        # needs: build
+        runs-on: ubuntu-latest
+        # runs-on: windows-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: ./.github/actions/install-nodejs-and-packages
+
+            - name: Publish to marketplace
+              uses: ./.github/actions/publish-to-marketplace

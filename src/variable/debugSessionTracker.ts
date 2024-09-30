@@ -1,7 +1,7 @@
 import { constants } from 'buffer';
 import * as vscode from 'vscode';
 import { ImageVariable, ImageVariableType } from './imageVariable';
-import { DebugVariable, DebugVariableType } from './debugVariable';
+import { DebugVariable, DebugVariableType, DebugEntity } from './debugVariable';
 import { VariableTypeFactory } from './variableTypeFactory';
 
 
@@ -102,20 +102,20 @@ export class DebugSessionTracker {
     }
 
     // util
-    public gatherAllVariables(): DebugVariable[] {
-        let allVariables: DebugVariable[] = [];
+    public gatherAllVariables(): DebugEntity[] {
+        let allVariables: DebugEntity[] = [];
         for (let thread of this.threads) {
             for (let frame of thread.frames) {
                 // recursive gather
-                let gather = (variable: DebugVariable) => {
+                let gather = (variable: DebugEntity) => {
                     allVariables.push(variable);
                     if (variable.value instanceof Array) {
-                        variable.value.forEach((child: DebugVariable) => {
+                        variable.value.forEach((child: DebugEntity) => {
                             gather(child);
                         });
                     }
                 };
-                frame.variables.forEach((variable: DebugVariable) => {
+                frame.variables.forEach((variable: DebugEntity) => {
                     gather(variable);
                 });
 
@@ -128,9 +128,9 @@ export class DebugSessionTracker {
         return allVariables;
     }
 
-    gatherImageVariables() {
+    gatherImageVariables(): ImageVariable[] {
         const imageVariables = this.gatherAllVariables().filter(
-            variable => variable instanceof ImageVariable
+            (variable): variable is ImageVariable => variable instanceof ImageVariable
         );
         return imageVariables;
     }

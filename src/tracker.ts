@@ -5,6 +5,7 @@ import { register } from 'module';
 import { DebugSessionTracker } from './variable/debugSessionTracker';
 import { DebugVariable } from './variable/debugVariable';
 import { VariableTypeFactory } from './variable/variableTypeFactory';
+import { ImageVariable } from './variable/imageVariable';
 
 export class VariableTracker implements vscode.DebugAdapterTracker {
     private _context: vscode.ExtensionContext;
@@ -15,7 +16,30 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         this._context = context;
     }
 
-    async proc(message: any) {
+    public async onDidSendMessage(message: any) {
+        // console.log("onDidSendMessage", Object.assign({}, message));
+
+        if (message.type === 'event' && message.event === 'stopped') {
+            const enable = await vscode.workspace.getConfiguration().get('debug-variable-actions.config.enable');
+            if (enable) {
+                await this.procImagePanel(message);
+            } else {
+                console.log("debug-variable-actions.config.enable is", enable);
+            }
+        }
+    }
+
+    async procImagePanel(message: any) {
+        VariableTypeFactory.loadSettings();
+
+        VariableViewPanel.render(this._context);
+        const panel = VariableViewPanel.currentPanel;
+        if (panel) {
+            // panel.showPanel();
+        }
+        VariableViewPanel.sendInstanceMessage("WAIT FOR IMAGES...");
+
+
         const session = vscode.debug.activeDebugSession;
 
         // Create new tracker to manage debug variables every frames and threads,
@@ -52,43 +76,52 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         const allVariables = sessionTracker.gatherAllVariables();
         console.log(allVariables);
 
-        const imageVariables = sessionTracker.gatherImageVariables();
+        const imageVariables: ImageVariable[] = sessionTracker.gatherImageVariables();
         console.log(imageVariables);
 
+        const imageMetaWides = [];
         for (const imageVariable of imageVariables) {
             imageVariable.updateImageInfo();
             imageVariable.updateBinaryInfo();
-            await imageVariable.toFile();
-            // imageVariable.toFile();
-
-        }
-
-        console.log("DONE!!");
-
-        let wahat = 3;
-
-    }
-
-    public async onDidSendMessage(message: any) {
-        // console.log("onDidSendMessage", Object.assign({}, message));
-
-        if (message.type === 'event' && message.event === 'stopped') {
-            VariableTypeFactory.loadSettings();
-
-            VariableViewPanel.render(this._context);
-            const panel = VariableViewPanel.currentPanel;
-            if (panel) {
-                // panel.showPanel();
+            const metaWide = await imageVariable.toFile(); // toFile() may return undefined if the image could not read properly.
+            if (metaWide) {
+                imageMetaWides.push(metaWide);
             }
-            VariableViewPanel.sendInstanceMessage("WAIT FOR IMAGES...");
-            await this.proc(message);
-
-            console.log("DONE!!!!!!!!!!!");
-            VariableViewPanel.postMessage({ command: "capture" });
-            VariableViewPanel.sendInstanceMessage("DONE!");
-
+            // imageVariable.toFile();
         }
 
+
+        console.log("rendering panel");
+        VariableViewPanel.render(this._context, "image-panel");
+        if (panel) {
+            // Set web url
+            for (const metaWide of imageMetaWides) {
+                metaWide.imageWebUrl = panel.getWebViewUrlString(vscode.Uri.file(metaWide.vscode.filePath));
+            }
+            console.log("imageMetaWides", imageMetaWides);
+
+            // Display
+            // const openPath = vscode.Uri.file(filePath.toString()).toString().replace("/file:", "");
+            // vscode.commands.executeCommand('vscode.open', filePath.fsPath);
+            console.log("showing images on panel", panel);
+            const workspaceFolders = vscode.workspace.workspaceFolders;
+            panel.postMessage({
+                command: "images",
+                metas: imageMetaWides,
+                breakpointMeta: message.body,
+                vscodeMeta: { workspaceFolders }
+
+            });
+            panel.showPanel();
+
+            console.log("DONE!!");
+        } else {
+            console.log("panel is undefined");
+        }
+
+        console.log("DONE!!!!!!!!!!!");
+        VariableViewPanel.postMessage({ command: "capture" });
+        VariableViewPanel.sendInstanceMessage("DONE!");
     }
 
     //     public onDidSendMessage(message: any) {

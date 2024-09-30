@@ -211,6 +211,10 @@ export class ImageVariable extends DebugVariable {
         const filePath = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, filename);
         console.log("filePath", filePath);
 
+        // hicont image path
+        const filenameHicont = `${this.expression}.hicont.png`.replace(pattern, "-");
+        const filePathHicont = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, filenameHicont);
+
         // Extract the directory path from filePath
         const dirPath = path.dirname(filePath.fsPath);
 
@@ -239,6 +243,20 @@ export class ImageVariable extends DebugVariable {
                 }
             });
 
+            await sharp(imageArray, {
+                raw: {
+                    width: this.imageInfo.mem_width,
+                    height: this.imageInfo.mem_height,
+                    channels: this.imageInfo.channels,
+                }
+            }).normalize().toFile(filePathHicont.fsPath, (err, info) => {
+                if (err) {
+                    console.error('Error processing image:', this.expression, err);
+                } else {
+                    console.log('Image processed and saved:', this.expression, info);
+                }
+            });
+
             // console.log("Setting opencv image to jimp");
             // new Jimp({
             //     width: this.imageInfo.mem_width, height: this.imageInfo.mem_height, data: Buffer.from(imageSrc.data)
@@ -251,44 +269,48 @@ export class ImageVariable extends DebugVariable {
             // this.imageHash = crypto.createHash('blake2b512').update(bufferData).digest('hex');
             this.imageHash = crypto.createHash('md5').update(bufferData).digest('hex');
 
-            this.metaWide = {
+            this.metaWide = await {
                 "vscode": {
                     "workspaceFolder": this.frame.thread.tracker.session.workspaceFolder,
                     "storageUri": storageUri.fsPath,
                     "filePath": filePath.fsPath,
+                    "filePathHicont": filePathHicont.fsPath,
                 },
                 "imageInfo": this.imageInfo,
                 "imageHash": this.imageHash,
+                "imagewebUrl": "",
                 ...this.gatherMeta()
             };
 
             // Display
             // const openPath = vscode.Uri.file(filePath.toString()).toString().replace("/file:", "");
             // vscode.commands.executeCommand('vscode.open', filePath.fsPath);
-            console.log("rendering panel");
-            VariableViewPanel.render(this.frame.thread.tracker.context);
-            const panel = VariableViewPanel.currentPanel;
-            if (panel) {
-                console.log("showing image on panel", panel);
-                const weburi = panel.getWebViewUrlString(filePath);
-                panel.postMessage({
-                    command: "image",
-                    // url: filePath.toString()
-                    url: weburi,
-                    meta: this.metaWide
+            // console.log("rendering panel");
+            // VariableViewPanel.render(this.frame.thread.tracker.context);
+            // const panel = VariableViewPanel.currentPanel;
+            // if (panel) {
+            //     console.log("showing image on panel", panel);
+            //     const weburi = panel.getWebViewUrlString(filePath);
+            //     panel.postMessage({
+            //         command: "image",
+            //         // url: filePath.toString()
+            //         url: weburi,
+            //         meta: this.metaWide
 
-                });
-                panel.showPanel();
-            }
-            else {
-                console.log("panel is undefined");
-            }
+            //     });
+            //     panel.showPanel();
+            // }
+            // else {
+            //     console.log("panel is undefined");
+            // }
         }
 
         // Save .meta.json
         const metaPath = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, `${filename}.meta.json`);
         console.log("metaPath", metaPath);
         fs.writeFileSync(metaPath.fsPath, JSON.stringify(this.metaWide, null, 4));
+
+        return this.metaWide;
     }
 
 

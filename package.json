@@ -1,169 +1,177 @@
 {
-  "name": "debug-variable-right-click-actions",
-  "displayName": "debug-variable-right-click-actions",
-  "description": "",
-  "version": "0.0.1",
-  "engines": {
-    "vscode": "^1.89.0"
-  },
-  "categories": [
-    "Other"
-  ],
-  "activationEvents": [
-    "onDebug"
-  ],
-  "main": "./out/extension.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "debug-variable-right-click-actions.start",
-        "title": "Start"
-      },
-      {
-        "command": "debug-variable-right-click-actions.action",
-        "title": "Action"
-      },
-      {
-        "command": "debug-variable-right-click-actions.tocsv",
-        "title": "To CSV"
-      },
-      {
-        "command": "debug-variable-right-click-actions.topng",
-        "title": "To PNG"
-      },
-      {
-        "command": "debug-variable-right-click-actions.topanel",
-        "title": "To Panel"
-      }
-    ],
-    "menus": {
-      "debug/variables/context": [
-        {
-          "command": "debug-variable-right-click-actions.action",
-          "when": "true"
-        },
-        {
-          "command": "debug-variable-right-click-actions.tocsv",
-          "when": "true"
-        },
-        {
-          "command": "debug-variable-right-click-actions.topng",
-          "when": "true"
-        },
-        {
-          "command": "debug-variable-right-click-actions.topanel",
-          "when": "true"
-        }
-      ]
+    "name": "debug-variable-actions-vscode",
+    "displayName": "debug-variable-actions-vscode",
+    "description": "A VSCode extension for debugging variables",
+    "version": "0.0.32",
+    "engines": {
+        "vscode": "^1.89.0"
     },
-    "configuration": {
-      "title": "Debug Variable Right Click Actions",
-      "properties": {
-        "debug-variable-right-click-actions.config.enable": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable the extension"
-        },
-        "debug-variable-right-click-actions.config.image-types": {
-          "type": "array",
-          "additionalItems": true,
-          "description": "Additional image types",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "display_name": {
-                "type": "string"
-              },
-              "match_types": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "binary_info": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "sizeByte": {
-                    "type": "string"
-                  },
-                  "littleEndian": {
-                    "type": "string"
-                  },
-                  "signed": {
-                    "type": "string"
-                  },
-                  "fixedSize": {
-                    "type": "string",
-                    "default": "false"
-                  },
-                  "isInt": {
-                    "type": "string"
-                  }
-                }
-              },
-              "image_info": {
-                "additionalProperties": false,
-                "type": "object",
-                "properties": {
-                  "mem_width": {
-                    "type": "string"
-                  },
-                  "mem_height": {
-                    "type": "string"
-                  },
-                  "image_width": {
-                    "type": "string"
-                  },
-                  "image_height": {
-                    "type": "string"
-                  },
-                  "stride": {
-                    "type": "string"
-                  },
-                  "channels": {
-                    "type": "string"
-                  },
-                  "data": {
-                    "type": "string"
-                  },
-                  "format": {
-                    "type": "string"
-                  },
-                  "bytesForPx": {
-                    "type": "string"
-                  }
-                }
-              }
+    "categories": [
+        "Debuggers",
+        "Other"
+    ],
+    "activationEvents": [
+        "onDebug"
+    ],
+    "publisher": "akipg",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/akipg/debug-variable-actions-vscode.git"
+    },
+    "main": "./out/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "debug-variable-actions.start",
+                "title": "Start"
+            },
+            {
+                "command": "debug-variable-actions.action",
+                "title": "Action"
+            },
+            {
+                "command": "debug-variable-actions.tocsv",
+                "title": "To CSV"
+            },
+            {
+                "command": "debug-variable-actions.topng",
+                "title": "To PNG"
+            },
+            {
+                "command": "debug-variable-actions.topanel",
+                "title": "To Panel"
             }
-          }
+        ],
+        "menus": {
+            "debug/variables/context": [
+                {
+                    "command": "debug-variable-actions.action",
+                    "when": "true"
+                },
+                {
+                    "command": "debug-variable-actions.tocsv",
+                    "when": "true"
+                },
+                {
+                    "command": "debug-variable-actions.topng",
+                    "when": "true"
+                },
+                {
+                    "command": "debug-variable-actions.topanel",
+                    "when": "true"
+                }
+            ]
+        },
+        "configuration": {
+            "title": "Debug Variable Actions",
+            "properties": {
+                "debug-variable-actions.config.enable": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable the extension"
+                },
+                "debug-variable-actions.config.image-types": {
+                    "type": "array",
+                    "additionalItems": true,
+                    "description": "Additional image types",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "display_name": {
+                                "type": "string"
+                            },
+                            "match_types": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "binary_info": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "sizeByte": {
+                                        "type": "string"
+                                    },
+                                    "littleEndian": {
+                                        "type": "string"
+                                    },
+                                    "signed": {
+                                        "type": "string"
+                                    },
+                                    "fixedSize": {
+                                        "type": "string",
+                                        "default": "false"
+                                    },
+                                    "isInt": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "image_info": {
+                                "additionalProperties": false,
+                                "type": "object",
+                                "properties": {
+                                    "mem_width": {
+                                        "type": "string"
+                                    },
+                                    "mem_height": {
+                                        "type": "string"
+                                    },
+                                    "image_width": {
+                                        "type": "string"
+                                    },
+                                    "image_height": {
+                                        "type": "string"
+                                    },
+                                    "stride": {
+                                        "type": "string"
+                                    },
+                                    "channels": {
+                                        "type": "string"
+                                    },
+                                    "data": {
+                                        "type": "string"
+                                    },
+                                    "format": {
+                                        "type": "string"
+                                    },
+                                    "bytesForPx": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
-      }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile && npm run lint",
+        "lint": "eslint src --ext ts",
+        "test": "vscode-test"
+    },
+    "devDependencies": {
+        "@types/ejs": "^3.1.5",
+        "@types/mocha": "^10.0.6",
+        "@types/node": "18.x",
+        "@types/vscode": "^1.89.0",
+        "@typescript-eslint/eslint-plugin": "^7.11.0",
+        "@typescript-eslint/parser": "^7.11.0",
+        "@vscode/test-cli": "^0.0.9",
+        "@vscode/test-electron": "^2.4.0",
+        "eslint": "^8.57.0",
+        "typescript": "^5.4.5"
+    },
+    "dependencies": {
+        "dedent": "^1.5.3",
+        "ejs": "^3.1.10",
+        "jimp": "^0.22.12",
+        "sharp": "^0.33.5"
     }
-  },
-  "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
-    "test": "vscode-test"
-  },
-  "devDependencies": {
-    "@types/mocha": "^10.0.6",
-    "@types/node": "18.x",
-    "@types/vscode": "^1.89.0",
-    "@typescript-eslint/eslint-plugin": "^7.11.0",
-    "@typescript-eslint/parser": "^7.11.0",
-    "@vscode/test-cli": "^0.0.9",
-    "@vscode/test-electron": "^2.4.0",
-    "eslint": "^8.57.0",
-    "typescript": "^5.4.5"
-  },
-  "dependencies": {
-    "dedent": "^1.5.3",
-    "jimp": "^0.22.12",
-    "sharp": "^0.33.4"
-  }
 }

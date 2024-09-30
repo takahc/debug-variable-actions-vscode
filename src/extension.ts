@@ -63,7 +63,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// 	}));
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('debug-variable-right-click-actions.action', (request: any) => {
+		vscode.commands.registerCommand('debug-variable-actions.action', (request: any) => {
 			// get value
 			vscode.debug.activeDebugSession?.customRequest('stackTrace', { threadId: 1 }).then((response) => {
 				const frameId = response.stackFrames[0].id;
@@ -124,7 +124,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('debug-variable-right-click-actions.tocsv', (request: any) => {
+		vscode.commands.registerCommand('debug-variable-actions.tocsv', (request: any) => {
 			// get value
 			vscode.debug.activeDebugSession?.customRequest('stackTrace', { threadId: 1 }).then((response) => {
 				const frameId = response.stackFrames[0].id;
@@ -179,7 +179,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('debug-variable-right-click-actions.topng', (request: any) => {
+		vscode.commands.registerCommand('debug-variable-actions.topng', (request: any) => {
 			// get value
 			vscode.debug.activeDebugSession?.customRequest('stackTrace', { threadId: 1 }).then((response) => {
 				const frameId = response.stackFrames[0].id;
@@ -236,8 +236,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('debug-variable-right-click-actions.topanel', async (request: any) => {
-			console.log("debug-variable-right-click-actions.topanel request", request);
+		vscode.commands.registerCommand('debug-variable-actions.topanel', async (request: any) => {
+			console.log("debug-variable-actions.topanel request", request);
 			// get value
 			const variables_response = await vscode.debug.activeDebugSession?.customRequest('variables', { variablesReference: request.variable.variablesReference });
 			console.log("variables_response", variables_response);
@@ -400,7 +400,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('debug-variable-right-click-actions.start', () => {
+		vscode.commands.registerCommand('debug-variable-actions.start', () => {
 			// Create and show a webview
 			if (lastPanel) {
 				lastPanel.reveal(vscode.ViewColumn.One);
@@ -417,8 +417,8 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
-		if (e.affectsConfiguration('debug-variable-right-click-actions.config.image-types')) {
-			console.log("changed config: debug-variable-right-click-actions.config.image-types");
+		if (e.affectsConfiguration('debug-variable-actions.config.image-types')) {
+			console.log("changed config: debug-variable-actions.config.image-types");
 			VariableTypeFactory.loadSettings();
 		}
 	}));

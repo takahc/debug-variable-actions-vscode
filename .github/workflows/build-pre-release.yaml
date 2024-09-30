@@ -1,0 +1,30 @@
+name: Build (pre-release)
+
+on:
+    pull_request:
+        branches: ["pre-release"]
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: ./.github/actions/install-nodejs-and-packages
+
+            - name: Update version
+              id: update-version
+              uses: ./.github/actions/update-version
+              with:
+                  update_semantic: "patch"
+
+            - name: Build (pre-release)
+              id: build
+              uses: ./.github/actions/build-pre-release
+              with:
+                  is_pre_release: true
+                  save_artifacts: true
+                  push_changes: false
+                  tag: false
