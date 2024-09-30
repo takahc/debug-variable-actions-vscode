@@ -28,3 +28,12 @@ jobs:
                   save_artifacts: true
                   push_changes: true
                   tag: ${{ steps.update-version.outputs.tag }}
+
+            - name: Publish to marketplace
+              uses: ./.github/actions/publish-to-marketplace
+              env:
+                  VSCE_PAT: ${{ secrets.VSCE_PAT }}
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  pre_release: true
+                  tag: ${{ steps.update-version.outputs.tag }}

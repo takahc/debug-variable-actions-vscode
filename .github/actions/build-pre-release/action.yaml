@@ -67,6 +67,9 @@ runs:
         - name: Push to remote
           if: ${{ inputs.push_changes }}
           run: |
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
               git add .
               git commit -m "Automated commit by GitHub Actions"
               git push
@@ -77,6 +80,9 @@ runs:
         - name: Push tag
           if: ${{ inputs.tag != null }}
           run: |
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
               tag=v${{ steps.build.outputs.build_version }}
               if [ "${{ inputs.is_pre_release }}" = "true" ]; then
                 tag_message=${tag}-pre-release
