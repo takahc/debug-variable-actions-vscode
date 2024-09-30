@@ -57,7 +57,7 @@ runs:
           shell: bash
 
         - name: Save extension artifacts
-          if: ${{ inputs.save_artifacts }}
+          if: ${{ inputs.save_artifacts == 'true' }}
           uses: actions/upload-artifact@v4
           id: upload-artifact
           with:
@@ -65,7 +65,7 @@ runs:
               path: "./artifacts/${{ steps.build.outputs.filename }}"
 
         - name: Push to remote
-          if: ${{ inputs.push_changes }}
+          if: ${{ inputs.push_changes == 'true' }}
           run: |
               git config user.name "github-actions[bot]"
               git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

@@ -1,7 +1,15 @@
 name: "Publish to marketplace"
 description: "Publish to marketplace"
 
-
+inputs:
+    pre_release:
+        description: "Is pre-release"
+        required: false
+        default: true
+    tag:
+        description: "Tag"
+        required: false
+        default: null
 
 runs:
     using: "composite"
