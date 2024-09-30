@@ -21,6 +21,6 @@ runs:
               git push
               git push origin --tags
           env:
-              VSCE_PAT: ${{ secrets.VSCE_PAT }}
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              VSCE_PAT: ${{ env.VSCE_PAT }}
+              GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
           shell: bash
