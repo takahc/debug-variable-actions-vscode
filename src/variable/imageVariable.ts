@@ -211,6 +211,10 @@ export class ImageVariable extends DebugVariable {
         const filePath = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, filename);
         console.log("filePath", filePath);
 
+        // hicont image path
+        const filenameHicont = `${this.expression}.hicont.png`.replace(pattern, "-");
+        const filePathHicont = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, filenameHicont);
+
         // Extract the directory path from filePath
         const dirPath = path.dirname(filePath.fsPath);
 
@@ -239,6 +243,20 @@ export class ImageVariable extends DebugVariable {
                 }
             });
 
+            await sharp(imageArray, {
+                raw: {
+                    width: this.imageInfo.mem_width,
+                    height: this.imageInfo.mem_height,
+                    channels: this.imageInfo.channels,
+                }
+            }).normalize().toFile(filePathHicont.fsPath, (err, info) => {
+                if (err) {
+                    console.error('Error processing image:', this.expression, err);
+                } else {
+                    console.log('Image processed and saved:', this.expression, info);
+                }
+            });
+
             // console.log("Setting opencv image to jimp");
             // new Jimp({
             //     width: this.imageInfo.mem_width, height: this.imageInfo.mem_height, data: Buffer.from(imageSrc.data)
@@ -256,6 +274,7 @@ export class ImageVariable extends DebugVariable {
                     "workspaceFolder": this.frame.thread.tracker.session.workspaceFolder,
                     "storageUri": storageUri.fsPath,
                     "filePath": filePath.fsPath,
+                    "filePathHicont": filePathHicont.fsPath,
                 },
                 "imageInfo": this.imageInfo,
                 "imageHash": this.imageHash,

@@ -17,7 +17,7 @@ window.addEventListener('DOMContentLoaded', () => {
             const breakpointCapture = new BreakpointCapture(message.breakpointMeta, message.vscodeMeta);
             manager.addBreakpointCapture(breakpointCapture);
             for (const meta of metas) {
-                const imageUrl = meta.imageWebUrl;
+                const imageUrl = convertUrlToHicont(meta.imageWebUrl);
                 console.log("image", imageUrl, meta);
                 const imageTraceId = meta.variable.evaluateName;
                 const imageTrace = manager.addImageTrace(imageTraceId);
@@ -759,4 +759,9 @@ function displayInstantMessage(s, duration = 1000) {
             document.querySelector("#instant-message").innerHTML = "";
         }, duration);
     }
+}
+
+function convertUrlToHicont(url) {
+    const hicontUrl = url.replace(/(^.*?)([^\/]+)(\.[^.]+$)/, "$1$2.hicont$3");
+    return hicontUrl;
 }
