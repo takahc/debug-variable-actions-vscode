@@ -49,6 +49,7 @@
         "xtr1common": "cpp",
         "xutility": "cpp"
     },
+    "debug-variable-actions.config.enable": true,
     "debug-variable-actions.config.image-types": [
         {
             "display_name": "MyImage",

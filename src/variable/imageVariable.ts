@@ -154,6 +154,7 @@ export class ImageVariable extends DebugVariable {
         // Create a typed array from the buffer data
         let imageArray = new TypedArray(
             bufferData.buffer,
+            // @ts-ignore: TS2554: Expected 0-1 arguments, but got 3.
             bufferData.byteOffset,
             bufferData.byteLength / this.imageInfo.bytesForPx
         );
@@ -225,7 +226,7 @@ export class ImageVariable extends DebugVariable {
 
         // hicont image path
         const filenameHicont = `${this.expression}.hicont.png`.replace(pattern, "-");
-        const filePathHicont = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, filenameHicont);
+        const filePathHicont = vscode.Uri.joinPath(this.frame.thread.tracker.saveDirUri, break_dir_name, filenameHicont);
 
         // Extract the directory path from filePath
 

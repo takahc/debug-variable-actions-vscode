@@ -308,6 +308,7 @@ export function activate(context: vscode.ExtensionContext) {
 						Float64Array; // Assuming bytesForPx === 8 for double precision floats
 
 			// Create a typed array from the buffer data
+			// @ts-ignore: TS2554: Expected 0-1 arguments, but got 3.
 			let imageArray = new TypedArray(bufferData.buffer, bufferData.byteOffset, bufferData.byteLength / bytesForPx);
 			for (let i = 0; i < height; i++) {
 				for (let j = 0; j < width; j++) {
@@ -423,7 +424,7 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('debug-variable-actions.autocontinueframe', async () => {
 			if (DebugSessionTracker.currentTracker) {
 				// Get current frame
-				const frameName = DebugSessionTracker.currentTracker.threads[0].frames[0].meta.name
+				const frameName = DebugSessionTracker.currentTracker.threads[0].frames[0].meta.name;
 				const funcName = frameName.match(/.*[!](.*)?\(/mi)[1];
 				DebugSessionTracker.autoContinueEnable = true;
 				DebugSessionTracker.autoConintueFrameName = funcName;

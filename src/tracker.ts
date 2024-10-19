@@ -41,17 +41,19 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
                 }
 
                 // Auto-continue
-                let sessionTracker = DebugSessionTracker.currentTracker;
-                if (sessionTracker) {
-                    const funcName = sessionTracker.threads[0].frames[0].meta.name.match(/.*[!](.*)?\(/mi)[1]
-                    if (DebugSessionTracker.autoContinueEnable && DebugSessionTracker.autoConintueFrameName === funcName) {
-                        console.log("autoContinueEnable is true");
-                        await sessionTracker.stepOver();
-                    } else {
-                        if (DebugSessionTracker.autoContinueEnable) {
-                            console.log("autoContinueEnable is true but frame name is different");
-                            vscode.window.showInformationMessage("End auto-continue.");
-                            DebugSessionTracker.autoContinueEnable = false;
+                if (DebugSessionTracker.autoContinueEnable) {
+                    let sessionTracker = DebugSessionTracker.currentTracker;
+                    if (sessionTracker) {
+                        const funcName = sessionTracker.threads[0].frames[0].meta.name.match(/.*[!](.*)?\(/mi)[1];
+                        if (DebugSessionTracker.autoConintueFrameName === funcName) {
+                            console.log("autoContinueEnable is true");
+                            await sessionTracker.stepOver();
+                        } else {
+                            if (DebugSessionTracker.autoContinueEnable) {
+                                console.log("autoContinueEnable is true but frame name is different");
+                                vscode.window.showInformationMessage("End auto-continue.");
+                                DebugSessionTracker.autoContinueEnable = false;
+                            }
                         }
                     }
                 }
