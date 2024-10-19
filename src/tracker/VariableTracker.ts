@@ -1,16 +1,13 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { VariableViewPanel } from '../panel/VariableViewPanel';
-
 import { DebugSessionTracker } from '../debugger/DebugSessionTracker';
-import { DebugVariable } from '../debugger/variable/DebugVariable';
 import { VariableTypeFactory } from '../debugger/variable/VariableTypeFactory';
 import { ImageVariable } from '../debugger/variable/ImageVariable';
 
 export class VariableTracker implements vscode.DebugAdapterTracker {
     private _context: vscode.ExtensionContext;
     private _panel: VariableViewPanel | undefined;
-    private _sessionTracker: DebugSessionTracker | undefined;
     public breakpoints: any[] = [];
 
     constructor(context: vscode.ExtensionContext) {
@@ -18,366 +15,127 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
     }
 
     public async onDidSendMessage(message: any) {
-        console.log("onDidSendMessage", Object.assign({}, message));
+        console.log("onDidSendMessage", { ...message });
 
-        // if (message.type === 'event' && (message.event === 'stopped' || message.event === 'continued')) {
-        if (message.type === 'event' && (message.event === 'stopped')) {
-            const enable = await vscode.workspace.getConfiguration().get('debug-variable-actions.config.enable');
-            if (enable) {
-                const renderMode = await vscode.workspace.getConfiguration().get('debug-variable-actions.config.render-mode');
-                if (renderMode === "panel") {
+        if (message.type === 'event' && message.event === 'stopped') {
+            const enable = vscode.workspace.getConfiguration().get<boolean>('debug-variable-actions.config.enable');
+            if (!enable) {
+                console.log("debug-variable-actions.config.enable is disabled");
+                return;
+            }
+
+            const renderMode = vscode.workspace.getConfiguration().get<string>('debug-variable-actions.config.render-mode');
+            switch (renderMode) {
+                case 'panel':
                     await this.procImagePanel(message);
-                }
-                else if (renderMode === "panel-vue") {
+                    break;
+                case 'panel-vue':
                     await this.procImagePanelVue(message);
-                } else if (renderMode === "stack-vue") {
+                    break;
+                case 'stack-vue':
                     await this.procImageStack(message);
-                }
+                    break;
+                default:
+                    console.log(`Unknown render mode: ${renderMode}`);
+                    return;
+            }
 
-                // Save breakpoints JSON
-                const tracker = DebugSessionTracker.currentTracker;
-                if (tracker) {
-                    const breakpointsPath = vscode.Uri.joinPath(tracker.saveDirUri, `breakpoints.json`);
-                    fs.writeFileSync(breakpointsPath.fsPath, JSON.stringify(this.breakpoints, null, 4));
-                    console.log("Saved breakpoints.json to ", breakpointsPath.fsPath);
-                }
+            this.saveBreakpoints();
 
-                // Auto-continue
-                if (DebugSessionTracker.autoContinueEnable) {
-                    let sessionTracker = DebugSessionTracker.currentTracker;
-                    if (sessionTracker) {
-                        const funcName = sessionTracker.threads[0].frames[0].meta.name.match(/.*[!](.*)?\(/mi)[1];
-                        if (DebugSessionTracker.autoConintueFrameName === funcName) {
-                            console.log("autoContinueEnable is true");
-                            await sessionTracker.stepOver();
-                        } else {
-                            if (DebugSessionTracker.autoContinueEnable) {
-                                console.log("autoContinueEnable is true but frame name is different");
-                                vscode.window.showInformationMessage("End auto-continue.");
-                                DebugSessionTracker.autoContinueEnable = false;
-                            }
-                        }
-                    }
-                }
+            if (DebugSessionTracker.autoContinueEnable) {
+                await this.autoContinueIfNeeded();
+            }
+        }
+    }
+
+    private saveBreakpoints() {
+        const tracker = DebugSessionTracker.currentTracker;
+        if (tracker) {
+            const breakpointsPath = vscode.Uri.joinPath(tracker.saveDirUri, 'breakpoints.json');
+            fs.writeFileSync(breakpointsPath.fsPath, JSON.stringify(this.breakpoints, null, 4));
+            console.log("Saved breakpoints.json to", breakpointsPath.fsPath);
+        }
+    }
+
+    private async autoContinueIfNeeded() {
+        const sessionTracker = DebugSessionTracker.currentTracker;
+        if (sessionTracker) {
+            const funcName = sessionTracker.threads[0].frames[0].meta.name.match(/.*[!](.*)?\(/mi)[1];
+            if (DebugSessionTracker.autoConintueFrameName === funcName) {
+                console.log("Auto-continue enabled, continuing execution...");
+                await sessionTracker.stepOver();
             } else {
-                console.log("debug-variable-actions.config.enable is", enable);
+                console.log("Frame name mismatch, ending auto-continue.");
+                DebugSessionTracker.autoContinueEnable = false;
+                vscode.window.showInformationMessage("End auto-continue.");
             }
         }
     }
 
+    private async procImagePanelVue(message: any) {
+        await this.handleImageProcessing(message, "image-panel-vue", "images");
+    }
 
-    async procImagePanelVue(message: any) {
+    private async procImageStack(message: any) {
+        await this.handleImageProcessing(message, "image-stack", "images-stack");
+    }
+
+    private async procImagePanel(message: any) {
+        await this.handleImageProcessing(message, "image-panel", "images");
+    }
+
+    private async handleImageProcessing(message: any, panelType: string, command: string) {
         VariableTypeFactory.loadSettings();
+        const session = vscode.debug.activeDebugSession;
+        if (!session) { return; }
 
-        VariableViewPanel.render(this._context, "image-panel-vue");
+        VariableViewPanel.render(this._context, panelType);
         const panel = VariableViewPanel.currentPanel;
         if (panel) {
-            // panel.showPanel();
             panel.sendInstanceMessage("WAIT FOR IMAGES...");
         }
 
-
-        const session = vscode.debug.activeDebugSession;
-
-        // Create new tracker to manage debug variables every frames and threads,
-        //   not to share them among debug trackers even if they have same session.
-        DebugSessionTracker.newSessionTracker(this._context, session!);
-        let sessionTracker = DebugSessionTracker.currentTracker!;
-        DebugSessionTracker.breakCount++;
+        DebugSessionTracker.newSessionTracker(this._context, session);
+        const sessionTracker = DebugSessionTracker.currentTracker!;
         const threadId = message.body.threadId;
 
-        console.log("fetchLocalVariablesInFirstFrame", sessionTracker);
         const thread = sessionTracker.addThread(threadId, [], message.body);
         const variables = await thread.fetchLocalVariablesInFirstFrame();
-        console.log("fetchLocalVariablesInFirstFrame", variables);
+        const imageMetaWides = await this.processImageVariables(sessionTracker);
 
-        let values: any = [];
-        variables.forEach((variable: DebugVariable) => {
-            values.push(variable.getVariableValuesAsDict());
-        });
-        console.log("values", values);
+        this.breakpoints.push(sessionTracker.getSerializable());
 
-        const allVariables = sessionTracker.gatherAllVariables();
-        console.log(allVariables);
-
-        const imageVariables: ImageVariable[] = sessionTracker.gatherImageVariables();
-        console.log(imageVariables);
-
-
-        const imageMetaWides = [];
-        for (const imageVariable of imageVariables) {
-            imageVariable.updateImageInfo();
-            imageVariable.updateBinaryInfo();
-            const metaWide = await imageVariable.toFile(); // toFile() may return undefined if the image could not read properly.
-            if (metaWide) {
-                imageMetaWides.push(metaWide);
-            }
-            // imageVariable.toFile();
-        }
-
-        this.breakpoints.push(sessionTracker.getSerializable()); // Capture trackers
-
-        console.log("rendering panel");
-        VariableViewPanel.render(this._context, "image-panel-vue");
         if (panel) {
-            // Set web url
             for (const metaWide of imageMetaWides) {
                 metaWide.imageWebUrl = panel.getWebViewUrlString(vscode.Uri.file(metaWide.vscode.filePath));
             }
-            console.log("imageMetaWides", imageMetaWides);
 
-            // Display
-            // const openPath = vscode.Uri.file(filePath.toString()).toString().replace("/file:", "");
-            // vscode.commands.executeCommand('vscode.open', filePath.fsPath);
-            console.log("showing images on panel", panel);
             const workspaceFolders = vscode.workspace.workspaceFolders;
             panel.postMessage({
-                command: "images",
-                breakpoints: this.breakpoints,
+                command,
                 metas: imageMetaWides,
                 breakpointMeta: message.body,
-                vscodeMeta: { workspaceFolders }
-
+                vscodeMeta: { workspaceFolders },
+                frames: thread.frames.map(frame => frame.getSerializable())
             });
             panel.showPanel();
-
-            console.log("DONE!!");
             panel.postMessage({ command: "capture" });
             panel.sendInstanceMessage("DONE!");
-        } else {
-            console.log("panel is undefined");
         }
-
-        console.log("DONE!!!!!!!!!!!");
     }
 
-
-    async procImageStack(message: any) {
-        // Load settings
-        VariableTypeFactory.loadSettings();
-
-        // Render panel
-        VariableViewPanel.render(this._context, "image-stack");
-        const panel = VariableViewPanel.currentPanel;
-        if (panel) {
-            panel.sendInstanceMessage("WAIT FOR IMAGES...");
-        }
-
-        // Get active debug session
-        const session = vscode.debug.activeDebugSession;
-
-        // Create new tracker to manage debug variables every frames and threads,
-        //   not to share them among debug trackers even if they have same session.
-        DebugSessionTracker.newSessionTracker(this._context, session!);
-        let sessionTracker = DebugSessionTracker.currentTracker!;
-        DebugSessionTracker.breakCount++;
-        const threadId = message.body.threadId;
-
-        // Fetch local variables in the first frame
-        console.log("fetchLocalVariablesInFirstFrame", sessionTracker);
-        const thread = sessionTracker.addThread(threadId, [], message.body);
-        const variables = await thread.fetchLocalVariablesInFirstFrame();
-        console.log("fetchLocalVariablesInFirstFrame", variables);
-
-        // Get variable values
-        let values: any = [];
-        variables.forEach((variable: DebugVariable) => {
-            values.push(variable.getVariableValuesAsDict());
-        });
-        console.log("values", values);
-
-        // Gather all variables
-        const allVariables = sessionTracker.gatherAllVariables();
-        console.log(allVariables);
-
-        // Gather image variables
+    private async processImageVariables(sessionTracker: DebugSessionTracker) {
         const imageVariables: ImageVariable[] = sessionTracker.gatherImageVariables();
-        console.log(imageVariables);
+        const imageMetaWides: any[] = [];
 
-        // Generate image file
-        const imageMetaWides = [];
         for (const imageVariable of imageVariables) {
             imageVariable.updateImageInfo();
             imageVariable.updateBinaryInfo();
-            const metaWide = await imageVariable.toFile(); // toFile() may return undefined if the image could not read properly.
+            const metaWide = await imageVariable.toFile();
             if (metaWide) {
                 imageMetaWides.push(metaWide);
             }
         }
-
-        // Render panel
-        console.log("rendering panel");
-        VariableViewPanel.render(this._context, "image-panel");
-        if (panel) {
-            // Set web url
-            for (const metaWide of imageMetaWides) {
-                metaWide.imageWebUrl = panel.getWebViewUrlString(vscode.Uri.file(metaWide.vscode.filePath));
-            }
-            console.log("imageMetaWides", imageMetaWides);
-
-            // Display
-            // const openPath = vscode.Uri.file(filePath.toString()).toString().replace("/file:", "");
-            // vscode.commands.executeCommand('vscode.open', filePath.fsPath);
-            console.log("showing images on panel", panel);
-            const workspaceFolders = vscode.workspace.workspaceFolders;
-            const _msg = {
-                command: "images-stack",
-                metas: imageMetaWides,
-                breakpointMeta: message.body,
-                frames: thread.frames.map(frame => frame.getSerializable()),
-                vscodeMeta: { workspaceFolders }
-            };
-            panel.postMessage(_msg);
-            panel.showPanel();
-
-            console.log("DONE!!");
-            panel.postMessage({ command: "capture" });
-            panel.sendInstanceMessage("DONE!");
-
-        } else {
-            console.log("panel is undefined");
-
-        }
-
-        // Save tracker.json
-        const breakCount = DebugSessionTracker.breakCount; //FIXME
-        const break_dir_name = `Break${breakCount}`;
-        const trackerPath = vscode.Uri.joinPath(sessionTracker.saveDirUri, break_dir_name, `tracker.json`);
-        console.log("trackerPath", trackerPath);
-        fs.writeFileSync(trackerPath.fsPath, JSON.stringify(sessionTracker.getSerializable(), null, 4));
-
-        // Post message
-        console.log("DONE!!!!!!!!!!!");
+        return imageMetaWides;
     }
-
-    async procImagePanel(message: any) {
-        VariableTypeFactory.loadSettings();
-
-        VariableViewPanel.render(this._context);
-        const panel = VariableViewPanel.currentPanel;
-        if (panel) {
-            // panel.showPanel();
-            panel.sendInstanceMessage("WAIT FOR IMAGES...");
-        }
-
-
-        const session = vscode.debug.activeDebugSession;
-
-        // Create new tracker to manage debug variables every frames and threads,
-        //   not to share them among debug trackers even if they have same session.
-        DebugSessionTracker.newSessionTracker(this._context, session!);
-        let sessionTracker = DebugSessionTracker.currentTracker!;
-        DebugSessionTracker.breakCount++;
-        const threadId = message.body.threadId;
-
-        // const stackTrace = await session?.customRequest('stackTrace', { threadId });
-        // const frameId = stackTrace.stackFrames[0].id;
-        // const scopes = await session?.customRequest('scopes', { frameId });
-
-        // console.log(frameId);
-        // console.log(stackTrace);
-        // console.log("scopes", scopes);
-        // for (const scope of scopes.scopes) {
-        //     const variables = await session?.customRequest('variables', { variablesReference: scope.variablesReference });
-        //     console.log(variables);
-        //     // Here you can process the variables as needed
-        // }
-
-        console.log("fetchLocalVariablesInFirstFrame", sessionTracker);
-        const thread = sessionTracker.addThread(threadId, [], message.body);
-        const variables = await thread.fetchLocalVariablesInFirstFrame();
-        console.log("fetchLocalVariablesInFirstFrame", variables);
-
-        let values: any = [];
-        variables.forEach((variable: DebugVariable) => {
-            values.push(variable.getVariableValuesAsDict());
-        });
-        console.log("values", values);
-
-        const allVariables = sessionTracker.gatherAllVariables();
-        console.log(allVariables);
-
-        const imageVariables: ImageVariable[] = sessionTracker.gatherImageVariables();
-        console.log(imageVariables);
-
-        const imageMetaWides = [];
-        for (const imageVariable of imageVariables) {
-            imageVariable.updateImageInfo();
-            imageVariable.updateBinaryInfo();
-            const metaWide = await imageVariable.toFile(); // toFile() may return undefined if the image could not read properly.
-            if (metaWide) {
-                imageMetaWides.push(metaWide);
-            }
-            // imageVariable.toFile();
-        }
-
-
-        console.log("rendering panel");
-        VariableViewPanel.render(this._context, "image-panel");
-        if (panel) {
-            // Set web url
-            for (const metaWide of imageMetaWides) {
-                metaWide.imageWebUrl = panel.getWebViewUrlString(vscode.Uri.file(metaWide.vscode.filePath));
-            }
-            console.log("imageMetaWides", imageMetaWides);
-
-            // Display
-            // const openPath = vscode.Uri.file(filePath.toString()).toString().replace("/file:", "");
-            // vscode.commands.executeCommand('vscode.open', filePath.fsPath);
-            console.log("showing images on panel", panel);
-            const workspaceFolders = vscode.workspace.workspaceFolders;
-            panel.postMessage({
-                command: "images",
-                metas: imageMetaWides,
-                breakpointMeta: message.body,
-                vscodeMeta: { workspaceFolders }
-
-            });
-            panel.showPanel();
-
-            console.log("DONE!!");
-            panel.postMessage({ command: "capture" });
-            panel.sendInstanceMessage("DONE!");
-        } else {
-            console.log("panel is undefined");
-        }
-
-        console.log("DONE!!!!!!!!!!!");
-    }
-
-    //     public onDidSendMessage(message: any) {
-    //         console.log(Object.assign({}, message));
-    //         if ((message.type === 'event' && message.event === 'output') ||
-    //             (message.type === 'response' && message.command === 'evaluate')) {
-    //             console.log(Object.assign({}, message));
-    //             if ((message.body && message.body.category === 'stdout') ||
-    //                 (message.boy)) {
-    //                 console.log('message.body', message.body);
-    //                 if (!this._panel) {
-    //                     console.log("this._panel is undefined")
-    //                     this._panel = new VariableViewPanel(this._context);
-    //                 }
-    //                 else{
-    //                     console.log("this._panel is NOT undefined")
-    //                 }
-    //                 console.log("this._panel.isPanelExist 1", this._panel.isPanelExist());
-    //                 this._panel.render();
-    //                 this._panel.showPanel(vscode.ViewColumn.Two);
-    //                 console.log("this._panel.isPanelExist 2", this._panel.isPanelExist());
-
-    //                 let variableOut = {
-    //                     message,
-    //                     name: message.body.variablesReference,
-    //                     value: message.body.output
-    //                 };
-
-    //                 console.log("this._panel.isPanelExist 3", this._panel.isPanelExist());
-    //                 console.log("posting message to panel")
-    //                 this._panel.postMessage({ command: 'variable', output: variableOut });
-    //                 console.log("this._panel.isPanelExist 4", this._panel.isPanelExist());
-    //             }
-    //         }
-    //     }
 }
-
-

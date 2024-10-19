@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import dedent from 'dedent';
-
 import { DebugSessionTracker } from '../debugger/DebugSessionTracker';
 import { ImageVariable } from '../debugger/variable/ImageVariable';
 import { VariableTypeFactory } from '../debugger/variable/VariableTypeFactory';
@@ -10,197 +9,116 @@ interface IDebugAction {
     execute(request: any | undefined): void;
 }
 
-export class DebugActionBasic implements IDebugAction {
+class CodeExecutionActionBase implements IDebugAction {
     public name: string;
 
-    constructor() {
-        this.name = "action";
+    constructor(name: string) {
+        this.name = name;
     }
 
     public execute(request: any | undefined = undefined): void {
-        console.log("Debug Action executed", this.name);
+        console.log(`Debug Action executed: ${this.name}`);
         if (request) {
-            console.log(request);
-            // get value
-            vscode.debug.activeDebugSession?.customRequest('stackTrace', { threadId: 1 }).then((response) => {
-                const frameId = response.stackFrames[0].id;
-                // const code = `import pandas as pd; print(pd.DataFrame(${request.variable.name}).to_json())`;
-                // const code = `import pandas; print((lambda : pandas.DataFrame(${request.variable.name}).to_json())())`
-                const code = dedent`
-				import json
-				print(
-					(lambda : 
-						json.dumps(
-							(${request.variable.name}).tolist()
-						) 
-					)()
-				)`;
-                const code2 = dedent`
-					def get_type
-
-					def get_variable_info():
-						import builtins as _VSCODE_BUILTINS
-						import sys as _VSCODE_SYS
-						import json as _VSCODE_JSON
-						
-						var = ${request.variable.name}
-						
-						
-						if "numpy" in _VSCODE_SYS.modules:
-							import numpy as _VSCODE_NP
-							if isinstance(var_json, _VSCODE_NP.ndarray):
-								var_json = numpy.array(var_json).tolist()						
-
-						if "pandas" in _VSCODE_SYS.modules:
-							var_json = _VSCODE_PD.DataFrame({var).to_json()
-								
-						out_json = json.dumps{}
-
-						return xxx
-						
-					print(get_variable_info())
-
-					del _VSCODE_BUILTINS, _VSODE_SYS, _VSCODE_JSON
-					if "numpy" in _VSCODE_SYS.modules: del _VSCODE_NP
-					if "pandas" in _VSCODE_SYS.modules: del _VSCODE_PD
-					
-					del get_variable_info
-				`;
-
-                console.log("evaluate code: ", code);
-                vscode.debug.activeDebugSession?.customRequest('evaluate', {
-                    expression: code,
-                    frameId: frameId,
-                    context: "repl",
-                    format: { rawString: true }
-                });
-            });
+            this.evaluateExpression(request);
         }
+    }
+
+    protected evaluateExpression(request: any): void {
+        vscode.debug.activeDebugSession?.customRequest('stackTrace', { threadId: 1 }).then(response => {
+            const frameId = response.stackFrames[0].id;
+            const code = this.getEvaluationCode(request);
+            console.log("evaluate code:", code);
+            vscode.debug.activeDebugSession?.customRequest('evaluate', {
+                expression: code,
+                frameId,
+                context: "repl",
+                format: { rawString: true }
+            });
+        });
+    }
+
+    protected getEvaluationCode(request: any): string {
+        return dedent`
+            import json
+            print(
+                (lambda : json.dumps((${request.variable.name}).tolist()))()
+            )
+        `;
     }
 }
 
-export class DebugActionToCSV implements IDebugAction {
-    public name: string;
-
+export class DebugActionBasic extends CodeExecutionActionBase {
     constructor() {
-        this.name = "tocsv";
-    }
-
-    public execute(request: any | undefined = undefined): void {
-        console.log("Debug Action executed", this.name);
-        if (request) {
-            // get value
-            vscode.debug.activeDebugSession?.customRequest('stackTrace', { threadId: 1 }).then((response) => {
-                const frameId = response.stackFrames[0].id;
-                const code = dedent`
-				def get_variable_info(var, var_name):
-					import builtins as _VSCODE_BUILTINS
-					import sys as _VSCODE_SYS
-					import json as _VSCODE_JSON
-					if "numpy" in _VSCODE_SYS.modules: import numpy as _VSCODE_NP
-					if "pandas" in _VSCODE_SYS.modules: import pandas as _VSCODE_PD
-
-					filename = var_name + ".csv"
-											
-					if "numpy" in _VSCODE_SYS.modules and isinstance(var, _VSCODE_NP.ndarray):
-						_VSCODE_NP.savetxt(filename, var, delimiter=',')
-					elif "pandas" in _VSCODE_SYS.modules and isinstance(var, _VSCODE_PD.DataFrame):
-						var.to_csv(filename)
-					else:
-						with open(filename, 'w') as f:
-							_VSCODE_JSON.dump(var, f)							
-					
-				get_variable_info(${request.variable.name}, "${request.variable.name}")
-
-				#del _VSCODE_BUILTINS, _VSODE_SYS, _VSCODE_JSON
-				#if "numpy" in _VSCODE_SYS.modules: del _VSCODE_NP
-				#if "pandas" in _VSCODE_SYS.modules: del _VSCODE_PD
-				del get_variable_info
-			`;
-                console.log("evaluate code: ", code);
-                vscode.debug.activeDebugSession?.customRequest('evaluate', {
-                    expression: code,
-                    frameId: frameId,
-                    context: "repl",
-                    format: { rawString: true }
-                }).then((response) => {
-                    console.log("response_tocsv: ", response);
-                    const content = 'exampleContent';
-                    const workspaceFolders = vscode.workspace.workspaceFolders;
-                    const filePath = workspaceFolders ? vscode.Uri.joinPath(workspaceFolders[0].uri, `${request.variable.name}.csv`) : null;
-
-                    if (filePath) {
-                        const openPath = vscode.Uri.file(filePath.toString());
-                        vscode.workspace.openTextDocument(filePath).then(doc => {
-                            vscode.window.showTextDocument(doc);
-                        });
-                    }
-                });
-            });
-        }
+        super("action");
     }
 }
 
-export class DebugActionToPNG implements IDebugAction {
-    public name: string;
-
+export class DebugActionToCSV extends CodeExecutionActionBase {
     constructor() {
-        this.name = "topng";
+        super("tocsv");
+    }
+
+    protected getEvaluationCode(request: any): string {
+        return dedent`
+            def save_to_csv(var, var_name):
+                import sys as _sys, json as _json
+                filename = var_name + ".csv"
+                if "numpy" in _sys.modules and isinstance(var, _sys.modules["numpy"].ndarray):
+                    _sys.modules["numpy"].savetxt(filename, var, delimiter=',')
+                elif "pandas" in _sys.modules and isinstance(var, _sys.modules["pandas"].DataFrame):
+                    var.to_csv(filename)
+                else:
+                    with open(filename, 'w') as f:
+                        _json.dump(var, f)
+                        
+            save_to_csv(${request.variable.name}, "${request.variable.name}")
+        `;
     }
 
     public execute(request: any | undefined = undefined): void {
-        console.log("Debug Action executed", this.name);
-        if (request) {
-            // get value
-            vscode.debug.activeDebugSession?.customRequest('stackTrace', { threadId: 1 }).then((response) => {
-                const frameId = response.stackFrames[0].id;
-                const code = dedent`
-				def get_variable_info(var, var_name):
-					import builtins as _VSCODE_BUILTINS
-					import sys as _VSCODE_SYS
-					import json as _VSCODE_JSON
-					if "numpy" in _VSCODE_SYS.modules: import numpy as _VSCODE_NP
-					if "pandas" in _VSCODE_SYS.modules: import pandas as _VSCODE_PD
-					from PIL import Image as _VSCODE_IMAGE
+        super.execute(request);
+        vscode.workspace.workspaceFolders?.[0].uri && this.showCSVFile(request.variable.name);
+    }
 
-					filename = var_name + ".png"
-					
-					try:
-						im = _VSCODE_IMAGE.fromarray(var)
-						if var.ndim == 2:
-							im = im.convert("L")
-						im.save(filename)
-						print("success")
-					except Exception as e:
-						print("Error", e)
-					
-				get_variable_info(${request.variable.name}, "${request.variable.name}")
+    private showCSVFile(variableName: string): void {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0].uri;
+        const filePath = vscode.Uri.joinPath(workspaceFolder!, `${variableName}.csv`);
+        vscode.workspace.openTextDocument(filePath).then(doc => vscode.window.showTextDocument(doc));
+    }
+}
 
-				#del _VSCODE_BUILTINS, _VSODE_SYS, _VSCODE_JSON
-				#if "numpy" in _VSCODE_SYS.modules: del _VSCODE_NP
-				#if "pandas" in _VSCODE_SYS.modules: del _VSCODE_PD
-				del get_variable_info
-			`;
-                console.log("evaluate code: ", code);
-                vscode.debug.activeDebugSession?.customRequest('evaluate', {
-                    expression: code,
-                    frameId: frameId,
-                    context: "repl",
-                    format: { rawString: true }
-                }).then((response) => {
-                    console.log("response_topng: ", response);
-                    const workspaceFolders = vscode.workspace.workspaceFolders;
-                    const filePath = workspaceFolders ? vscode.Uri.joinPath(workspaceFolders[0].uri, `${request.variable.name}.png`) : null;
+export class DebugActionToPNG extends CodeExecutionActionBase {
+    constructor() {
+        super("topng");
+    }
 
-                    if (filePath) {
-                        const openPath = vscode.Uri.file(filePath.toString());
-                        vscode.workspace.openTextDocument(filePath).then(doc => {
-                            vscode.window.showTextDocument(doc);
-                        });
-                    }
-                });
-            });
-        }
+    protected getEvaluationCode(request: any): string {
+        return dedent`
+            def save_to_png(var, var_name):
+                from PIL import Image
+                filename = var_name + ".png"
+                try:
+                    im = Image.fromarray(var)
+                    if var.ndim == 2:
+                        im = im.convert("L")
+                    im.save(filename)
+                    print("success")
+                except Exception as e:
+                    print("Error:", e)
+                    
+            save_to_png(${request.variable.name}, "${request.variable.name}")
+        `;
+    }
+
+    public execute(request: any | undefined = undefined): void {
+        super.execute(request);
+        vscode.workspace.workspaceFolders?.[0].uri && this.showPNGFile(request.variable.name);
+    }
+
+    private showPNGFile(variableName: string): void {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0].uri;
+        const filePath = vscode.Uri.joinPath(workspaceFolder!, `${variableName}.png`);
+        vscode.workspace.openTextDocument(filePath).then(doc => vscode.window.showTextDocument(doc));
     }
 }
 
@@ -212,19 +130,22 @@ export class DebugActionAutoContinueFrame implements IDebugAction {
     }
 
     public async execute(request: any | undefined = undefined): Promise<void> {
-        console.log("Debug Action executed", this.name);
-        if (DebugSessionTracker.currentTracker) {
-            // Get current frame
-            const frameName = DebugSessionTracker.currentTracker.threads[0].frames[0].meta.name;
-            const funcName = frameName.match(/.*[!](.*)?\(/mi)[1];
+        console.log(`Debug Action executed: ${this.name}`);
+        const tracker = DebugSessionTracker.currentTracker;
+
+        if (tracker) {
+            const funcName = this.extractFunctionName(tracker.threads[0].frames[0].meta.name);
             DebugSessionTracker.autoContinueEnable = true;
             DebugSessionTracker.autoConintueFrameName = funcName;
-            vscode.window.showInformationMessage(`Start auto continue frame: ${funcName}`);
-            await DebugSessionTracker.currentTracker.stepOver();
-        }
-        else {
+            vscode.window.showInformationMessage(`Start auto-continue for frame: ${funcName}`);
+            await tracker.stepOver();
+        } else {
             vscode.window.showErrorMessage("No active debug session");
         }
+    }
+
+    private extractFunctionName(frameName: string): string {
+        return frameName.match(/.*[!](.*)?\(/mi)?.[1] ?? '';
     }
 }
 
@@ -235,10 +156,11 @@ export class DebugActionAutoContinueFrameStop implements IDebugAction {
         this.name = "autocontinueframe-stop";
     }
 
-    public async execute(request: any | undefined = undefined): Promise<void> {
-        console.log("Debug Action executed", this.name);
+    public async execute(): Promise<void> {
+        console.log(`Debug Action executed: ${this.name}`);
         DebugSessionTracker.autoContinueEnable = false;
         DebugSessionTracker.autoConintueFrameName = "";
+        vscode.window.showInformationMessage("Auto-continue frame stopped.");
     }
 }
 
@@ -249,15 +171,15 @@ export class DebugActionChangeConfiguration implements IDebugAction {
         this.name = "change-configuration";
     }
 
-    public async execute(e: any | undefined = undefined): Promise<void> {
-        console.log("Debug Action executed", this.name);
+    public async execute(e: vscode.ConfigurationChangeEvent): Promise<void> {
+        console.log(`Debug Action executed: ${this.name}`);
         if (e.affectsConfiguration('debug-variable-actions.config.image-types')) {
-            console.log("changed config: debug-variable-actions.config.image-types");
             VariableTypeFactory.loadSettings();
+            console.log("Configuration changed: image types");
         }
-        else if (e.affectsConfiguration('debug-variable-actions.config.image-sizebyte-limit')) {
-            console.log("changed config: debug-variable-actions.config.image-sizebyte-limit");
-            ImageVariable.sizeByteLimit = vscode.workspace.getConfiguration().get("debug-variable-actions.config.image-sizebyte-limit");
+        if (e.affectsConfiguration('debug-variable-actions.config.image-sizebyte-limit')) {
+            ImageVariable.sizeByteLimit = vscode.workspace.getConfiguration().get<number>("debug-variable-actions.config.image-sizebyte-limit");
+            console.log("Configuration changed: image size byte limit");
         }
     }
 }
