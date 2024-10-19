@@ -27,8 +27,11 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
             if (enable) {
                 const renderMode = await vscode.workspace.getConfiguration().get('debug-variable-actions.config.render-mode');
                 if (renderMode === "panel") {
+                    await this.procImagePanel(message);
+                }
+                else if (renderMode === "panel-vue") {
                     await this.procImagePanelVue(message);
-                } else if (renderMode === "stack") {
+                } else if (renderMode === "stack-vue") {
                     await this.procImageStack(message);
                 }
 
