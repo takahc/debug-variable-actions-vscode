@@ -1,0 +1,1301 @@
+{
+    "command": "images-stack",
+    "metas": [
+        {
+            "vscode": {
+                "workspaceFolder": {
+                    "uri": {
+                        "$mid": 1,
+                        "fsPath": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1",
+                        "_sep": 1,
+                        "external": "file:///c%3A/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                        "path": "/c:/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                        "scheme": "file"
+                    },
+                    "name": "ConsoleApplication1",
+                    "index": 0
+                },
+                "storageUri": "c:\\Users\\vanch\\AppData\\Roaming\\Code\\User\\workspaceStorage\\9e945dd1c70d62ceffb1ab39d02775c0\\akipg.debug-variable-actions-vscode",
+                "filePath": "c:\\Users\\vanch\\AppData\\Roaming\\Code\\User\\workspaceStorage\\9e945dd1c70d62ceffb1ab39d02775c0\\akipg.debug-variable-actions-vscode\\Session_1e48983d-3ee7-460f-901d-2c7cdeb9a164\\Break10\\img.png"
+            },
+            "imageInfo": {
+                "mem_width": 300,
+                "mem_height": 199,
+                "image_width": 300,
+                "image_height": 199,
+                "stride": 300,
+                "channels": 1,
+                "data": "0x0000027181732fb0",
+                "format": "GRAY",
+                "bytesForPx": 1
+            },
+            "imageHash": "a91c26c9845c5b6fc31467580150906d",
+            "imagewebUrl": "",
+            "session": {
+                "id": "1e48983d-3ee7-460f-901d-2c7cdeb9a164",
+                "type": "cppdbg",
+                "name": "(gdb) Launch current file",
+                "workspaceFolder": {
+                    "uri": {
+                        "$mid": 1,
+                        "fsPath": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1",
+                        "_sep": 1,
+                        "external": "file:///c%3A/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                        "path": "/c:/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                        "scheme": "file"
+                    },
+                    "name": "ConsoleApplication1",
+                    "index": 0
+                },
+                "configuration": {
+                    "name": "(gdb) Launch current file",
+                    "type": "cppdbg",
+                    "request": "launch",
+                    "program": "C:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1/edge2_MyImage.exe",
+                    "args": [],
+                    "stopAtEntry": false,
+                    "cwd": "C:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1",
+                    "environment": [],
+                    "externalConsole": false,
+                    "MIMode": "gdb",
+                    "miDebuggerPath": "C:\\mingw64\\bin\\gdb.exe",
+                    "setupCommands": [
+                        {
+                            "description": "Enable pretty-printing for gdb",
+                            "text": "-enable-pretty-printing",
+                            "ignoreFailures": true
+                        },
+                        {
+                            "description": "Set Disassembly Flavor to Intel",
+                            "text": "-gdb-set disassembly-flavor intel",
+                            "ignoreFailures": true
+                        }
+                    ],
+                    "preLaunchTask": "C/C++: g++ build current file",
+                    "__configurationTarget": 6,
+                    "configSource": "workspaceFolder",
+                    "debugType": "debug"
+                }
+            },
+            "thread": {
+                "reason": "breakpoint",
+                "threadId": 1,
+                "allThreadsStopped": true,
+                "source": {
+                    "name": "edge2_MyImage.c",
+                    "path": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1\\edge2_MyImage.c",
+                    "sources": [],
+                    "checksums": []
+                },
+                "line": 115,
+                "column": 1
+            },
+            "frame": {
+                "id": 1000,
+                "name": "main()",
+                "source": {
+                    "name": "edge2_MyImage.c",
+                    "path": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1\\edge2_MyImage.c",
+                    "sources": [],
+                    "checksums": []
+                },
+                "line": 115,
+                "column": 1,
+                "instructionPointerReference": "0x00007ff63c10b7d0"
+            },
+            "variable": {
+                "name": "img",
+                "value": "{...}",
+                "type": "MyImage",
+                "evaluateName": "img",
+                "variablesReference": 1003
+            },
+            "imageWebUrl": "https://file%2B.vscode-resource.vscode-cdn.net/c%3A/Users/vanch/AppData/Roaming/Code/User/workspaceStorage/9e945dd1c70d62ceffb1ab39d02775c0/akipg.debug-variable-actions-vscode/Session_1e48983d-3ee7-460f-901d-2c7cdeb9a164/Break10/img.png"
+        },
+        {
+            "vscode": {
+                "workspaceFolder": {
+                    "uri": {
+                        "$mid": 1,
+                        "fsPath": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1",
+                        "_sep": 1,
+                        "external": "file:///c%3A/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                        "path": "/c:/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                        "scheme": "file"
+                    },
+                    "name": "ConsoleApplication1",
+                    "index": 0
+                },
+                "storageUri": "c:\\Users\\vanch\\AppData\\Roaming\\Code\\User\\workspaceStorage\\9e945dd1c70d62ceffb1ab39d02775c0\\akipg.debug-variable-actions-vscode",
+                "filePath": "c:\\Users\\vanch\\AppData\\Roaming\\Code\\User\\workspaceStorage\\9e945dd1c70d62ceffb1ab39d02775c0\\akipg.debug-variable-actions-vscode\\Session_1e48983d-3ee7-460f-901d-2c7cdeb9a164\\Break10\\edge.png"
+            },
+            "imageInfo": {
+                "mem_width": 300,
+                "mem_height": 199,
+                "image_width": 300,
+                "image_height": 199,
+                "stride": 300,
+                "channels": 1,
+                "data": "0x0000027181741920",
+                "format": "GRAY",
+                "bytesForPx": 1
+            },
+            "imageHash": "b4b327977a6d3e2e7ed382042b6c082c",
+            "imagewebUrl": "",
+            "session": {
+                "id": "1e48983d-3ee7-460f-901d-2c7cdeb9a164",
+                "type": "cppdbg",
+                "name": "(gdb) Launch current file",
+                "workspaceFolder": {
+                    "uri": {
+                        "$mid": 1,
+                        "fsPath": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1",
+                        "_sep": 1,
+                        "external": "file:///c%3A/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                        "path": "/c:/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                        "scheme": "file"
+                    },
+                    "name": "ConsoleApplication1",
+                    "index": 0
+                },
+                "configuration": {
+                    "name": "(gdb) Launch current file",
+                    "type": "cppdbg",
+                    "request": "launch",
+                    "program": "C:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1/edge2_MyImage.exe",
+                    "args": [],
+                    "stopAtEntry": false,
+                    "cwd": "C:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1",
+                    "environment": [],
+                    "externalConsole": false,
+                    "MIMode": "gdb",
+                    "miDebuggerPath": "C:\\mingw64\\bin\\gdb.exe",
+                    "setupCommands": [
+                        {
+                            "description": "Enable pretty-printing for gdb",
+                            "text": "-enable-pretty-printing",
+                            "ignoreFailures": true
+                        },
+                        {
+                            "description": "Set Disassembly Flavor to Intel",
+                            "text": "-gdb-set disassembly-flavor intel",
+                            "ignoreFailures": true
+                        }
+                    ],
+                    "preLaunchTask": "C/C++: g++ build current file",
+                    "__configurationTarget": 6,
+                    "configSource": "workspaceFolder",
+                    "debugType": "debug"
+                }
+            },
+            "thread": {
+                "reason": "breakpoint",
+                "threadId": 1,
+                "allThreadsStopped": true,
+                "source": {
+                    "name": "edge2_MyImage.c",
+                    "path": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1\\edge2_MyImage.c",
+                    "sources": [],
+                    "checksums": []
+                },
+                "line": 115,
+                "column": 1
+            },
+            "frame": {
+                "id": 1000,
+                "name": "main()",
+                "source": {
+                    "name": "edge2_MyImage.c",
+                    "path": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1\\edge2_MyImage.c",
+                    "sources": [],
+                    "checksums": []
+                },
+                "line": 115,
+                "column": 1,
+                "instructionPointerReference": "0x00007ff63c10b7d0"
+            },
+            "variable": {
+                "name": "edge",
+                "value": "{...}",
+                "type": "MyImage",
+                "evaluateName": "edge",
+                "variablesReference": 1004
+            },
+            "imageWebUrl": "https://file%2B.vscode-resource.vscode-cdn.net/c%3A/Users/vanch/AppData/Roaming/Code/User/workspaceStorage/9e945dd1c70d62ceffb1ab39d02775c0/akipg.debug-variable-actions-vscode/Session_1e48983d-3ee7-460f-901d-2c7cdeb9a164/Break10/edge.png"
+        },
+        {
+            "vscode": {
+                "workspaceFolder": {
+                    "uri": {
+                        "$mid": 1,
+                        "fsPath": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1",
+                        "_sep": 1,
+                        "external": "file:///c%3A/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                        "path": "/c:/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                        "scheme": "file"
+                    },
+                    "name": "ConsoleApplication1",
+                    "index": 0
+                },
+                "storageUri": "c:\\Users\\vanch\\AppData\\Roaming\\Code\\User\\workspaceStorage\\9e945dd1c70d62ceffb1ab39d02775c0\\akipg.debug-variable-actions-vscode",
+                "filePath": "c:\\Users\\vanch\\AppData\\Roaming\\Code\\User\\workspaceStorage\\9e945dd1c70d62ceffb1ab39d02775c0\\akipg.debug-variable-actions-vscode\\Session_1e48983d-3ee7-460f-901d-2c7cdeb9a164\\Break10\\enhanced.png"
+            },
+            "imageInfo": {
+                "mem_width": 300,
+                "mem_height": 199,
+                "image_width": 300,
+                "image_height": 199,
+                "stride": 300,
+                "channels": 1,
+                "data": "0x0000027181750290",
+                "format": "GRAY",
+                "bytesForPx": 1
+            },
+            "imageHash": "c902591cf6c003fe34b6932237cac7ce",
+            "imagewebUrl": "",
+            "session": {
+                "id": "1e48983d-3ee7-460f-901d-2c7cdeb9a164",
+                "type": "cppdbg",
+                "name": "(gdb) Launch current file",
+                "workspaceFolder": {
+                    "uri": {
+                        "$mid": 1,
+                        "fsPath": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1",
+                        "_sep": 1,
+                        "external": "file:///c%3A/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                        "path": "/c:/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                        "scheme": "file"
+                    },
+                    "name": "ConsoleApplication1",
+                    "index": 0
+                },
+                "configuration": {
+                    "name": "(gdb) Launch current file",
+                    "type": "cppdbg",
+                    "request": "launch",
+                    "program": "C:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1/edge2_MyImage.exe",
+                    "args": [],
+                    "stopAtEntry": false,
+                    "cwd": "C:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1",
+                    "environment": [],
+                    "externalConsole": false,
+                    "MIMode": "gdb",
+                    "miDebuggerPath": "C:\\mingw64\\bin\\gdb.exe",
+                    "setupCommands": [
+                        {
+                            "description": "Enable pretty-printing for gdb",
+                            "text": "-enable-pretty-printing",
+                            "ignoreFailures": true
+                        },
+                        {
+                            "description": "Set Disassembly Flavor to Intel",
+                            "text": "-gdb-set disassembly-flavor intel",
+                            "ignoreFailures": true
+                        }
+                    ],
+                    "preLaunchTask": "C/C++: g++ build current file",
+                    "__configurationTarget": 6,
+                    "configSource": "workspaceFolder",
+                    "debugType": "debug"
+                }
+            },
+            "thread": {
+                "reason": "breakpoint",
+                "threadId": 1,
+                "allThreadsStopped": true,
+                "source": {
+                    "name": "edge2_MyImage.c",
+                    "path": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1\\edge2_MyImage.c",
+                    "sources": [],
+                    "checksums": []
+                },
+                "line": 115,
+                "column": 1
+            },
+            "frame": {
+                "id": 1000,
+                "name": "main()",
+                "source": {
+                    "name": "edge2_MyImage.c",
+                    "path": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1\\edge2_MyImage.c",
+                    "sources": [],
+                    "checksums": []
+                },
+                "line": 115,
+                "column": 1,
+                "instructionPointerReference": "0x00007ff63c10b7d0"
+            },
+            "variable": {
+                "name": "enhanced",
+                "value": "{...}",
+                "type": "MyImage",
+                "evaluateName": "enhanced",
+                "variablesReference": 1005
+            },
+            "imageWebUrl": "https://file%2B.vscode-resource.vscode-cdn.net/c%3A/Users/vanch/AppData/Roaming/Code/User/workspaceStorage/9e945dd1c70d62ceffb1ab39d02775c0/akipg.debug-variable-actions-vscode/Session_1e48983d-3ee7-460f-901d-2c7cdeb9a164/Break10/enhanced.png"
+        }
+    ],
+    "breakpointMeta": {
+        "reason": "breakpoint",
+        "threadId": 1,
+        "allThreadsStopped": true,
+        "source": {
+            "name": "edge2_MyImage.c",
+            "path": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1\\edge2_MyImage.c",
+            "sources": [],
+            "checksums": []
+        },
+        "line": 115,
+        "column": 1
+    },
+    "frames": [
+        {
+            "frameId": 1000,
+            "meta": {
+                "id": 1000,
+                "name": "main()",
+                "source": {
+                    "name": "edge2_MyImage.c",
+                    "path": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1\\edge2_MyImage.c",
+                    "sources": [],
+                    "checksums": []
+                },
+                "line": 115,
+                "column": 1,
+                "instructionPointerReference": "0x00007ff63c10b7d0"
+            },
+            "variables": [
+                {
+                    "name": "filename",
+                    "meta": {
+                        "name": "filename",
+                        "value": "0x7ff63c10fd79 <stbi__depth_scale_table+1217> \"example.png\"",
+                        "type": "const char *",
+                        "evaluateName": "filename",
+                        "variablesReference": 1002,
+                        "memoryReference": "0x00007ff63c10fd79"
+                    },
+                    "expression": "filename",
+                    "type": "const char *",
+                    "startAddress": "0x00007ff63c10fd79",
+                    "binaryInfo": {
+                        "sizeByte": 0,
+                        "littleEndian": true,
+                        "signed": true,
+                        "fixedSize": false,
+                        "isInt": true
+                    },
+                    "value": [
+                        {
+                            "name": "*filename",
+                            "meta": {
+                                "name": "*filename",
+                                "value": "101 'e'",
+                                "type": "const char",
+                                "evaluateName": "*(filename)",
+                                "variablesReference": 0,
+                                "memoryReference": "0x0000000000000065"
+                            },
+                            "expression": "*(filename)",
+                            "type": "const char",
+                            "startAddress": "0x0000000000000065",
+                            "binaryInfo": {
+                                "sizeByte": 0,
+                                "littleEndian": true,
+                                "signed": true,
+                                "fixedSize": false,
+                                "isInt": true
+                            },
+                            "value": "101 'e'",
+                            "parentName": "filename"
+                        }
+                    ],
+                    "isArray": true
+                },
+                {
+                    "name": "img",
+                    "meta": {
+                        "name": "img",
+                        "value": "{...}",
+                        "type": "MyImage",
+                        "evaluateName": "img",
+                        "variablesReference": 1003
+                    },
+                    "expression": "img",
+                    "type": {
+                        "name": "MyImage",
+                        "expression": "MyImage",
+                        "isVisualizable": false,
+                        "binaryMeta": {
+                            "sizeByte": {
+                                "expression": "width*height*1*1"
+                            },
+                            "littleEndian": {
+                                "expression": "true"
+                            },
+                            "signed": {
+                                "expression": "false"
+                            },
+                            "fixedSize": {
+                                "expression": "false"
+                            },
+                            "isInt": {
+                                "expression": "true"
+                            }
+                        },
+                        "imageMeta": {
+                            "mem_width": {
+                                "expression": "width"
+                            },
+                            "mem_height": {
+                                "expression": "height"
+                            },
+                            "image_width": {
+                                "expression": "width"
+                            },
+                            "image_height": {
+                                "expression": "height"
+                            },
+                            "stride": {
+                                "expression": "width*1"
+                            },
+                            "channels": {
+                                "expression": "1"
+                            },
+                            "data": {
+                                "expression": "String(((d)=> data.split(' ')[0] )(data))"
+                            },
+                            "format": {
+                                "expression": "'GRAY'"
+                            },
+                            "bytesForPx": {
+                                "expression": "1"
+                            }
+                        }
+                    },
+                    "binaryInfo": {
+                        "sizeByte": 59700,
+                        "littleEndian": true,
+                        "signed": false,
+                        "fixedSize": false,
+                        "isInt": true
+                    },
+                    "value": [
+                        {
+                            "name": "width",
+                            "meta": {
+                                "name": "width",
+                                "value": "300",
+                                "type": "int",
+                                "evaluateName": "(img).width",
+                                "variablesReference": 0,
+                                "memoryReference": "0x000000000000012c"
+                            },
+                            "expression": "(img).width",
+                            "type": "int",
+                            "startAddress": "0x000000000000012c",
+                            "binaryInfo": {
+                                "sizeByte": 0,
+                                "littleEndian": true,
+                                "signed": true,
+                                "fixedSize": false,
+                                "isInt": true
+                            },
+                            "value": "300",
+                            "parentName": "img"
+                        },
+                        {
+                            "name": "height",
+                            "meta": {
+                                "name": "height",
+                                "value": "199",
+                                "type": "int",
+                                "evaluateName": "(img).height",
+                                "variablesReference": 0,
+                                "memoryReference": "0x00000000000000c7"
+                            },
+                            "expression": "(img).height",
+                            "type": "int",
+                            "startAddress": "0x00000000000000c7",
+                            "binaryInfo": {
+                                "sizeByte": 0,
+                                "littleEndian": true,
+                                "signed": true,
+                                "fixedSize": false,
+                                "isInt": true
+                            },
+                            "value": "199",
+                            "parentName": "img"
+                        },
+                        {
+                            "name": "data",
+                            "meta": {
+                                "name": "data",
+                                "value": "0x27181732fb0 \" \\371\\165�q\\002\"",
+                                "type": "unsigned char *",
+                                "evaluateName": "(img).data",
+                                "variablesReference": 1006,
+                                "memoryReference": "0x0000027181732fb0"
+                            },
+                            "expression": "(img).data",
+                            "type": "unsigned char *",
+                            "startAddress": "0x0000027181732fb0",
+                            "binaryInfo": {
+                                "sizeByte": 0,
+                                "littleEndian": true,
+                                "signed": true,
+                                "fixedSize": false,
+                                "isInt": true
+                            },
+                            "value": [
+                                {
+                                    "name": "*data",
+                                    "meta": {
+                                        "name": "*data",
+                                        "value": "32 ' '",
+                                        "type": "unsigned char",
+                                        "evaluateName": "*((img).data)",
+                                        "variablesReference": 0,
+                                        "memoryReference": "0x0000000000000020"
+                                    },
+                                    "expression": "*((img).data)",
+                                    "type": "unsigned char",
+                                    "startAddress": "0x0000000000000020",
+                                    "binaryInfo": {
+                                        "sizeByte": 0,
+                                        "littleEndian": true,
+                                        "signed": true,
+                                        "fixedSize": false,
+                                        "isInt": true
+                                    },
+                                    "value": "32 ' '",
+                                    "parentName": "data"
+                                }
+                            ],
+                            "isArray": true,
+                            "parentName": "img"
+                        }
+                    ],
+                    "isArray": true,
+                    "imageInfo": {
+                        "mem_width": 300,
+                        "mem_height": 199,
+                        "image_width": 300,
+                        "image_height": 199,
+                        "stride": 300,
+                        "channels": 1,
+                        "data": "0x0000027181732fb0",
+                        "format": "GRAY",
+                        "bytesForPx": 1
+                    },
+                    "imageHash": "a91c26c9845c5b6fc31467580150906d",
+                    "metaWide": {
+                        "vscode": {
+                            "workspaceFolder": {
+                                "uri": {
+                                    "$mid": 1,
+                                    "fsPath": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1",
+                                    "_sep": 1,
+                                    "external": "file:///c%3A/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                                    "path": "/c:/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                                    "scheme": "file"
+                                },
+                                "name": "ConsoleApplication1",
+                                "index": 0
+                            },
+                            "storageUri": "c:\\Users\\vanch\\AppData\\Roaming\\Code\\User\\workspaceStorage\\9e945dd1c70d62ceffb1ab39d02775c0\\akipg.debug-variable-actions-vscode",
+                            "filePath": "c:\\Users\\vanch\\AppData\\Roaming\\Code\\User\\workspaceStorage\\9e945dd1c70d62ceffb1ab39d02775c0\\akipg.debug-variable-actions-vscode\\Session_1e48983d-3ee7-460f-901d-2c7cdeb9a164\\Break10\\img.png"
+                        },
+                        "imageInfo": {
+                            "mem_width": 300,
+                            "mem_height": 199,
+                            "image_width": 300,
+                            "image_height": 199,
+                            "stride": 300,
+                            "channels": 1,
+                            "data": "0x0000027181732fb0",
+                            "format": "GRAY",
+                            "bytesForPx": 1
+                        },
+                        "imageHash": "a91c26c9845c5b6fc31467580150906d",
+                        "imagewebUrl": "",
+                        "session": {
+                            "id": "1e48983d-3ee7-460f-901d-2c7cdeb9a164",
+                            "type": "cppdbg",
+                            "name": "(gdb) Launch current file",
+                            "workspaceFolder": {
+                                "uri": {
+                                    "$mid": 1,
+                                    "fsPath": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1",
+                                    "_sep": 1,
+                                    "external": "file:///c%3A/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                                    "path": "/c:/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                                    "scheme": "file"
+                                },
+                                "name": "ConsoleApplication1",
+                                "index": 0
+                            },
+                            "configuration": {
+                                "name": "(gdb) Launch current file",
+                                "type": "cppdbg",
+                                "request": "launch",
+                                "program": "C:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1/edge2_MyImage.exe",
+                                "args": [],
+                                "stopAtEntry": false,
+                                "cwd": "C:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1",
+                                "environment": [],
+                                "externalConsole": false,
+                                "MIMode": "gdb",
+                                "miDebuggerPath": "C:\\mingw64\\bin\\gdb.exe",
+                                "setupCommands": [
+                                    {
+                                        "description": "Enable pretty-printing for gdb",
+                                        "text": "-enable-pretty-printing",
+                                        "ignoreFailures": true
+                                    },
+                                    {
+                                        "description": "Set Disassembly Flavor to Intel",
+                                        "text": "-gdb-set disassembly-flavor intel",
+                                        "ignoreFailures": true
+                                    }
+                                ],
+                                "preLaunchTask": "C/C++: g++ build current file",
+                                "__configurationTarget": 6,
+                                "configSource": "workspaceFolder",
+                                "debugType": "debug"
+                            }
+                        },
+                        "thread": {
+                            "reason": "breakpoint",
+                            "threadId": 1,
+                            "allThreadsStopped": true,
+                            "source": {
+                                "name": "edge2_MyImage.c",
+                                "path": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1\\edge2_MyImage.c",
+                                "sources": [],
+                                "checksums": []
+                            },
+                            "line": 115,
+                            "column": 1
+                        },
+                        "frame": {
+                            "id": 1000,
+                            "name": "main()",
+                            "source": {
+                                "name": "edge2_MyImage.c",
+                                "path": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1\\edge2_MyImage.c",
+                                "sources": [],
+                                "checksums": []
+                            },
+                            "line": 115,
+                            "column": 1,
+                            "instructionPointerReference": "0x00007ff63c10b7d0"
+                        },
+                        "variable": {
+                            "name": "img",
+                            "value": "{...}",
+                            "type": "MyImage",
+                            "evaluateName": "img",
+                            "variablesReference": 1003
+                        },
+                        "imageWebUrl": "https://file%2B.vscode-resource.vscode-cdn.net/c%3A/Users/vanch/AppData/Roaming/Code/User/workspaceStorage/9e945dd1c70d62ceffb1ab39d02775c0/akipg.debug-variable-actions-vscode/Session_1e48983d-3ee7-460f-901d-2c7cdeb9a164/Break10/img.png"
+                    }
+                },
+                {
+                    "name": "edge",
+                    "meta": {
+                        "name": "edge",
+                        "value": "{...}",
+                        "type": "MyImage",
+                        "evaluateName": "edge",
+                        "variablesReference": 1004
+                    },
+                    "expression": "edge",
+                    "type": {
+                        "name": "MyImage",
+                        "expression": "MyImage",
+                        "isVisualizable": false,
+                        "binaryMeta": {
+                            "sizeByte": {
+                                "expression": "width*height*1*1"
+                            },
+                            "littleEndian": {
+                                "expression": "true"
+                            },
+                            "signed": {
+                                "expression": "false"
+                            },
+                            "fixedSize": {
+                                "expression": "false"
+                            },
+                            "isInt": {
+                                "expression": "true"
+                            }
+                        },
+                        "imageMeta": {
+                            "mem_width": {
+                                "expression": "width"
+                            },
+                            "mem_height": {
+                                "expression": "height"
+                            },
+                            "image_width": {
+                                "expression": "width"
+                            },
+                            "image_height": {
+                                "expression": "height"
+                            },
+                            "stride": {
+                                "expression": "width*1"
+                            },
+                            "channels": {
+                                "expression": "1"
+                            },
+                            "data": {
+                                "expression": "String(((d)=> data.split(' ')[0] )(data))"
+                            },
+                            "format": {
+                                "expression": "'GRAY'"
+                            },
+                            "bytesForPx": {
+                                "expression": "1"
+                            }
+                        }
+                    },
+                    "binaryInfo": {
+                        "sizeByte": 59700,
+                        "littleEndian": true,
+                        "signed": false,
+                        "fixedSize": false,
+                        "isInt": true
+                    },
+                    "value": [
+                        {
+                            "name": "width",
+                            "meta": {
+                                "name": "width",
+                                "value": "300",
+                                "type": "int",
+                                "evaluateName": "(edge).width",
+                                "variablesReference": 0,
+                                "memoryReference": "0x000000000000012c"
+                            },
+                            "expression": "(edge).width",
+                            "type": "int",
+                            "startAddress": "0x000000000000012c",
+                            "binaryInfo": {
+                                "sizeByte": 0,
+                                "littleEndian": true,
+                                "signed": true,
+                                "fixedSize": false,
+                                "isInt": true
+                            },
+                            "value": "300",
+                            "parentName": "edge"
+                        },
+                        {
+                            "name": "height",
+                            "meta": {
+                                "name": "height",
+                                "value": "199",
+                                "type": "int",
+                                "evaluateName": "(edge).height",
+                                "variablesReference": 0,
+                                "memoryReference": "0x00000000000000c7"
+                            },
+                            "expression": "(edge).height",
+                            "type": "int",
+                            "startAddress": "0x00000000000000c7",
+                            "binaryInfo": {
+                                "sizeByte": 0,
+                                "littleEndian": true,
+                                "signed": true,
+                                "fixedSize": false,
+                                "isInt": true
+                            },
+                            "value": "199",
+                            "parentName": "edge"
+                        },
+                        {
+                            "name": "data",
+                            "meta": {
+                                "name": "data",
+                                "value": "0x27181741920 \"\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\\r\\360\\255�\"...",
+                                "type": "unsigned char *",
+                                "evaluateName": "(edge).data",
+                                "variablesReference": 1007,
+                                "memoryReference": "0x0000027181741920"
+                            },
+                            "expression": "(edge).data",
+                            "type": "unsigned char *",
+                            "startAddress": "0x0000027181741920",
+                            "binaryInfo": {
+                                "sizeByte": 0,
+                                "littleEndian": true,
+                                "signed": true,
+                                "fixedSize": false,
+                                "isInt": true
+                            },
+                            "value": [
+                                {
+                                    "name": "*data",
+                                    "meta": {
+                                        "name": "*data",
+                                        "value": "13 '\\r'",
+                                        "type": "unsigned char",
+                                        "evaluateName": "*((edge).data)",
+                                        "variablesReference": 0,
+                                        "memoryReference": "0x000000000000000d"
+                                    },
+                                    "expression": "*((edge).data)",
+                                    "type": "unsigned char",
+                                    "startAddress": "0x000000000000000d",
+                                    "binaryInfo": {
+                                        "sizeByte": 0,
+                                        "littleEndian": true,
+                                        "signed": true,
+                                        "fixedSize": false,
+                                        "isInt": true
+                                    },
+                                    "value": "13 '\\r'",
+                                    "parentName": "data"
+                                }
+                            ],
+                            "isArray": true,
+                            "parentName": "edge"
+                        }
+                    ],
+                    "isArray": true,
+                    "imageInfo": {
+                        "mem_width": 300,
+                        "mem_height": 199,
+                        "image_width": 300,
+                        "image_height": 199,
+                        "stride": 300,
+                        "channels": 1,
+                        "data": "0x0000027181741920",
+                        "format": "GRAY",
+                        "bytesForPx": 1
+                    },
+                    "imageHash": "b4b327977a6d3e2e7ed382042b6c082c",
+                    "metaWide": {
+                        "vscode": {
+                            "workspaceFolder": {
+                                "uri": {
+                                    "$mid": 1,
+                                    "fsPath": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1",
+                                    "_sep": 1,
+                                    "external": "file:///c%3A/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                                    "path": "/c:/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                                    "scheme": "file"
+                                },
+                                "name": "ConsoleApplication1",
+                                "index": 0
+                            },
+                            "storageUri": "c:\\Users\\vanch\\AppData\\Roaming\\Code\\User\\workspaceStorage\\9e945dd1c70d62ceffb1ab39d02775c0\\akipg.debug-variable-actions-vscode",
+                            "filePath": "c:\\Users\\vanch\\AppData\\Roaming\\Code\\User\\workspaceStorage\\9e945dd1c70d62ceffb1ab39d02775c0\\akipg.debug-variable-actions-vscode\\Session_1e48983d-3ee7-460f-901d-2c7cdeb9a164\\Break10\\edge.png"
+                        },
+                        "imageInfo": {
+                            "mem_width": 300,
+                            "mem_height": 199,
+                            "image_width": 300,
+                            "image_height": 199,
+                            "stride": 300,
+                            "channels": 1,
+                            "data": "0x0000027181741920",
+                            "format": "GRAY",
+                            "bytesForPx": 1
+                        },
+                        "imageHash": "b4b327977a6d3e2e7ed382042b6c082c",
+                        "imagewebUrl": "",
+                        "session": {
+                            "id": "1e48983d-3ee7-460f-901d-2c7cdeb9a164",
+                            "type": "cppdbg",
+                            "name": "(gdb) Launch current file",
+                            "workspaceFolder": {
+                                "uri": {
+                                    "$mid": 1,
+                                    "fsPath": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1",
+                                    "_sep": 1,
+                                    "external": "file:///c%3A/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                                    "path": "/c:/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                                    "scheme": "file"
+                                },
+                                "name": "ConsoleApplication1",
+                                "index": 0
+                            },
+                            "configuration": {
+                                "name": "(gdb) Launch current file",
+                                "type": "cppdbg",
+                                "request": "launch",
+                                "program": "C:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1/edge2_MyImage.exe",
+                                "args": [],
+                                "stopAtEntry": false,
+                                "cwd": "C:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1",
+                                "environment": [],
+                                "externalConsole": false,
+                                "MIMode": "gdb",
+                                "miDebuggerPath": "C:\\mingw64\\bin\\gdb.exe",
+                                "setupCommands": [
+                                    {
+                                        "description": "Enable pretty-printing for gdb",
+                                        "text": "-enable-pretty-printing",
+                                        "ignoreFailures": true
+                                    },
+                                    {
+                                        "description": "Set Disassembly Flavor to Intel",
+                                        "text": "-gdb-set disassembly-flavor intel",
+                                        "ignoreFailures": true
+                                    }
+                                ],
+                                "preLaunchTask": "C/C++: g++ build current file",
+                                "__configurationTarget": 6,
+                                "configSource": "workspaceFolder",
+                                "debugType": "debug"
+                            }
+                        },
+                        "thread": {
+                            "reason": "breakpoint",
+                            "threadId": 1,
+                            "allThreadsStopped": true,
+                            "source": {
+                                "name": "edge2_MyImage.c",
+                                "path": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1\\edge2_MyImage.c",
+                                "sources": [],
+                                "checksums": []
+                            },
+                            "line": 115,
+                            "column": 1
+                        },
+                        "frame": {
+                            "id": 1000,
+                            "name": "main()",
+                            "source": {
+                                "name": "edge2_MyImage.c",
+                                "path": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1\\edge2_MyImage.c",
+                                "sources": [],
+                                "checksums": []
+                            },
+                            "line": 115,
+                            "column": 1,
+                            "instructionPointerReference": "0x00007ff63c10b7d0"
+                        },
+                        "variable": {
+                            "name": "edge",
+                            "value": "{...}",
+                            "type": "MyImage",
+                            "evaluateName": "edge",
+                            "variablesReference": 1004
+                        },
+                        "imageWebUrl": "https://file%2B.vscode-resource.vscode-cdn.net/c%3A/Users/vanch/AppData/Roaming/Code/User/workspaceStorage/9e945dd1c70d62ceffb1ab39d02775c0/akipg.debug-variable-actions-vscode/Session_1e48983d-3ee7-460f-901d-2c7cdeb9a164/Break10/edge.png"
+                    }
+                },
+                {
+                    "name": "enhanced",
+                    "meta": {
+                        "name": "enhanced",
+                        "value": "{...}",
+                        "type": "MyImage",
+                        "evaluateName": "enhanced",
+                        "variablesReference": 1005
+                    },
+                    "expression": "enhanced",
+                    "type": {
+                        "name": "MyImage",
+                        "expression": "MyImage",
+                        "isVisualizable": false,
+                        "binaryMeta": {
+                            "sizeByte": {
+                                "expression": "width*height*1*1"
+                            },
+                            "littleEndian": {
+                                "expression": "true"
+                            },
+                            "signed": {
+                                "expression": "false"
+                            },
+                            "fixedSize": {
+                                "expression": "false"
+                            },
+                            "isInt": {
+                                "expression": "true"
+                            }
+                        },
+                        "imageMeta": {
+                            "mem_width": {
+                                "expression": "width"
+                            },
+                            "mem_height": {
+                                "expression": "height"
+                            },
+                            "image_width": {
+                                "expression": "width"
+                            },
+                            "image_height": {
+                                "expression": "height"
+                            },
+                            "stride": {
+                                "expression": "width*1"
+                            },
+                            "channels": {
+                                "expression": "1"
+                            },
+                            "data": {
+                                "expression": "String(((d)=> data.split(' ')[0] )(data))"
+                            },
+                            "format": {
+                                "expression": "'GRAY'"
+                            },
+                            "bytesForPx": {
+                                "expression": "1"
+                            }
+                        }
+                    },
+                    "binaryInfo": {
+                        "sizeByte": 59700,
+                        "littleEndian": true,
+                        "signed": false,
+                        "fixedSize": false,
+                        "isInt": true
+                    },
+                    "value": [
+                        {
+                            "name": "width",
+                            "meta": {
+                                "name": "width",
+                                "value": "300",
+                                "type": "int",
+                                "evaluateName": "(enhanced).width",
+                                "variablesReference": 0,
+                                "memoryReference": "0x000000000000012c"
+                            },
+                            "expression": "(enhanced).width",
+                            "type": "int",
+                            "startAddress": "0x000000000000012c",
+                            "binaryInfo": {
+                                "sizeByte": 0,
+                                "littleEndian": true,
+                                "signed": true,
+                                "fixedSize": false,
+                                "isInt": true
+                            },
+                            "value": "300",
+                            "parentName": "enhanced"
+                        },
+                        {
+                            "name": "height",
+                            "meta": {
+                                "name": "height",
+                                "value": "199",
+                                "type": "int",
+                                "evaluateName": "(enhanced).height",
+                                "variablesReference": 0,
+                                "memoryReference": "0x00000000000000c7"
+                            },
+                            "expression": "(enhanced).height",
+                            "type": "int",
+                            "startAddress": "0x00000000000000c7",
+                            "binaryInfo": {
+                                "sizeByte": 0,
+                                "littleEndian": true,
+                                "signed": true,
+                                "fixedSize": false,
+                                "isInt": true
+                            },
+                            "value": "199",
+                            "parentName": "enhanced"
+                        },
+                        {
+                            "name": "data",
+                            "meta": {
+                                "name": "data",
+                                "value": "0x27181750290 \"\\223\\377\\377\\377\\230\\377\\377\\377\\231\\377\\377\\377\\225\\377\\377\\377\\216\\377\\377\\377\\212\\377\\377\\377�\\377\\377\\377�\\377\\377\\377\\222\\377\\377\\377\\236\\377\\377\\377�\\377\\377\\377\\225\\377\\377\\377\\202\\377\\377\\377\\205\\377\\377\\377\\222\\377\\377\\377\\230\\377\\377\\377v\\377\\377\\377x\\377\\377\\377\\211\\377\\377\\377\\221\\377\\377\\377\\212\\377\\377\\377\\200\\377\\377\\377p\\377\\377\\377\\204\\377\\377\\377x\\377\\373\\377\\223\\377\\377\\377\\377\\377\\377\\377\\377\\377�\\377\\377\\377\\344\\377\\377\\377\\343\\377\\377\\377\\346\\377\\377\\377\\352\\377\\377\\377\\351\\377\\377\\377\\346\\377\\377\\377\\354\\377\\377\\377\\355\\377\\377\\377\\347\\377\\377\\377\\377\\377\\377\\377\\377\\377\\377\\377\\377\\377\\377\\377\\346\\377\\377\\377\\347\\377\\377\\377\\352\\377\\377\\377\\357\\377\\377\\377\\352\\377\\377\\377\\342\\377\\377\\377\\377\\377\\377\\377\\377\", <incomplete sequence \\377>...",
+                                "type": "unsigned char *",
+                                "evaluateName": "(enhanced).data",
+                                "variablesReference": 1008,
+                                "memoryReference": "0x0000027181750290"
+                            },
+                            "expression": "(enhanced).data",
+                            "type": "unsigned char *",
+                            "startAddress": "0x0000027181750290",
+                            "binaryInfo": {
+                                "sizeByte": 0,
+                                "littleEndian": true,
+                                "signed": true,
+                                "fixedSize": false,
+                                "isInt": true
+                            },
+                            "value": [
+                                {
+                                    "name": "*data",
+                                    "meta": {
+                                        "name": "*data",
+                                        "value": "147 '\\223'",
+                                        "type": "unsigned char",
+                                        "evaluateName": "*((enhanced).data)",
+                                        "variablesReference": 0,
+                                        "memoryReference": "0x0000000000000093"
+                                    },
+                                    "expression": "*((enhanced).data)",
+                                    "type": "unsigned char",
+                                    "startAddress": "0x0000000000000093",
+                                    "binaryInfo": {
+                                        "sizeByte": 0,
+                                        "littleEndian": true,
+                                        "signed": true,
+                                        "fixedSize": false,
+                                        "isInt": true
+                                    },
+                                    "value": "147 '\\223'",
+                                    "parentName": "data"
+                                }
+                            ],
+                            "isArray": true,
+                            "parentName": "enhanced"
+                        }
+                    ],
+                    "isArray": true,
+                    "imageInfo": {
+                        "mem_width": 300,
+                        "mem_height": 199,
+                        "image_width": 300,
+                        "image_height": 199,
+                        "stride": 300,
+                        "channels": 1,
+                        "data": "0x0000027181750290",
+                        "format": "GRAY",
+                        "bytesForPx": 1
+                    },
+                    "imageHash": "c902591cf6c003fe34b6932237cac7ce",
+                    "metaWide": {
+                        "vscode": {
+                            "workspaceFolder": {
+                                "uri": {
+                                    "$mid": 1,
+                                    "fsPath": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1",
+                                    "_sep": 1,
+                                    "external": "file:///c%3A/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                                    "path": "/c:/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                                    "scheme": "file"
+                                },
+                                "name": "ConsoleApplication1",
+                                "index": 0
+                            },
+                            "storageUri": "c:\\Users\\vanch\\AppData\\Roaming\\Code\\User\\workspaceStorage\\9e945dd1c70d62ceffb1ab39d02775c0\\akipg.debug-variable-actions-vscode",
+                            "filePath": "c:\\Users\\vanch\\AppData\\Roaming\\Code\\User\\workspaceStorage\\9e945dd1c70d62ceffb1ab39d02775c0\\akipg.debug-variable-actions-vscode\\Session_1e48983d-3ee7-460f-901d-2c7cdeb9a164\\Break10\\enhanced.png"
+                        },
+                        "imageInfo": {
+                            "mem_width": 300,
+                            "mem_height": 199,
+                            "image_width": 300,
+                            "image_height": 199,
+                            "stride": 300,
+                            "channels": 1,
+                            "data": "0x0000027181750290",
+                            "format": "GRAY",
+                            "bytesForPx": 1
+                        },
+                        "imageHash": "c902591cf6c003fe34b6932237cac7ce",
+                        "imagewebUrl": "",
+                        "session": {
+                            "id": "1e48983d-3ee7-460f-901d-2c7cdeb9a164",
+                            "type": "cppdbg",
+                            "name": "(gdb) Launch current file",
+                            "workspaceFolder": {
+                                "uri": {
+                                    "$mid": 1,
+                                    "fsPath": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1",
+                                    "_sep": 1,
+                                    "external": "file:///c%3A/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                                    "path": "/c:/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                                    "scheme": "file"
+                                },
+                                "name": "ConsoleApplication1",
+                                "index": 0
+                            },
+                            "configuration": {
+                                "name": "(gdb) Launch current file",
+                                "type": "cppdbg",
+                                "request": "launch",
+                                "program": "C:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1/edge2_MyImage.exe",
+                                "args": [],
+                                "stopAtEntry": false,
+                                "cwd": "C:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1",
+                                "environment": [],
+                                "externalConsole": false,
+                                "MIMode": "gdb",
+                                "miDebuggerPath": "C:\\mingw64\\bin\\gdb.exe",
+                                "setupCommands": [
+                                    {
+                                        "description": "Enable pretty-printing for gdb",
+                                        "text": "-enable-pretty-printing",
+                                        "ignoreFailures": true
+                                    },
+                                    {
+                                        "description": "Set Disassembly Flavor to Intel",
+                                        "text": "-gdb-set disassembly-flavor intel",
+                                        "ignoreFailures": true
+                                    }
+                                ],
+                                "preLaunchTask": "C/C++: g++ build current file",
+                                "__configurationTarget": 6,
+                                "configSource": "workspaceFolder",
+                                "debugType": "debug"
+                            }
+                        },
+                        "thread": {
+                            "reason": "breakpoint",
+                            "threadId": 1,
+                            "allThreadsStopped": true,
+                            "source": {
+                                "name": "edge2_MyImage.c",
+                                "path": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1\\edge2_MyImage.c",
+                                "sources": [],
+                                "checksums": []
+                            },
+                            "line": 115,
+                            "column": 1
+                        },
+                        "frame": {
+                            "id": 1000,
+                            "name": "main()",
+                            "source": {
+                                "name": "edge2_MyImage.c",
+                                "path": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1\\edge2_MyImage.c",
+                                "sources": [],
+                                "checksums": []
+                            },
+                            "line": 115,
+                            "column": 1,
+                            "instructionPointerReference": "0x00007ff63c10b7d0"
+                        },
+                        "variable": {
+                            "name": "enhanced",
+                            "value": "{...}",
+                            "type": "MyImage",
+                            "evaluateName": "enhanced",
+                            "variablesReference": 1005
+                        },
+                        "imageWebUrl": "https://file%2B.vscode-resource.vscode-cdn.net/c%3A/Users/vanch/AppData/Roaming/Code/User/workspaceStorage/9e945dd1c70d62ceffb1ab39d02775c0/akipg.debug-variable-actions-vscode/Session_1e48983d-3ee7-460f-901d-2c7cdeb9a164/Break10/enhanced.png"
+                    }
+                }
+            ]
+        }
+    ],
+    "vscodeMeta": {
+        "workspaceFolders": [
+            {
+                "uri": {
+                    "$mid": 1,
+                    "fsPath": "c:\\Users\\vanch\\prog\\debug-variable-actions-vscode-for-c\\test2\\ConsoleApplication1",
+                    "_sep": 1,
+                    "external": "file:///c%3A/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                    "path": "/c:/Users/vanch/prog/debug-variable-actions-vscode-for-c/test2/ConsoleApplication1",
+                    "scheme": "file"
+                },
+                "name": "ConsoleApplication1",
+                "index": 0
+            }
+        ]
+    }
+}

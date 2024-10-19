@@ -1,5 +1,5 @@
-import { constants } from 'buffer';
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 import { ImageVariable, ImageVariableType } from './imageVariable';
 import { DebugVariable, DebugVariableType, DebugEntity } from './debugVariable';
 import { VariableTypeFactory } from './variableTypeFactory';
@@ -17,6 +17,10 @@ export class DebugSessionTracker {
     public readonly context: vscode.ExtensionContext;;
     public readonly threads: DebugThread[] = [];
     public readonly debugStartDate: string;
+    private _saveDirUri: vscode.Uri;
+    public breakpoints: any[] = [];
+    public static autoContinueEnable: boolean = false;
+    public static autoConintueFrameName: string = "";
 
     public static breakCount: number = 0; // FIXME: manage brake count not by a static.
 
@@ -36,6 +40,7 @@ export class DebugSessionTracker {
         this._session = _session;
         this.sessionName = _sessionName;
         this.threads = _threads;
+        this.breakpoints = [];
 
         // Get the current date and time
         const now = new Date();
@@ -57,6 +62,21 @@ export class DebugSessionTracker {
 
         // Concatenate the parts with the desired format
         this.debugStartDate = `${year}-${monthPadded}-${dayPadded}_${hoursPadded}-${minutesPadded}-${secondsPadded}-${millisecondsPadded}`;
+
+        // Set the save directory uri
+        const session_dir_name = `Session_${this.session.id}`;
+        if (context.storageUri !== undefined) {
+            this._saveDirUri = vscode.Uri.joinPath(context.storageUri, session_dir_name);
+        } else {
+            this._saveDirUri = vscode.Uri.joinPath(context.globalStorageUri, `Session${_session.id}`);
+        }
+        // If not exist context.globalStorageUri directory, create directory
+        ((dirpath: string) => {
+            if (!fs.existsSync(dirpath)) {
+                fs.mkdirSync(dirpath, { recursive: true });
+            }
+
+        })(this._saveDirUri.fsPath);
     };
 
     // getter
@@ -72,6 +92,9 @@ export class DebugSessionTracker {
         } else {
             return DebugSessionTracker.trackers.find(tracker => tracker.trackerId === _trackerQuery);
         }
+    }
+    get saveDirUri(): vscode.Uri {
+        return this._saveDirUri;
     }
 
     // factory
@@ -128,11 +151,51 @@ export class DebugSessionTracker {
         return allVariables;
     }
 
-    gatherImageVariables(): ImageVariable[] {
-        const imageVariables = this.gatherAllVariables().filter(
+    gatherImageVariables(searched?: DebugEntity[], gathered?: ImageVariable[]): ImageVariable[] {
+        if (searched === undefined) {
+            searched = this.gatherAllVariables();
+        }
+        if (gathered === undefined) {
+            gathered = [];
+        }
+        // recursive gather
+        const imageVariables = searched.filter(
             (variable): variable is ImageVariable => variable instanceof ImageVariable
         );
-        return imageVariables;
+        gathered.push(...imageVariables); // Add imageVariables to gathered
+
+        for (let variable of imageVariables) {
+            if (variable.value instanceof Array) {
+                this.gatherImageVariables(variable.value, gathered);
+            }
+        }
+
+        return gathered;
+    }
+
+    getSerializable() {
+        return {
+            trackerId: this.trackerId,
+            session: this.sessionName,
+            threads: this.threads.map(thread => thread.getSerializable())
+        };
+    }
+
+    async continue() {
+        const threadId = this.threads[0].id;
+        await this.session.customRequest('continue', { threadId });
+    }
+    async stepOver() {
+        const threadId = this.threads[0].id;
+        await this.session.customRequest('next', { threadId });
+    }
+    async stepIn() {
+        const threadId = this.threads[0].id;
+        await this.session.customRequest('stepIn', { threadId });
+    }
+    async stepOut() {
+        const threadId = this.threads[0].id;
+        await this.session.customRequest('stepOut', { threadId });
     }
 }
 
@@ -216,6 +279,13 @@ export class DebugThread {
         return frame.variables;
     }
 
+    getSerializable() {
+        return {
+            threadId: this.id,
+            meta: this.meta,
+            frames: this.frames.map(frame => frame.getSerializable())
+        };
+    }
 }
 
 export class DebugFrame {
@@ -247,6 +317,14 @@ export class DebugFrame {
         }
         this.variables.push(variable);
         return variable;
+    }
+
+    getSerializable() {
+        return {
+            frameId: this.id,
+            meta: this.meta,
+            variables: this.variables.map(variable => variable.getSerializable())
+        };
     }
 
 }

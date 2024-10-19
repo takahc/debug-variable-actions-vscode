@@ -14,6 +14,8 @@ export interface IbinaryInfo<T> {
     isInt: T,
 }
 export class DebugVariable {
+    public category: string = "primitive";
+    public isImageVariable: boolean = false;
     public meta: any;
     public readonly frame: DebugFrame;
     public name: string | undefined;
@@ -125,18 +127,39 @@ export class DebugVariable {
         // if (this.meta === undefined) { return; }
         // if (until.depth === 0) { return; } // break if the depth reaches 0
 
-        console.log(
-            this,
-            this.meta.name,
-            {
-                variablesReference: this.meta.variablesReference,
-                filter: undefined,
-                start: 0,
-                count: 1000
+        // too much logs
+        if (0) {
+            console.log(
+                "drillDown",
+                this,
+                this.meta.name,
+                {
+                    variablesReference: this.meta.variablesReference,
+                    filter: undefined,
+                    start: 0,
+                    count: 1000
+                    // count: 0
 
-            });
+                });
+        }
 
         if (this.meta.variablesReference === 0) { return; }
+
+        // check prevent drill down
+        for (const cond of VariableTypeFactory.preventDrillDownConditions) {
+            if (VariableTypeFactory.preventDrillDownConditions) {
+                const args = {
+                    value: this.getVariableValuesAsDict({}),
+                    meta: this.gatherMeta(),
+                };
+                const check = EvalExpression.eval(cond, args);
+                if (check) {
+                    // console.log("skip drill down by cond", cond, check, this.meta.name);
+                    return;
+                }
+            }
+
+        }
 
         // fetch child debug variables
         let variables;
@@ -148,6 +171,7 @@ export class DebugVariable {
                     filter: undefined,
                     // start: 0,
                     count: 1000
+                    // count: 0
 
                 }
             );
@@ -248,6 +272,35 @@ export class DebugVariable {
             if ("^\[[0-9]\]$".match(this.name)) { return "array"; }
         }
         return "other";
+    }
+
+    getSerializable() {
+        let ret: any = {
+            category: this.category,
+            isImageVariable: this.isImageVariable,
+            name: this.name,
+            meta: this.meta,
+            expression: this.expression,
+            type: this.type,
+            startAddress: this.startAddress,
+            endAddress: this.endAddress,
+            sizeByte: this.sizeByte,
+            binaryInfo: this.binaryInfo,
+            value: this.value,
+            isVisualizable: this.isVisualizable,
+            isArray: this.isArray,
+            isStruct: this.isStruct,
+            parentName: this.parent?.name,
+        };
+
+        if (this.value instanceof Array) {
+            ret.value = [];
+            this.value.forEach((variable: DebugVariable) => {
+                ret.value.push(variable.getSerializable());
+            });
+        }
+
+        return ret;
     }
 }
 

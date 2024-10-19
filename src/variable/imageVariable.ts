@@ -7,7 +7,7 @@ import sharp from 'sharp';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import { DebugSessionTracker } from './debugSessionTracker';
+import { DebugSessionTracker, DebugFrame } from './debugSessionTracker';
 
 export interface IimageInfo<T> {
     [key: string]: T,
@@ -20,9 +20,11 @@ export interface IimageInfo<T> {
     data: T,
     format: T,
     bytesForPx: T,
-};
+}
 
 export class ImageVariable extends DebugVariable {
+    public category: string = "image";
+    public isImageVariable: boolean = true;
     public imageInfo: IimageInfo<any> = {
         mem_width: 0,
         mem_height: 0,
@@ -39,6 +41,18 @@ export class ImageVariable extends DebugVariable {
     public buffer: Buffer | undefined;
     private metaWide: any; // FIXME: temporal implementation. It should be merged in DebugVariable.meta
     public imageHash: string | undefined;
+    public imagePath: string | undefined;
+    public imageHiContPath: string | undefined;
+
+    static sizeByteLimit = vscode.workspace.getConfiguration().get("debug-variable-actions.config.image-sizebyte-limit");
+
+    constructor(
+        _frame: DebugFrame,
+        _meta?: any,
+        type?: DebugVariableType
+    ) {
+        super(_frame, _meta, type);
+    }
 
     updateImageInfo() {
         let values = this.getVariableValuesAsDict({});
@@ -96,12 +110,16 @@ export class ImageVariable extends DebugVariable {
 
 
         // check null pointer
-        if (parseInt(startAddress, 16) === 0) {
+        if (parseInt(startAddress, 16) <= 0) {
             console.log("toFile skip null pointer image", this.name, this.expression);
             return;
         }
-        if (this.binaryInfo.sizeByte === 0 || this.imageInfo.mem_width === 0 || this.imageInfo.mem_height === 0) {
-            console.log("toFile skip zero size image", this.name, this.expression);
+        if (this.binaryInfo.sizeByte <= 0 || this.imageInfo.mem_width <= 0 || this.imageInfo.mem_height <= 0) {
+            console.log("toFile skip zero size image", this.name, this.expression, this.binaryInfo.sizeByte);
+            return;
+        }
+        if (this.binaryInfo.sizeByte > 1024 * 1024 * 1024) {
+            console.log("toFile skip too large image", this.name, this.expression, this.binaryInfo.sizeByte);
             return;
         }
 
@@ -197,18 +215,12 @@ export class ImageVariable extends DebugVariable {
         const frameName = this.frame.meta.name;
         const source = `${this.frame.meta.source.name}(${this.frame.meta.line},${this.frame.meta.column})`;
 
-        // const session_dir_name = `Session${date}_${this.frame.thread.tracker.session.type}_${this.frame.thread.tracker.session.id}`;
-        // const session_dir_name = `Session${this.frame.thread.tracker.debugStartDate}`;
-        const session_dir_name = `Session${this.frame.thread.tracker.session.id}`;
-        this.frame.thread.tracker.debugStartDate;
-        // const break_dir_name = `Break${breakCount}_thread${threadId}_frame${frameId}_${frameName}_${source}`;
         const break_dir_name = `Break${breakCount}`;
-        // const filename = `${this.name}_${this.expression}.png`;
-        // const filename = `${this.expression}.png`;
         const pattern = /[\\\/:\*\?\"<>\|]/;
-        const filename = `${this.expression}.png`.replace(pattern, "-");
-        // const filename = `${this.expression}.tif`.replace(pattern, "-");
-        const filePath = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, filename);
+        const filenameStem = `${this.expression}`.replace(pattern, "-");
+        const filename = `${filenameStem}.png`;
+        const dirPath = vscode.Uri.joinPath(this.frame.thread.tracker.saveDirUri, break_dir_name);
+        const filePath = vscode.Uri.joinPath(dirPath, filename);
         console.log("filePath", filePath);
 
         // hicont image path
@@ -216,11 +228,11 @@ export class ImageVariable extends DebugVariable {
         const filePathHicont = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, filenameHicont);
 
         // Extract the directory path from filePath
-        const dirPath = path.dirname(filePath.fsPath);
 
         // Check if the directory exists, if not, create it
-        if (!fs.existsSync(dirPath)) {
-            await fs.mkdirSync(dirPath, { recursive: true });
+        if (!fs.existsSync(dirPath.fsPath
+        )) {
+            await fs.mkdirSync(dirPath.fsPath, { recursive: true });
         }
 
         if (filePath) {
@@ -237,11 +249,29 @@ export class ImageVariable extends DebugVariable {
                 }
             }).toFile(filePath.fsPath, (err, info) => {
                 if (err) {
-                    console.error('Error processing image:', this.expression, err);
+                    console.error('Error processing image:', this.expression, filePath.toString(), err);
                 } else {
-                    console.log('Image processed and saved:', this.expression, info);
+                    console.log('Image processed and saved:', this.expression, filePath.toString(), info);
                 }
             });
+            this.imagePath = filePath.fsPath;
+
+            // High contrast image
+            const hicontFilePath = vscode.Uri.joinPath(dirPath, `${filenameStem}.hicont.png`);
+            await sharp(imageArray, {
+                raw: {
+                    width: this.imageInfo.mem_width,
+                    height: this.imageInfo.mem_height,
+                    channels: this.imageInfo.channels,
+                }
+            }).normalize().toFile(hicontFilePath.fsPath, (err, info) => {
+                if (err) {
+                    console.error('Error processing image:', this.expression, hicontFilePath.toString(), err);
+                } else {
+                    console.log('Image processed and saved:', this.expression, hicontFilePath.toString(), info);
+                }
+            });
+            this.imageHiContPath = hicontFilePath.fsPath;
 
             await sharp(imageArray, {
                 raw: {
@@ -306,11 +336,22 @@ export class ImageVariable extends DebugVariable {
         }
 
         // Save .meta.json
-        const metaPath = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, `${filename}.meta.json`);
+        const metaPath = vscode.Uri.joinPath(dirPath, `${filename}.meta.json`);
         console.log("metaPath", metaPath);
         fs.writeFileSync(metaPath.fsPath, JSON.stringify(this.metaWide, null, 4));
 
         return this.metaWide;
+    }
+
+    getSerializable() {
+        return {
+            ...super.getSerializable(),
+            imageInfo: this.imageInfo,
+            imageHash: this.imageHash,
+            imagePath: this.imagePath,
+            imageHiContPath: this.imageHiContPath,
+            metaWide: this.metaWide,
+        };
     }
 
 
