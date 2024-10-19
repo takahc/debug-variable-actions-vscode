@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { ImageVariable, ImageVariableType } from './imageVariable';
-import { DebugVariable, DebugVariableType, DebugEntity } from './debugVariable';
-import { VariableTypeFactory } from './variableTypeFactory';
-
+import { DebugThread } from './DebugThread';
+import { DebugFrame } from './DebugFrame';
+import { DebugEntity } from './variable/DebugVariable';
+import { ImageVariable } from './variable/ImageVariable';
 
 type IdType = number;
 type TrackerId = IdType;
@@ -198,135 +198,4 @@ export class DebugSessionTracker {
         await this.session.customRequest('stepOut', { threadId });
     }
 }
-
-export class DebugThread {
-    public readonly tracker: DebugSessionTracker;
-    public readonly id: IdType;
-    private _frames: DebugFrame[];
-
-    public meta: any;
-
-    public get frames(): DebugFrame[] {
-        return this._frames;
-    }
-
-    constructor(
-        _tracker: DebugSessionTracker,
-        _threadId: IdType,
-        _frames: DebugFrame[] = [],
-        meta?: any
-    ) {
-        this.tracker = _tracker;
-        this.id = _threadId;
-        this._frames = _frames;
-
-        this.meta = meta;
-    }
-
-    addFrame(_frameId: IdType, _variables: DebugVariable[] = [], meta?: any): DebugFrame {
-        let frame = new DebugFrame(this, _frameId, _variables, meta);
-        this.frames.push(frame);
-        return frame;
-    }
-
-    async queryFrame(): Promise<DebugFrame[] | undefined> {
-        const stackTrace = await this.tracker.session?.customRequest('stackTrace',
-            { threadId: this.id, startFrame: 0, levels: 1000 }
-        );
-        console.log(stackTrace);
-        if (stackTrace) {
-            this._frames = [];
-            stackTrace.stackFrames.map((stackFrame: any) => {
-                this.addFrame(stackFrame.id, [], stackFrame);
-            });
-            return this._frames;
-        }
-        else {
-            return undefined;
-        }
-    }
-
-    async fetchLocalVariablesInFirstFrame() {
-        if (this.frames.length === 0) {
-            await this.queryFrame();
-        }
-        if (this.frames.length === 0) {
-            return [];
-        }
-        const frame = this.frames[0];
-        const scopes = await this.tracker.session?.customRequest('scopes', { frameId: frame.id });
-        console.log("scopes", scopes);
-        if (scopes) {
-            const local_scope = scopes.scopes.find((scope: any) => scope.name === "Locals");
-            console.log("local_scope", local_scope);
-            const variables = await this.tracker.session?.customRequest('variables', { variablesReference: local_scope.variablesReference });
-            console.log("variables", variables);
-            variables.variables.forEach((variable: any) => {
-                if (VariableTypeFactory.ImageTypeNames.includes(variable.type)) {
-                    let imageType = VariableTypeFactory.get(variable.type) || undefined;
-                    frame.addVariable(variable, imageType);
-                }
-                else {
-                    // comment out below if you don't want to fetch non-image variables
-                    frame.addVariable(variable);
-                }
-            });
-        }
-        for (let variable of frame.variables) {
-            console.log("start drillDown", variable);
-            await variable.drillDown({ depth: -1, type_names: VariableTypeFactory.ImageTypeNames });
-        }
-        return frame.variables;
-    }
-
-    getSerializable() {
-        return {
-            threadId: this.id,
-            meta: this.meta,
-            frames: this.frames.map(frame => frame.getSerializable())
-        };
-    }
-}
-
-export class DebugFrame {
-    public readonly thread: DebugThread;
-    public readonly id: IdType;
-    public readonly variables: DebugVariable[];
-
-    public meta: any;
-
-    constructor(
-        _thread: DebugThread,
-        _frameId: IdType,
-        _variables: DebugVariable[] = [],
-        meta?: any
-    ) {
-        this.thread = _thread;
-        this.id = _frameId;
-        this.variables = _variables;
-        this.meta = meta;
-    }
-
-    addVariable(meta: any, type?: DebugVariableType): DebugVariable {
-        let variable;
-        if (type instanceof ImageVariableType) {
-            variable = new ImageVariable(this, meta, type);
-        }
-        else {
-            variable = new DebugVariable(this, meta);
-        }
-        this.variables.push(variable);
-        return variable;
-    }
-
-    getSerializable() {
-        return {
-            frameId: this.id,
-            meta: this.meta,
-            variables: this.variables.map(variable => variable.getSerializable())
-        };
-    }
-
-}
-
 

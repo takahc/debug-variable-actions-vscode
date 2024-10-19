@@ -1,16 +1,9 @@
 import * as vscode from 'vscode';
-import { DebugVariableType, IbinaryInfo } from "./debugVariable";
-import { ImageVariableType, IimageInfo } from "./imageVariable";
-
-interface IimageTypeConfig {
-    display_name: string;
-    match_types: string[];
-    binary_info: IbinaryInfo<string>;
-    image_info: IimageInfo<string>;
-}
+import { DebugVariableType } from "./DebugVariableType";
+import { ImageVariableType, ImageTypeConfig } from "./ImageVariableType";
 
 export class VariableTypeFactory {
-    private static imageTypesConfig: { [key: string]: IimageTypeConfig } = {};
+    private static imageTypesConfig: { [key: string]: ImageTypeConfig } = {};
     private static imageMatchTypeStrs: string[] = [];
     public static preventDrillDownConditions: string[] = [];
 
@@ -108,7 +101,7 @@ export class VariableTypeFactory {
 
     static loadSettings() {
         // load user defined types
-        const _configs: IimageTypeConfig[] | undefined = vscode.workspace.getConfiguration().get("debug-variable-actions.config.image-types");
+        const _configs: ImageTypeConfig[] | undefined = vscode.workspace.getConfiguration().get("debug-variable-actions.config.image-types");
         if (_configs) {
             console.log("Before loading config: imageTypesConfig", this.imageTypesConfig);
             this.imageTypesConfig = {};

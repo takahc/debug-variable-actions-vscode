@@ -1,12 +1,11 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { VariableViewPanel } from './panel';
-import { register } from 'module';
+import { VariableViewPanel } from '../panel/VariableViewPanel';
 
-import { DebugSessionTracker } from './variable/debugSessionTracker';
-import { DebugVariable } from './variable/debugVariable';
-import { VariableTypeFactory } from './variable/variableTypeFactory';
-import { ImageVariable } from './variable/imageVariable';
+import { DebugSessionTracker } from '../debugger/DebugSessionTracker';
+import { DebugVariable } from '../debugger/variable/DebugVariable';
+import { VariableTypeFactory } from '../debugger/variable/VariableTypeFactory';
+import { ImageVariable } from '../debugger/variable/ImageVariable';
 
 export class VariableTracker implements vscode.DebugAdapterTracker {
     private _context: vscode.ExtensionContext;
@@ -382,26 +381,3 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
 }
 
 
-export class VariableTrackerRegister implements vscode.DebugAdapterTrackerFactory {
-    private variableTracker: VariableTracker;
-    public readonly context: vscode.ExtensionContext;
-
-    constructor(_context: vscode.ExtensionContext) {
-        this.variableTracker = new VariableTracker(_context);
-        this.context = _context;
-    }
-
-    createDebugAdapterTracker(session: vscode.DebugSession):
-        vscode.ProviderResult<vscode.DebugAdapterTracker> {
-        console.log("sessoin!", session);
-        const tracker = DebugSessionTracker.newSessionTracker(this.context, session);
-        DebugSessionTracker.breakCount = 0; // FIXME: It should better to manage not by a static.
-        this.variableTracker.breakpoints = [];
-        return this.variableTracker;
-    }
-
-    static register(context: vscode.ExtensionContext): vscode.Disposable {
-        console.log(context);
-        return vscode.debug.registerDebugAdapterTrackerFactory('*', new VariableTrackerRegister(context));
-    }
-}
