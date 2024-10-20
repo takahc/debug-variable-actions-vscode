@@ -115,6 +115,7 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
                 command,
                 metas: imageMetaWides,
                 breakpointMeta: message.body,
+                breakpoints: this.breakpoints,
                 vscodeMeta: { workspaceFolders },
                 frames: thread.frames.map(frame => frame.getSerializable())
             });
