@@ -24,6 +24,8 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
                 return;
             }
 
+            DebugSessionTracker.breakCount++;
+
             const renderMode = vscode.workspace.getConfiguration().get<string>('debug-variable-actions.config.render-mode');
             switch (renderMode) {
                 case 'panel':
