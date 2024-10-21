@@ -128,13 +128,14 @@ export default {
     splitVkey(vkey) {
       let module, frame, varname;
       let fande = vkey;
-      if (vkey.split("|").length > 1) {
-        module = vkey.split("!")[0];
+      let _module = "";
+      if (vkey.split("!").length > 1) {
+        _module = vkey.split("!")[0];
         fande = vkey.split("!")[1];
       }
       frame = fande.split("|")[0];
       varname = fande.split("|")[1];
-      return { varname, frame, module };
+      return { varname, frame, _module };
     },
     gatherImageVariables(variables, imageVariables) {
       // Recursively gather all image variables
@@ -189,7 +190,9 @@ export default {
               gatheredVariables.push(...this.gatherImageVariables(gatheredVariables, []));
               console.log("vue gatheredVariables", gatheredVariables);
               for (const variable of gatheredVariables) {
-                const vkey = `${frame.meta.name.match(/.*[!].*?\(/gmi)[0]}|${variable.expression}`;
+                const funcNameMatch = frame.meta.name.match(/(?:[^!]*!)?(\w+)/);
+                const funcName = funcNameMatch ? funcNameMatch[0] : '';
+                const vkey = `${funcName}|${variable.expression}`;
                 if (!this.variableKeys.includes(vkey)) {
                   this.variableKeys.push(vkey);
                 }

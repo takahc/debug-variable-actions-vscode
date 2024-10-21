@@ -25,6 +25,7 @@ export default {
             deep: true,
             handler: function (newBreakpoints) {
                 console.log('breakpoints changed', newBreakpoints);
+                // eslint-disable-next-line
                 const breakpointsTreeData = [];
 
             },
@@ -54,8 +55,8 @@ export default {
         }
     },
     methods: {
-        traverse(variable, result = [], id = 0){ 
-            if(variable.isArray){
+        traverse(variable, result = [], id = 0) {
+            if (variable.isArray) {
                 result.push(
                     {
                         id: id,
@@ -64,11 +65,11 @@ export default {
                     }
                 );
 
-                for(let i = 0; i < variable.length; i++){
+                for (let i = 0; i < variable.length; i++) {
                     this.traverse(variable[i], result);
                 }
-            }else{
-
+            } else {
+                // eslint-disable-next-line
             }
         },
         generateColumns(length = 10, prefix = 'column-', props) {

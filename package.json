@@ -91,7 +91,8 @@
                     "description": "Render mode",
                     "enum": [
                         "panel",
-                        "stack"
+                        "panel-vue",
+                        "stack-vue"
                     ],
                     "enumDescriptions": [
                         "Simple visualization",

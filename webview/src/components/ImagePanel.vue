@@ -34,7 +34,7 @@
       <div v-if="breakpoints && breakpoints.length > 0" class="panel-view">
         <div class="frame-stack" @click="expandStack = !expandStack">
           <div class="frame-stack-item" v-for="(frame, frameIdx) in breakpoints[index].threads[0].frames"
-            :key="`framestack|${frame.meta.name.match(/.*[!].*?\(/gmi)[0]}`"
+            :key="`framestack|${frame.meta.name.match(/(?:[^!]*!)?(\w+)/)[0]}`"
             :data-is-overflow-frame="frameIdx >= expandStackMin && !expandStack">
             <!-- <span v-if="frameIdx !== 0" class="frame-stack-sep">&gt;</span> -->
             <span class="frame-stack-name tooltip">
@@ -49,7 +49,7 @@
                   <span v-if="frame.meta.source !== undefined">File: {{ frame.meta.source.name }}</span><br>
                   Line: {{ frame.meta.line }}, {{ frame.meta.column }}
                 </span>
-                <span>{{ frame.meta.name.match(/.*[!](.*)?\(/mi)[1] }}</span>
+                <span>{{ frame.meta.name.match(/(?:[^!]*!)?(\w+)/)[1] }}</span>
                 <!-- <span>{{ frame.meta.name.match(/.*[!](.*)?\(.*(Line.*)/mi)[1] }}</span> -->
               </span>
             </span>
@@ -64,12 +64,12 @@
 
         <!-- image-variables -->
         <div v-for="(frame) in [breakpoints[index].threads[0].frames[0]]"
-          :key="`imagevar|${frame.meta.name.match(/.*[!].*?\(/gmi)[0]}`">
+          :key="`imagevar|${frame.meta.name.match(/(?:[^!]*!)?(\w+)/)[0]}`">
           <div class="image-variables">
             <div class="image-variable-item"
               v-for="(variable) in frame.variables.filter(variable => variable.imagePath !== undefined)"
-              :key="`${frame.meta.name.match(/.*[!].*?\(/gmi)[0]}|${variable.name}`"
-              :data-change-state="breakpointDiffs[index][`${frame.meta.name.match(/.*[!].*?\(/gmi)[0]}|${variable.name}`]">
+              :key="`${frame.meta.name.match(/(?:[^!]*!)?(\w+)/)[0]}|${variable.name}`"
+              :data-change-state="breakpointDiffs[index][`${frame.meta.name.match(/(?:[^!]*!)?(\w+)/)[0]}|${variable.name}`]">
               <div>
                 <img v-if="showHicontImage" :src="pathToUri(variable.imageHiContPath)" :alt="variable.name"
                   :style="{ width: imageSize + 'px' }" />
@@ -103,8 +103,8 @@
                   <th>Detail</th>
                 </tr>
                 <tr class="variable-list-item" v-for="(variable) in frame.variables"
-                  :key="`${frame.meta.name.match(/.*[!].*?\(/gmi)[0]}|${variable.name}|list`"
-                  :data-change-state="breakpointDiffs[index][`${frame.meta.name.match(/.*[!].*?\(/gmi)[0]}|${variable.name}`]"
+                  :key="`${frame.meta.name.match(/(?:[^!]*!)?(\w+)/)[0]}|${variable.name}|list`"
+                  :data-change-state="breakpointDiffs[index][`${frame.meta.name.match(/(?:[^!]*!)?(\w+)/)[0]}|${variable.name}`]"
                   :data-variable-category="variable.category">
                   <td class="variable-list-name">{{ variable.name }}</td>
                   <td class="variable-list-type">{{ variable.meta.type }}</td>
@@ -231,7 +231,7 @@ export default {
           for (const thread of breakpoint.threads) {
             for (const frame of thread.frames) {
               for (const variable of frame.variables) {
-                const vkey = `${frame.meta.name.match(/.*[!].*?\(/gmi)[0]}|${variable.name}`;
+                const vkey = `${frame.meta.name.match(/(?:[^!]*!)?(\w+)/)[0]}|${variable.name}`;
                 if (!this.variableKeys.includes(vkey)) {
                   this.variableKeys.push(vkey);
                 }
@@ -252,7 +252,7 @@ export default {
           breakpointDiffs.push(breakpointDiff);
           for (const frame of breakpoint.threads[0].frames) {
             for (const variable of frame.variables) {
-              const variableKey = `${frame.meta.name.match(/.*[!].*?\(/gmi)[0]}|${variable.name}`
+              const variableKey = `${frame.meta.name.match(/(?:[^!]*!)?(\w+)/)[0]}|${variable.name}`
               let changeState = "";
               if (breakpointIdx == 0)
                 changeState = "new";
