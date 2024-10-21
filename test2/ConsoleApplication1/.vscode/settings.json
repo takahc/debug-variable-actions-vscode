@@ -1,5 +1,5 @@
 {
-    "debug-variable-actions.config.render-mode": "panel-vue",
+    "debug-variable-actions.config.render-mode": "panel",
     "debug-variable-actions.config.enable": true,
     "debug-variable-actions.config.image-types": [
         {

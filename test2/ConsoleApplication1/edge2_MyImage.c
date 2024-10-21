@@ -111,6 +111,10 @@ int main() {
     MyImage edge = edge_detection(&img);
     MyImage enhanced = enhance_edges(&img, &edge);
 
+    while(1){
+        int a = 0;
+    }
+
     free(img.data);
     free(edge.data);
     free(enhanced.data);

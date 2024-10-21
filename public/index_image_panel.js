@@ -600,6 +600,7 @@ class ImageItemDomFactory {
         this.a_filename = document.createElement("a");
         this.a_source = document.createElement("a");
         this.img = document.createElement("img");
+        this.drawioClipButton = document.createElement("button");
         this.variableInfoDiv = document.createElement("div");
     }
 
@@ -617,14 +618,28 @@ class ImageItemDomFactory {
 
         // a
         const adiv = document.createElement("div");
-        adiv.style.padding = "3px";
+        adiv.style.padding = "0 3px";
         adiv.style.paddingTop = "0px";
-        adiv.appendChild(this.a_filename);
-        adiv.appendChild(this.a_source);
+        adiv.style.display = "flex";
         this.imageItemDiv.appendChild(adiv);
+
+        this.drawioClipButton.innerHTML = "📄";
+        this.drawioClipButton.classList.add("drawio-clip-button");
+        this.drawioClipButton.style.border = "none";
+        this.drawioClipButton.style.padding = "0px";
+        this.drawioClipButton.style.margin = "0px 3px";
+        this.drawioClipButton.style.backgroundColor = "transparent";
+        this.drawioClipButton.style.cursor = "pointer";
+        this.drawioClipButton.style.color = "var(--vscode-editor-foreground)";
+
+        adiv.appendChild(this.a_filename);
+        adiv.appendChild(this.drawioClipButton);
+        adiv.appendChild(this.a_source);
 
         // div.variable-info
         this.variableInfoDiv.classList.add("variable-info");
+        this.variableInfoDiv.style.padding = "0 3px";
+        this.variableInfoDiv.style.margin = "0px 0px 3px 0px";
         if (this.imageUrl !== undefined && this.meta !== undefined) {
             this.update(this.imageUrl, this.meta);
         }
@@ -646,6 +661,9 @@ class ImageItemDomFactory {
         // this.a_filename.innerHTML = `<b>${meta.variable.evaluateName}</b><br>`;
         this.a_filename.innerHTML = `${meta.variable.evaluateName}<br>`;
         this.a_filename.classList.add("evaluate-name");
+
+        this.drawioClipButton.onclick = () => drawioClip(`${imageUrl}`, meta);
+
 
         const workspaceFolder = meta.vscode.workspaceFolder.uri.fsPath;
         const sourcePathRelative = meta.frame.source.path.replace(workspaceFolder, ".");
@@ -688,6 +706,19 @@ class ImageDomFactory {
         this.imageUrl = imageUrl;
 
     }
+}
+
+function getBlobFromImageUrl(imageUrl) {
+    return new Promise((resolve, reject) => {
+        loadXHR(imageUrl).then(function (blob) {
+            try {
+                console.log("blob", blob);
+                resolve(blob);
+            } catch (error) {
+                reject(error);
+            }
+        });
+    });
 }
 
 function copyPngImageToClipboard(imageUrl) {
@@ -764,4 +795,82 @@ function displayInstantMessage(s, duration = 1000) {
 function convertUrlToHicont(url) {
     const hicontUrl = url.replace(/(^.*?)([^\/]+)(\.[^.]+$)/, "$1$2.hicont$3");
     return hicontUrl;
+}
+
+function drawioClip(url, meta) {
+    getBlobFromImageUrl(url).then(function (blob) {
+
+        // get base64
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = function () {
+            const base64data = reader.result.replace(/^data:image\/(png|jpg);base64,/, "");
+            console.log("base64data", base64data);
+
+            console.log("meta", meta);
+
+            const image_width = parseFloat(meta.imageInfo.image_width);
+            const image_height = parseFloat(meta.imageInfo.image_height);
+            const margin = 10;
+            const text_height = 30;
+
+            const vert_width = 40;
+            const all_box_width = image_width + margin * 2 + vert_width;
+            const box_width = image_width + margin * 2;
+            const left = margin;
+            const x_to_center = margin + (box_width - image_width) / 2;
+
+            text = `<?xml version="1.0" ?>
+<mxGraphModel>
+	<root>
+		<mxCell id="0"/>
+		<mxCell id="1" parent="0"/>
+		<mxCell id="2" value="" style="swimlane;childLayout=stackLayout;resizeParent=1;resizeParentMax=0;horizontal=0;startSize=20;horizontalStack=0;html=1;fillColor=none;" vertex="1" parent="1">
+			<mxGeometry width="${all_box_width}" height="459.5" as="geometry">
+				<mxRectangle x="50" y="-180" width="40" height="60" as="alternateBounds"/>
+			</mxGeometry>
+		</mxCell>
+		<mxCell id="3" value="" style="swimlane;startSize=20;horizontal=0;html=1;strokeColor=none;fillColor=none;" vertex="1" parent="2">
+			<mxGeometry x="20" width="460" height="300" as="geometry">
+				<mxRectangle x="20" width="${box_width}" height="30" as="alternateBounds"/>
+			</mxGeometry>
+		</mxCell>
+		<UserObject label="" link="http://localhost:8082/files/${encodeURIComponent(meta.vscode.filePath)}" linkTarget="_blank" id="4">
+            <mxCell style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=data:image/png,${base64data};" vertex="1" parent="3">
+                <mxGeometry x="${x_to_center}" y="${text_height + margin}" width="${image_width}" height="${image_height}" as="geometry"/>
+            </mxCell>
+		</UserObject>
+		<mxCell id="5" value="DESCRIPTION" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="3">
+			<mxGeometry x="${x_to_center}" width="${image_width}" height="30" as="geometry"/>
+		</mxCell>
+		<mxCell id="6" value="${meta.variable.evaluateName}" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#480ced;" vertex="1" parent="3">
+			<mxGeometry x="${x_to_center}" y="${text_height + margin + image_height}" width="${image_width}" height="30" as="geometry"/>
+		</mxCell>
+		<mxCell id="7" value="${meta.variable.type} ${meta.imageInfo.image_width}x${meta.imageInfo.image_height}" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="3">
+			<mxGeometry x="${x_to_center}" y="${text_height + margin + image_height + text_height - 13}" width="${image_width}" height="30" as="geometry"/>
+		</mxCell>
+		<mxCell id="8" value="" style="swimlane;startSize=20;horizontal=0;html=1;fillColor=none;strokeColor=none;" vertex="1" collapsed="1" parent="2">
+			<mxGeometry x="20" y="300" width="${box_width}" height="30" as="geometry">
+				<mxRectangle x="20" y="300" width="${box_width}" height="30" as="alternateBounds"/>
+			</mxGeometry>
+		</mxCell>
+		<UserObject label="⬇️" link="http://localhost:8082/files/${encodeURIComponent(meta.vscode.filePath)}" linkTarget="_blank" id="9">
+			<mxCell style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="8">
+				<mxGeometry x="16" y="3.75" width="70" height="30" as="geometry"/>
+			</mxCell>
+		</UserObject>
+	</root >
+</mxGraphModel >
+
+
+            `;
+
+            enc = encodeURI(text);
+            console.log("drawio_text", text);
+            console.log("drawio_text_encoded", enc);
+
+            navigator.clipboard.writeText(enc);
+        };
+
+    });
 }
