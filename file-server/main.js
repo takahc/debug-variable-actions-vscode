@@ -57,6 +57,15 @@ app.get('/files/:filename', (req, res) => {
             res.setHeader('Content-Type', 'image/png');
             res.send(data);
         });
+    }
+    else if (fileExtension === '.csv') {
+        fs.readFile(filePath, 'utf8', (err, data) => {
+            if (err) {
+                return res.status(404).json({ error: 'File not found' });
+            }
+            res.setHeader('Content-Type', 'text/csv');
+            res.send(data);
+        });
     } else {
         res.status(400).json({ error: 'Invalid file type' });
     }
