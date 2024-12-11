@@ -220,4 +220,10 @@ export class ImageVariable extends DebugVariable {
             metaWide: this.metaWide,
         };
     }
+
+    // Add a method to fetch image data for hover display
+    public async fetchImageData(): Promise<string | null> {
+        await this.toFile();
+        return this.imagePath ? vscode.Uri.file(this.imagePath).toString() : null;
+    }
 }

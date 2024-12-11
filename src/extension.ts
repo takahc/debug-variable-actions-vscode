@@ -17,6 +17,11 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log("context", context);
 	context.subscriptions.push(VariableTrackerRegister.register(context));
 
+	// Register the ImageHoverProvider
+	context.subscriptions.push(
+		vscode.languages.registerHoverProvider("*", new ImageHoverProvider())
+	);
+
 	// Register commands:
 	context.subscriptions.push(
 		vscode.commands.registerCommand('debug-variable-actions.action', (request: any) => {
