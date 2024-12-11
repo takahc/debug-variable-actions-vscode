@@ -3,12 +3,12 @@ import sharp from 'sharp';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
 
-import { DebugSessionTracker } from '../DebugSessionTracker';
-import { DebugFrame } from '../DebugFrame';
-import { DebugVariable } from "./DebugVariable";
-import { DebugVariableType } from "./DebugVariableType";
-import { ImageVariableType, ImageInfo } from './ImageVariableType';
-import { EvalExpression } from "../../utils/EvalExpression";
+import { DebugSessionTracker } from '../debugSessionTracker';
+import { DebugFrame } from '../debugFrame';
+import { DebugVariable } from "./debugVariable";
+import { DebugVariableType } from "./debugVariableType";
+import { ImageVariableType, ImageInfo } from './imageVariableType';
+import { EvalExpression } from "../../utils/evalExpression";
 
 export class ImageVariable extends DebugVariable {
     public category = "image";

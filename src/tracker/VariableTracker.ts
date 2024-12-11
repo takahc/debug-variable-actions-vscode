@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { VariableViewPanel } from '../panel/VariableViewPanel';
-import { DebugSessionTracker } from '../debugger/DebugSessionTracker';
-import { VariableTypeFactory } from '../debugger/variable/VariableTypeFactory';
-import { ImageVariable } from '../debugger/variable/ImageVariable';
+import { VariableViewPanel } from '../panel/variableViewPanel';
+import { DebugSessionTracker } from '../debugger/debugSessionTracker';
+import { VariableTypeFactory } from '../debugger/variable/variableTypeFactory';
+import { ImageVariable } from '../debugger/variable/imageVariable';
 
 export class VariableTracker implements vscode.DebugAdapterTracker {
     private _context: vscode.ExtensionContext;

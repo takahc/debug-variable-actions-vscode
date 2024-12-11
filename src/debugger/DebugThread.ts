@@ -1,7 +1,7 @@
-import { DebugSessionTracker } from './DebugSessionTracker';
-import { DebugFrame } from './DebugFrame';
-import { DebugVariable } from './variable/DebugVariable';
-import { VariableTypeFactory } from './variable/VariableTypeFactory';
+import { DebugSessionTracker } from './debugSessionTracker';
+import { DebugFrame } from './debugFrame';
+import { DebugVariable } from './variable/debugVariable';
+import { VariableTypeFactory } from './variable/variableTypeFactory';
 
 type IdType = number;
 type TrackerId = IdType;

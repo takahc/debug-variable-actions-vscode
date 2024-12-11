@@ -3,8 +3,8 @@
 import * as vscode from 'vscode';
 import dedent from 'dedent';
 
-import { VariableTrackerRegister } from './tracker/VariableTrackerRegister';
-import *  as actions from './action/DebugAction';
+import { VariableTrackerRegister } from './tracker/variableTrackerRegister';
+import *  as actions from './action/debugAction';
 
 // process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
 

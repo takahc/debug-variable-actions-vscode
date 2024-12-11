@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
-import { VariableTracker } from './VariableTracker';
-import { DebugSessionTracker } from '../debugger/DebugSessionTracker';
+import { VariableTracker } from './variableTracker';
+import { DebugSessionTracker } from '../debugger/debugSessionTracker';
 
 export class VariableTrackerRegister implements vscode.DebugAdapterTrackerFactory {
     private variableTracker: VariableTracker;

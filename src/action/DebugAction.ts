@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import dedent from 'dedent';
-import { DebugSessionTracker } from '../debugger/DebugSessionTracker';
-import { ImageVariable } from '../debugger/variable/ImageVariable';
-import { VariableTypeFactory } from '../debugger/variable/VariableTypeFactory';
+import { DebugSessionTracker } from '../debugger/debugSessionTracker';
+import { ImageVariable } from '../debugger/variable/imageVariable';
+import { VariableTypeFactory } from '../debugger/variable/variableTypeFactory';
 
 interface IDebugAction {
     name: string;

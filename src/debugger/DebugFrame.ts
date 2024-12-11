@@ -1,9 +1,9 @@
-import { ImageVariable } from './variable/ImageVariable';
-import { ImageVariableType } from './variable/ImageVariableType';
-import { DebugVariable } from './variable/DebugVariable';
-import { DebugVariableType } from './variable/DebugVariableType';
+import { ImageVariable } from './variable/imageVariable';
+import { ImageVariableType } from './variable/imageVariableType';
+import { DebugVariable } from './variable/debugVariable';
+import { DebugVariableType } from './variable/debugVariableType';
 
-import { DebugThread } from './DebugThread';
+import { DebugThread } from './debugThread';
 
 type IdType = number;
 type TrackerId = IdType;

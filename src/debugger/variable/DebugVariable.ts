@@ -1,9 +1,9 @@
-import { DebugFrame } from '../DebugFrame';
-import { ImageVariable } from './ImageVariable';
-import { ImageVariableType } from './ImageVariableType';
-import { BinaryInfo, DebugVariableType, DebugVariableArrayType, DebugVariableStructType } from './DebugVariableType';
-import { VariableTypeFactory } from './VariableTypeFactory';
-import { EvalExpression } from '../../utils/EvalExpression';
+import { DebugFrame } from '../debugFrame';
+import { ImageVariable } from './imageVariable';
+import { ImageVariableType } from './imageVariableType';
+import { BinaryInfo, DebugVariableType, DebugVariableArrayType, DebugVariableStructType } from './debugVariableType';
+import { VariableTypeFactory } from './variableTypeFactory';
+import { EvalExpression } from '../../utils/evalExpression';
 
 export type DebugEntity = DebugVariable | ImageVariable;
 

@@ -1,5 +1,5 @@
-import { EvalExpression } from "../../utils/EvalExpression";
-import { DebugVariableType, BinaryInfo, BinaryInfoExpressions } from "./DebugVariableType";
+import { EvalExpression } from "../../utils/evalExpression";
+import { DebugVariableType, BinaryInfo, BinaryInfoExpressions } from "./debugVariableType";
 
 export type SupportedImageChannles = 1 | 2 | 3 | 4;
 export type SupportedImageFormats = "GRAY" | "RGB" | "BGR" | "RGBA" | "BGRA";

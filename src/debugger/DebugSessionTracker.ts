@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { DebugThread } from './DebugThread';
-import { DebugFrame } from './DebugFrame';
-import { DebugEntity } from './variable/DebugVariable';
-import { ImageVariable } from './variable/ImageVariable';
+import { DebugThread } from './debugThread';
+import { DebugFrame } from './debugFrame';
+import { DebugEntity } from './variable/debugVariable';
+import { ImageVariable } from './variable/imageVariable';
 
 type IdType = number;
 type TrackerId = IdType;

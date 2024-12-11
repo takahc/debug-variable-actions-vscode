@@ -1,4 +1,4 @@
-import { EvalExpression } from '../../utils/EvalExpression';
+import { EvalExpression } from '../../utils/evalExpression';
 
 export type BinaryInfo = {
     [key: string]: any,

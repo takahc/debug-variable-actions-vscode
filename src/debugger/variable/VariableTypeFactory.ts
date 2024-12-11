@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { DebugVariableType } from "./DebugVariableType";
-import { ImageVariableType, ImageTypeConfig } from "./ImageVariableType";
+import { DebugVariableType } from "./debugVariableType";
+import { ImageVariableType, ImageTypeConfig } from "./imageVariableType";
 
 export class VariableTypeFactory {
     private static imageTypesConfig: { [key: string]: ImageTypeConfig } = {};
