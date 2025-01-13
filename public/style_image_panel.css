@@ -1,3 +1,8 @@
+:root {
+  --image-size: 300px;
+}
+
+
 #instant-message {
   height: 12px;
   width: 100%;
@@ -23,7 +28,8 @@ div .image-content {
   text-align: left;
   margin: 8px;
   margin-bottom: 10px;
-  width: 300px;
+  /* width: 300px; */
+  width: var(--image-size);
 }
 
 .image {
@@ -31,7 +37,9 @@ div .image-content {
   height: 64px; */
   /* max-height: 64px; */
   /* width: 100px; */
-  height: 100px;
+  /* height: 100px; */
+  object-fit: fill;
+  width: 100%;
 }
 
 .variable-info {
@@ -75,4 +83,10 @@ div .image-content {
 
 .is-same-image {
   background-color: rgb(39 39 39 / 80%);
+}
+
+.controll-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }

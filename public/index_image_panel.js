@@ -64,9 +64,11 @@ class ImageTraceManager {
 
         // Slider to seek captures
         this.slider = this._initial_slider;
+        this.imageSizeSlider = this._initial_image_size_slider;
         this.frameInfo = document.createElement("span");
         this.goLineCheckBox = document.createElement("input");
         this.backNextSpan = this._initial_back_next_span;
+
         this._dom = this._initial_dom;
         this.addToParentDom();
     }
@@ -89,6 +91,17 @@ class ImageTraceManager {
         slider.max = 0;
         slider.step = 0;
         slider.oninput = (e) => { this._handleSliderEvent(e); };
+        return slider;
+    }
+
+    get _initial_image_size_slider() {
+        let slider = document.createElement("input");
+        slider.type = "range";
+        slider.min = 100;
+        slider.max = 1000;
+        slider.step = 100;
+        slider.value = 300;
+        slider.oninput = (e) => { this._handleImageSizeSliderEvent(e); };
         return slider;
     }
 
@@ -133,11 +146,22 @@ class ImageTraceManager {
     }
 
     addToParentDom() {
-        document.querySelector(this.parentDomQuery).appendChild(this.backNextSpan);
-        document.querySelector(this.parentDomQuery).appendChild(this.slider);
-        document.querySelector(this.parentDomQuery).appendChild(this.goLineCheckBox);
-        document.querySelector(this.parentDomQuery).appendChild(this.frameInfo);
-        document.querySelector(this.parentDomQuery).appendChild(this.dom);
+        this.controllContainer = document.createElement("div");
+        this.controllContainer.classList.add("controll-container");
+
+        this.frameControllContainer = document.createElement("div");
+        this.frameControllContainer.classList.add("frame-controll-container");
+        this.frameControllContainer.appendChild(this.backNextSpan);
+        this.frameControllContainer.appendChild(this.slider);
+        this.frameControllContainer.appendChild(this.goLineCheckBox);
+        this.frameControllContainer.appendChild(this.frameInfo);
+        this.controllContainer.appendChild(this.frameControllContainer);
+        this.controllContainer.appendChild(this.frameControllContainer);
+        this.controllContainer.appendChild(this.imageSizeSlider);
+
+        const parentDom = document.querySelector(this.parentDomQuery);
+        parentDom.appendChild(this.controllContainer);
+        parentDom.appendChild(this.dom);
     }
 
     has(id) {
@@ -312,6 +336,11 @@ class ImageTraceManager {
         if (this.goLineCheckBox.checked) {
             this.frameInfo.click();
         }
+    }
+
+    _handleImageSizeSliderEvent(e) {
+        let imageSize = e.target.value;
+        document.documentElement.style.setProperty('--image-size', `${imageSize}px`);
     }
 }
 
