@@ -124,10 +124,11 @@ export class VariableViewPanel {
         return this._panel;
     }
 
-    showPanel(where: vscode.ViewColumn = vscode.ViewColumn.Two): boolean {
+    showPanel(where?: vscode.ViewColumn): boolean {
         console.log("VariableViewPanel show");
         if (this._panel) {
-            this._panel.reveal(where);
+            const preserveFocus = true; // true: not focus
+            this._panel.reveal(where, preserveFocus);
             return true;
         }
         return false;
@@ -141,8 +142,19 @@ export class VariableViewPanel {
 
     public static render(context: vscode.ExtensionContext, renderMode?: VariableVeiewRenderMode) {
         if (VariableViewPanel.currentPanel) {
-            // If the webview panel already exists reveal it
-            VariableViewPanel.currentPanel._panel.reveal(vscode.ViewColumn.Two);
+            // Check if the panel is already visible
+            if (VariableViewPanel.currentPanel._panel.visible) {
+                if (VariableViewPanel.currentPanel._panel.active) {
+                    // do nothing if the panel is already active
+                }
+                else {
+                    // Focus the panel if it is already visible but not active
+                    VariableViewPanel.currentPanel._panel.reveal();
+                }
+            } else {
+                // Show the panel beside the active editor
+                VariableViewPanel.currentPanel._panel.reveal(vscode.ViewColumn.Beside);
+            }
         } else {
             let localResourceRoots = context.storageUri ? [
                 vscode.Uri.joinPath(context.extensionUri, "public"),
@@ -164,7 +176,8 @@ export class VariableViewPanel {
                     // Restrict the webview to only load resources from the `out` directory
                     localResourceRoots: localResourceRoots,
                     // misc
-                    enableFindWidget: true
+                    enableFindWidget: true,
+                    retainContextWhenHidden: true,
                 }
             );
 
@@ -207,7 +220,7 @@ export class VariableViewPanel {
     }
 
 
-    sendInstanceMessage(instant_message: string) {
+    sendInstantMessage(instant_message: string) {
         const panel = VariableViewPanel.currentPanel;
         if (panel) {
             const message = {
