@@ -79,7 +79,7 @@ runs:
           shell: bash
 
         - name: Push tag
-          if: ${{ inputs.tag }}
+          if: ${{ inputs.tag == 'true' }}
           run: |
               git config user.name "github-actions[bot]"
               git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
