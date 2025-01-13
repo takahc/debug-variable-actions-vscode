@@ -12,19 +12,57 @@ window.addEventListener('DOMContentLoaded', () => {
         if (!message) { message = event; }
         console.log("message received", message);
 
-        if (message.command === 'images') {
+        if (message.command === 'images-stack') {
+            const metas = message.metas;
+            const breakpointCapture = new BreakpointCapture(message.breakpointMeta, message.vscodeMeta);
+            manager.addBreakpointCapture(breakpointCapture);
+            console.log("images-stack", metas);
+
+            // Make a stack of frames
+            const topFrameId = message.frames[message.frames.length - 1].meta.name;
+            const topFrameItem = manager.addFrameItem(topFrameId);
+            let frameItem;
+            if (message.frames.length <= 1) {
+                frameItem = topFrameItem;
+            } else {
+                let parentFrameItem = topFrameItem;
+                for (let i = message.frames.length - 2; i >= 0; i--) {
+                    const frameMeta = message.frames[i];
+                    const frameId = frameMeta.meta.name;
+                    console.log("adding frame item", frameMeta, frameId);
+                    frameItem = parentFrameItem.addFrameItem(frameId);
+                    parentFrameItem = frameItem;
+                }
+            }
+            console.log("topFrameItem", topFrameItem, "frameItem", frameItem);
+
+            // Add images to the stack of frames
+            for (const meta of metas) {
+                const imageUrl = meta.imageWebUrl;
+                console.log("images-stack", imageUrl, meta);
+                const imageTraceId = `${meta.variable.evaluateName}@${meta.frame.name}`;
+                const imageTrace = frameItem.addImageTrace(imageTraceId);
+                imageTrace.renderMode = "stack";
+                imageTrace.addImage(imageUrl, meta);
+                breakpointCapture.addImageIdxCapture(imageTraceId, imageTrace.lastIdx);
+            }
+            // manager.renderAtBreakpoint(breakpointCapture, "stack");
+            // manager.renderStackFrames(breakpointCapture);
+            manager.renderStackFrames();
+        }
+        else if (message.command === 'images') {
             const metas = message.metas;
             const breakpointCapture = new BreakpointCapture(message.breakpointMeta, message.vscodeMeta);
             manager.addBreakpointCapture(breakpointCapture);
             for (const meta of metas) {
-                const imageUrl = convertUrlToHicont(meta.imageWebUrl);
+                const imageUrl = meta.imageWebUrl;
                 console.log("image", imageUrl, meta);
                 const imageTraceId = meta.variable.evaluateName;
                 const imageTrace = manager.addImageTrace(imageTraceId);
                 imageTrace.addImage(imageUrl, meta);
                 breakpointCapture.addImageIdxCapture(imageTraceId, imageTrace.lastIdx);
             }
-            manager.renderAtBreakpoint(breakpointCapture);
+            manager.renderAtBreakpoint(breakpointCapture, "single");
         }
         if (message.command === 'image') {
             const imageUrl = message.url;
@@ -52,6 +90,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 class ImageTraceManager {
     constructor(parentDomQuery) {
+        this.frameItemList = {};
         this.imageTraceList = {};
         this.parentDomQuery = parentDomQuery;
         this.captures = [];
@@ -63,12 +102,11 @@ class ImageTraceManager {
         this.lastRenderedBreakpointCapture = undefined;
 
         // Slider to seek captures
+        this.toolbar = document.createElement("div");
         this.slider = this._initial_slider;
-        this.imageSizeSlider = this._initial_image_size_slider;
         this.frameInfo = document.createElement("span");
         this.goLineCheckBox = document.createElement("input");
         this.backNextSpan = this._initial_back_next_span;
-
         this._dom = this._initial_dom;
         this.addToParentDom();
     }
@@ -77,6 +115,8 @@ class ImageTraceManager {
         // div.image-trace-manager
         let imageTraceManagerDiv = document.createElement("div");
         imageTraceManagerDiv.classList.add("image-trace-manager");
+
+        this.toolbar.classList.add("toolbar");
         this.frameInfo.classList.add("frame-info");
         this.goLineCheckBox.classList.add("go-line-checkbox");
         this.goLineCheckBox.type = "checkbox";
@@ -91,17 +131,6 @@ class ImageTraceManager {
         slider.max = 0;
         slider.step = 0;
         slider.oninput = (e) => { this._handleSliderEvent(e); };
-        return slider;
-    }
-
-    get _initial_image_size_slider() {
-        let slider = document.createElement("input");
-        slider.type = "range";
-        slider.min = 100;
-        slider.max = 1000;
-        slider.step = 100;
-        slider.value = 300;
-        slider.oninput = (e) => { this._handleImageSizeSliderEvent(e); };
         return slider;
     }
 
@@ -146,44 +175,47 @@ class ImageTraceManager {
     }
 
     addToParentDom() {
-        this.controllContainer = document.createElement("div");
-        this.controllContainer.classList.add("controll-container");
-
-        this.frameControllContainer = document.createElement("div");
-        this.frameControllContainer.classList.add("frame-controll-container");
-        this.frameControllContainer.appendChild(this.backNextSpan);
-        this.frameControllContainer.appendChild(this.slider);
-        this.frameControllContainer.appendChild(this.goLineCheckBox);
-        this.frameControllContainer.appendChild(this.frameInfo);
-        this.controllContainer.appendChild(this.frameControllContainer);
-        this.controllContainer.appendChild(this.frameControllContainer);
-        this.controllContainer.appendChild(this.imageSizeSlider);
-
-        const parentDom = document.querySelector(this.parentDomQuery);
-        parentDom.appendChild(this.controllContainer);
-        parentDom.appendChild(this.dom);
+        this.toolbar.appendChild(this.backNextSpan);
+        this.toolbar.appendChild(this.slider);
+        this.toolbar.appendChild(this.goLineCheckBox);
+        this.toolbar.appendChild(this.frameInfo);
+        document.querySelector(this.parentDomQuery).appendChild(this.toolbar);
+        document.querySelector(this.parentDomQuery).appendChild(this.dom);
     }
 
-    has(id) {
+    hasImageTrace(id) {
         return (id in this.imageTraceList);
     }
-
-    get(id) {
+    getImageTrace(id) {
         return this.imageTraceList[id];
     }
-
     addImageTrace(id) {
         if (!(id in this.imageTraceIdsAddedFromLastCapture)) {
             // This imageTrace did not exist in the last capture
             this.imageTraceIdsAddedFromLastCapture[id] = true;
         }
-        if (!this.has(id)) {
+        if (!this.hasImageTrace(id)) {
             let imageTrace = new ImageTrace(this, id);
             this.imageTraceList[id] = imageTrace;
             this.imageTraceIdsAddedFromLastCapture[id] = true;
             this.dom.appendChild(imageTrace.dom);
         }
         return this.imageTraceList[id];
+    }
+
+    hasFrameItem(id) {
+        return (id in this.frameItemList);
+    }
+    getFrameItem(id) {
+        return this.frameItemList[id];
+    }
+    addFrameItem(id) {
+        if (!this.hasFrameItem(id)) {
+            let frameItem = new FrameItem(this, id);
+            this.frameItemList[id] = frameItem;
+            this.dom.appendChild(frameItem.dom);
+        }
+        return this.frameItemList[id];
     }
 
     capture() {
@@ -272,7 +304,7 @@ class ImageTraceManager {
         this.lastRenderedCaptureIdx = this.currentRenderedCaptureIdx;
     }
 
-    renderAtBreakpoint(breakpointCapture) {
+    renderAtBreakpoint(breakpointCapture, renderMode = "single") {
         console.log("renderAtBreakpoint", breakpointCapture);
 
         // Render imageTraces in the given breakpointCapture
@@ -285,18 +317,43 @@ class ImageTraceManager {
             breakpointCapture.updateFrameInfoDom();
         }
 
-        // Hide imageTraces which are not in the current breakpointCapture
-        if (this.lastRenderedBreakpointCapture !== undefined) {
-            for (const pastImageTraceId of Object.keys(this.lastRenderedBreakpointCapture.imageTraceIdxDict)) {
-                if (!imageTraceIds.includes(pastImageTraceId)) {
-                    const imageTrace = this.imageTraceList[pastImageTraceId];
-                    imageTrace.hide();
+        if (renderMode === "single") {
+            // Hide imageTraces which are not in the current breakpointCapture
+            if (this.lastRenderedBreakpointCapture !== undefined) {
+                for (const pastImageTraceId of Object.keys(this.lastRenderedBreakpointCapture.imageTraceIdxDict)) {
+                    if (!imageTraceIds.includes(pastImageTraceId)) {
+                        const imageTrace = this.imageTraceList[pastImageTraceId];
+                        imageTrace.hide();
+                    }
                 }
             }
         }
 
         this._refreshFrameInfoByBreakpointCapture(breakpointCapture);
         this.lastRenderedBreakpointCapture = breakpointCapture;
+    }
+
+    renderStackFrames(targetFrameItemList = undefined) {
+        console.log("renderStackFrames", this);
+        if (targetFrameItemList === undefined) {
+            targetFrameItemList = this.frameItemList;
+        }
+        for (const [id, frameItem] of Object.entries(targetFrameItemList)) {
+            for (const [imageTraceId, imageTrace] of Object.entries(frameItem.imageTraceList)) {
+                imageTrace.show();
+                imageTrace.render(imageTrace.lastIdx);
+                // const idx = breakpointCapture.imageTraceIdxDict[imageTraceId];
+                // if (breakpointCapture === undefined || idx === undefined) {
+                //     imageTrace.addBlankStack();
+                // } else {
+                //     imageTrace.render(idx);
+                // }
+
+                // Recursively render stack frames
+                this.renderStackFrames(frameItem.frameItemList);
+            }
+        }
+        // this.lastRenderedBreakpointCapture = breakpointCapture;
     }
 
     _refreshFrameInfo(imageTrace, idx, captureIdx) {
@@ -336,11 +393,6 @@ class ImageTraceManager {
         if (this.goLineCheckBox.checked) {
             this.frameInfo.click();
         }
-    }
-
-    _handleImageSizeSliderEvent(e) {
-        let imageSize = e.target.value;
-        document.documentElement.style.setProperty('--image-size', `${imageSize}px`);
     }
 }
 
@@ -400,6 +452,152 @@ class BreakpointCapture {
     }
 }
 
+class FrameItem {
+    constructor(_manager, id, _parent = undefined) {
+        this.manager = _manager;
+        this.id = id;
+        this.parent = _parent;
+        this.imageTraceList = {};
+        this.frameItemList = {};
+        this.frameItemListOrder = [];
+        this.prev = undefined;
+        this.next = undefined;
+
+        this.frameInfoDiv = document.createElement("div");
+        this.frameBarDiv = document.createElement("div");
+        this.imageTracesDiv = document.createElement("div");
+        this.frameItemsDiv = document.createElement("div");
+        this._dom = this._initial_dom;
+
+        this.depth = this.parent === undefined ? 0 : this.parent.depth + 1;
+        this.depthMax = 0;
+    }
+
+    get _initial_dom() {
+        // div.frame-item
+        let frameItemDiv = document.createElement("div");
+        frameItemDiv.classList.add("frame-item");
+        frameItemDiv.dataset.frameItemId = this.id;
+        frameItemDiv.dataset.frameDepth = this.depth;
+        this.frameInfoDiv.classList.add("frame-info");
+        this.frameInfoDiv.innerHTML = this.id;
+        frameItemDiv.appendChild(this.frameInfoDiv);
+
+        this.frameBarDiv.classList.add("frame-bar");
+        this.frameBarDiv.innerHTML = this.id;
+        frameItemDiv.appendChild(this.frameBarDiv);
+
+        let frameContentDiv = document.createElement("div");
+        frameContentDiv.classList.add("frame-content");
+        frameItemDiv.appendChild(frameContentDiv);
+
+        this.imageTracesDiv.classList.add("image-traces");
+        frameContentDiv.appendChild(this.imageTracesDiv);
+
+        this.frameItemsDiv.classList.add("frame-items");
+        frameContentDiv.appendChild(this.frameItemsDiv);
+        return frameItemDiv;
+    }
+    get dom() {
+        return this._dom;
+    }
+    get depth() {
+        return this._depth;
+    }
+    set depth(newDepth) {
+        this._depth = newDepth;
+        this.dom.dataset.frameDepth = this._depth;
+    }
+    get depthMax() {
+        return this._depthMax;
+    }
+    set depthMax(newDepthMax) {
+        this._depthMax = newDepthMax;
+        this.imageTracesDiv.style.marginLeft = `${this._depthMax * 80}px`;
+        this.dom.dataset.frameDepthMax = this._depthMax;
+    }
+
+    // updateDepthMax() {
+    //     this.depthMax = this.depth;
+    //     for (const frameItem of Object.values(this.frameItemList)) {
+    //         const depth = frameItem.updateDepthMax();
+    //         if (this.depthMax < depth) {
+    //             this.depthMax = depth;
+    //         }
+    //     }
+
+    //     return this.depthMax;
+    // }
+
+    addBreakpointCapture(breakpointCapture) {
+        this.breakpointCaptureList.push(breakpointCapture);
+    }
+
+    hasImageTrace(id) {
+        return (id in this.imageTraceList);
+    }
+    getImageTrace(id) {
+        return this.imageTraceList[id];
+    }
+    addImageTrace(id) {
+        if (!this.hasImageTrace(id)) {
+            let imageTrace = new ImageTrace(this, id);
+            this.imageTraceList[id] = imageTrace;
+            this.imageTracesDiv.appendChild(imageTrace.dom);
+        }
+        return this.imageTraceList[id];
+    }
+
+    hasFrameItem(id) {
+        return (id in this.frameItemList);
+    }
+    getFrameItem(id) {
+        return this.frameItemList[id];
+    }
+    addFrameItem(id) {
+        if (!this.hasFrameItem(id)) {
+            let frameItem = new FrameItem(this.manager, id, this);
+            this.frameItemList[id] = frameItem;
+            this.frameItemListOrder.push(frameItem.id);
+            this.frameItemsDiv.appendChild(frameItem.dom);
+
+            if (this.depthMax < frameItem.depth) {
+                this.depthMax = frameItem.depth;
+                this._propagateDepthMax();
+            }
+
+            console.log("added frameItem", frameItem, this);
+        }
+        return this.frameItemList[id];
+    }
+
+    _propagateDepthMax() {
+        if (this.parent !== undefined) {
+            if (this.parent.depthMax < this.depthMax) {
+                this.parent.depthMax = this.depthMax;
+                this.parent.propagateDepthMax();
+            }
+        }
+    }
+
+    setLink(prev, next) {
+        if (prev !== undefined) {
+            this.setPrev(prev);
+        }
+        if (next !== undefined) {
+            this.setNext(next);
+        }
+    }
+    setPrev(prev) {
+        this.prev = prev;
+        prev.next = this;
+    }
+    setNext(next) {
+        this.next = next;
+        next.prev = this;
+    }
+}
+
 class ImageTrace {
     constructor(manager, id) {
         this.manager = manager;
@@ -411,13 +609,15 @@ class ImageTrace {
             showAll: false
         };
         this.lastRenderedIdx = undefined;
-        this.renderMode = undefined;  // "single" or "showAll", but initialy undefined
+        this._renderMode = undefined;  // "single" or "showAll", but initialy undefined
+        this._doInitDomNextRender = false;
     }
     get _initial_dom() {
         // div.image-trace
         let imageTraceDiv = document.createElement("div");
         imageTraceDiv.classList.add("image-trace");
         imageTraceDiv.classList.add("fade");
+        imageTraceDiv.dataset.imageTraceId = this.id;
         return imageTraceDiv;
     }
 
@@ -425,22 +625,50 @@ class ImageTrace {
         return this._dom;
     }
 
+    get renderMode() {
+        return this._renderMode;
+    }
+    set renderMode(newRenderMode) {
+        console.log("set renderMode", newRenderMode, this);
+        if (this._renderMode !== undefined) {
+            // this._renderMode is undefined only at the first rendering
+            //   No need to initialize dom at the first rendering
+            if (newRenderMode !== undefined && this._renderMode !== newRenderMode) {
+                // Set flag to initialize dom at next render
+                this._doInitDomNextRender = true;
+                console.log("this._doInitDomNextRender", this._doInitDomNextRender);
+            }
+        }
+
+        this._renderMode = newRenderMode;
+    }
+
+    clearDom() {
+        // Clear all dom of this.imageItemList items'
+        // Do not remove this.dom itself by setting this._dom = this._initial_dom;
+        //  because this.dom is already appended to the parent dom when this instance is created by ImageTraceManager.addImageTrace()
+        this._dom.innerHTML = "";
+    }
+
     render(idx = this.lastIdx) {
         console.log("ImageTrace.render", idx, this);
-        const newRenderMode = this.opt.showAll ? "showAll" : "single";
-        if (this.renderMode !== newRenderMode) {
+        // const newRenderMode = this.opt.showAll ? "showAll" : "single";
+        if (this._doInitDomNextRender) {
             console.log("Intermediate initialization of imageTrace's dom!");
-            // this._dom = this._initial_dom; // initialize dom if renderMode is changed
+            this._dom = this._initial_dom; // initialize dom if renderMode is changed
+            this._doInitDomNextRender = false;
         }
-        switch (newRenderMode) {
+        switch (this.renderMode) {
             case "single":
                 this._renderSingle(idx);
                 break;
             case "showAll":
                 this._renderShowAll(idx);
                 break;
+            case "stack":
+                this._renderStack(idx);
+                break;
         }
-        this.renderMode = newRenderMode;
     }
 
     show() {
@@ -459,9 +687,9 @@ class ImageTrace {
     }
 
     _renderSingle(idx) {
-        if (this.renderMode != "single" || this.renderMode === undefined) {
+        if (this.renderMode !== "single" || this.renderMode === undefined) {
             // Add a single imageItemDom in this.dom when the last renderMode is not single or first rendering
-            const imdom = this.imageItemFactory.create();
+            const imdom = this.imageItemFactory.createDom();
             console.log("imdom", imdom, this.dom, this.renderMode);
             this.dom.appendChild(imdom);
             console.log("imdom after", imdom, this.dom);
@@ -470,7 +698,7 @@ class ImageTrace {
         // Update the imageItemDom, imageUrl, meta, changedState will be updated
         const imageItem = this.imageItemList[idx];
         console.log("_renderSingle changedState", imageItem.changedState, imageItem);
-        this.imageItemFactory.update(imageItem.imageUrl, imageItem.meta, imageItem.changedState);
+        this.imageItemFactory.update(imageItem.imageUrl, imageItem.meta, imageItem.changedState, "single");
 
         if (idx === this.lastRenderedIdx) {
             return;
@@ -496,11 +724,29 @@ class ImageTrace {
         this.lastRenderedIdx = idx;
     }
 
+    _renderStack(currentBreakIdx) {
+        this.clearDom();
+        // for (let breakIdx = 0; breakIdx < this.imageItemList.length; breakIdx++) {
+        // for (let breakIdx = 0; breakIdx <= currentBreakIdx; breakIdx++) {
+        for (let breakIdx = currentBreakIdx; breakIdx >= 0; breakIdx--) {
+            const imageItemFactory = ImageItemDomFactory.createFactory();
+            imageItemFactory.update(this.imageItemList[breakIdx].imageUrl, this.imageItemList[breakIdx].meta, this.imageItemList[breakIdx].changedState, "stack");
+            this._dom.appendChild(imageItemFactory.dom);
+            console.log("stacking", imageItemFactory.dom, this.dom);
+        }
+    }
+
     _setImageDiffClass(cls) {
         this.dom.classList.remove("is-new-image");
         this.dom.classList.remove("is-changed-image");
         this.dom.classList.remove("is-same-image");
         this.dom.classList.add(cls);
+    }
+
+    addBlankStack() {
+        let imageItemFactory = ImageItemDomFactory.createFactory();
+        imageItemFactory.toBlank();
+        this._dom.appendChild(imageItemFactory.dom);
     }
 
     get lastIdx() {
@@ -547,7 +793,7 @@ class ImageItem {
     }
 
     get _initial_dom() {
-        return this.imageItemFactory.create();
+        return this.imageItemFactory.createDom();
     }
 
     get dom() {
@@ -632,7 +878,17 @@ class ImageItemDomFactory {
         this.variableInfoDiv = document.createElement("div");
     }
 
-    create() {
+    get dom() {
+        return this.imageItemDiv;
+    }
+
+    static createFactory() {
+        const factory = new ImageItemDomFactory();
+        factory.createDom();
+        return factory;
+    }
+
+    createDom() {
         const imageUrl = this.imageUrl;
         const meta = this.meta;
 
@@ -662,7 +918,25 @@ class ImageItemDomFactory {
         return this.imageItemDiv;
     }
 
-    update(imageUrl, meta, changedState) {
+    toBlank() {
+        this.img.src = "";
+        this.a_filename.innerHTML = "";
+        this.a_source.innerHTML = "";
+        this.variableInfoDiv.innerHTML = "";
+    }
+
+    update(imageUrl, meta, changedState, renderMode = "stack") {
+        switch (renderMode) {
+            case "single":
+                this._updateSingle(imageUrl, meta, changedState);
+                break;
+            case "stack":
+                this._updateStack(imageUrl, meta, changedState);
+                break;
+        }
+    }
+
+    _updateSingle(imageUrl, meta, changedState) {
         this.imageUrl = imageUrl;
         this.meta = meta;
 
@@ -671,8 +945,8 @@ class ImageItemDomFactory {
 
         // a
         this.a_filename.href = "#";
-        this.a_filename.onclick = () => copyPngImageToClipboard(`${imageUrl}`);
-        // this.a_filename.innerHTML = `<b>${meta.variable.evaluateName}</b><br>`;
+        this.a_filename.onclick = () => copyPngImageToClipboard(`${imageUrl} `);
+        // this.a_filename.innerHTML = `< b > ${ meta.variable.evaluateName }</b > <br>`;
         this.a_filename.innerHTML = `${meta.variable.evaluateName}<br>`;
         this.a_filename.classList.add("evaluate-name");
 
@@ -702,7 +976,51 @@ class ImageItemDomFactory {
         this.imageItemDiv.classList.remove(`is-same-image`);
         this.imageItemDiv.classList.add(`is-${changedState}-image`);
     }
+
+
+    _updateStack(imageUrl, meta, changedState) {
+        this.imageUrl = imageUrl;
+        this.meta = meta;
+
+        // img.image
+        this.img.src = imageUrl;
+
+        // a
+        this.a_filename.href = "#";
+        this.a_filename.onclick = () => copyPngImageToClipboard(`${imageUrl}`);
+        // this.a_filename.innerHTML = `<b>${meta.variable.evaluateName}</b><br>`;
+        // this.a_filename.innerHTML = `${meta.variable.evaluateName}<br>`;
+        this.a_filename.innerHTML = `${meta.variable.evaluateName}@${meta.frame.name}<br>`;
+        this.a_filename.classList.add("evaluate-name");
+
+        const workspaceFolder = meta.vscode.workspaceFolder.uri.fsPath;
+        const sourcePathRelative = meta.frame.source.path.replace(workspaceFolder, ".");
+        const sourcePathExp = `${sourcePathRelative}:${meta.frame.line}:${meta.frame.column}`;
+        const imageFileFsPath = `file:\\\\\\${meta.vscode.filePath}`;
+        this.a_source.classList.add("source-info");
+        this.a_source.innerHTML = `${sourcePathExp}`;
+        this.a_source.onclick = (() => () => {
+            console.log("Open file", meta.frame.source.path, "pos:", [meta.frame.line, meta.frame.column]);
+            // revealTextFile(meta.frame.source.path, [meta.frame.line, meta.frame.column]);
+            vscodeOpen(meta.frame.source.path, [meta.frame.line, meta.frame.column]);
+        })(meta);
+        // this.a_source.innerHTML = ``;
+
+        // div.variable-info
+        const filename = decodeURI(imageUrl.split('/').pop());
+        const imageSizeString = `${meta.imageInfo.mem_width}x${meta.imageInfo.mem_height}`;
+        // variableInfoDiv.innerHTML = `<b><a onclick="copyPngImageToClipboard(${imageUrl})" href="${imageFileFsPath}">${meta.variable.evaluateName}</a></b>
+        // this.variableInfoDiv.innerHTML = `<span>${meta.variable.type}</span> <span> ${imageSizeString}</span> <span> <i>${filename}</i></span>`;
+        this.variableInfoDiv.innerHTML = `<span>${meta.variable.type}</span> <span> ${imageSizeString}</span></span>`;
+
+        // Update is-***-image class
+        this.imageItemDiv.classList.remove(`is-new-image`);
+        this.imageItemDiv.classList.remove(`is-changed-image`);
+        this.imageItemDiv.classList.remove(`is-same-image`);
+        this.imageItemDiv.classList.add(`is-${changedState}-image`);
+    }
 }
+
 
 class ImageDomFactory {
     constructor(imageUrl) {
@@ -788,9 +1106,4 @@ function displayInstantMessage(s, duration = 1000) {
             document.querySelector("#instant-message").innerHTML = "";
         }, duration);
     }
-}
-
-function convertUrlToHicont(url) {
-    const hicontUrl = url.replace(/(^.*?)([^\/]+)(\.[^.]+$)/, "$1$2.hicont$3");
-    return hicontUrl;
 }

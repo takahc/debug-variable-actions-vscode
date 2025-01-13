@@ -1,9 +1,9 @@
-import { constants } from 'buffer';
 import * as vscode from 'vscode';
-import { ImageVariable, ImageVariableType } from './imageVariable';
-import { DebugVariable, DebugVariableType, DebugEntity } from './debugVariable';
-import { VariableTypeFactory } from './variableTypeFactory';
-
+import * as fs from 'fs';
+import { DebugThread } from './debugThread';
+import { DebugFrame } from './debugFrame';
+import { DebugEntity } from './variable/debugVariable';
+import { ImageVariable } from './variable/imageVariable';
 
 type IdType = number;
 type TrackerId = IdType;
@@ -17,6 +17,10 @@ export class DebugSessionTracker {
     public readonly context: vscode.ExtensionContext;;
     public readonly threads: DebugThread[] = [];
     public readonly debugStartDate: string;
+    private _saveDirUri: vscode.Uri;
+    public breakpoints: any[] = [];
+    public static autoContinueEnable: boolean = false;
+    public static autoConintueFrameName: string = "";
 
     public static breakCount: number = 0; // FIXME: manage brake count not by a static.
 
@@ -36,6 +40,7 @@ export class DebugSessionTracker {
         this._session = _session;
         this.sessionName = _sessionName;
         this.threads = _threads;
+        this.breakpoints = [];
 
         // Get the current date and time
         const now = new Date();
@@ -57,6 +62,21 @@ export class DebugSessionTracker {
 
         // Concatenate the parts with the desired format
         this.debugStartDate = `${year}-${monthPadded}-${dayPadded}_${hoursPadded}-${minutesPadded}-${secondsPadded}-${millisecondsPadded}`;
+
+        // Set the save directory uri
+        const session_dir_name = `Session_${this.session.id}`;
+        if (context.storageUri !== undefined) {
+            this._saveDirUri = vscode.Uri.joinPath(context.storageUri, session_dir_name);
+        } else {
+            this._saveDirUri = vscode.Uri.joinPath(context.globalStorageUri, `Session${_session.id}`);
+        }
+        // If not exist context.globalStorageUri directory, create directory
+        ((dirpath: string) => {
+            if (!fs.existsSync(dirpath)) {
+                fs.mkdirSync(dirpath, { recursive: true });
+            }
+
+        })(this._saveDirUri.fsPath);
     };
 
     // getter
@@ -72,6 +92,9 @@ export class DebugSessionTracker {
         } else {
             return DebugSessionTracker.trackers.find(tracker => tracker.trackerId === _trackerQuery);
         }
+    }
+    get saveDirUri(): vscode.Uri {
+        return this._saveDirUri;
     }
 
     // factory
@@ -128,127 +151,51 @@ export class DebugSessionTracker {
         return allVariables;
     }
 
-    gatherImageVariables(): ImageVariable[] {
-        const imageVariables = this.gatherAllVariables().filter(
+    gatherImageVariables(searched?: DebugEntity[], gathered?: ImageVariable[]): ImageVariable[] {
+        if (searched === undefined) {
+            searched = this.gatherAllVariables();
+        }
+        if (gathered === undefined) {
+            gathered = [];
+        }
+        // recursive gather
+        const imageVariables = searched.filter(
             (variable): variable is ImageVariable => variable instanceof ImageVariable
         );
-        return imageVariables;
+        gathered.push(...imageVariables); // Add imageVariables to gathered
+
+        for (let variable of imageVariables) {
+            if (variable.value instanceof Array) {
+                this.gatherImageVariables(variable.value, gathered);
+            }
+        }
+
+        return gathered;
+    }
+
+    getSerializable() {
+        return {
+            trackerId: this.trackerId,
+            session: this.sessionName,
+            threads: this.threads.map(thread => thread.getSerializable())
+        };
+    }
+
+    async continue() {
+        const threadId = this.threads[0].id;
+        await this.session.customRequest('continue', { threadId });
+    }
+    async stepOver() {
+        const threadId = this.threads[0].id;
+        await this.session.customRequest('next', { threadId });
+    }
+    async stepIn() {
+        const threadId = this.threads[0].id;
+        await this.session.customRequest('stepIn', { threadId });
+    }
+    async stepOut() {
+        const threadId = this.threads[0].id;
+        await this.session.customRequest('stepOut', { threadId });
     }
 }
-
-export class DebugThread {
-    public readonly tracker: DebugSessionTracker;
-    public readonly id: IdType;
-    private _frames: DebugFrame[];
-
-    public meta: any;
-
-    public get frames(): DebugFrame[] {
-        return this._frames;
-    }
-
-    constructor(
-        _tracker: DebugSessionTracker,
-        _threadId: IdType,
-        _frames: DebugFrame[] = [],
-        meta?: any
-    ) {
-        this.tracker = _tracker;
-        this.id = _threadId;
-        this._frames = _frames;
-
-        this.meta = meta;
-    }
-
-    addFrame(_frameId: IdType, _variables: DebugVariable[] = [], meta?: any): DebugFrame {
-        let frame = new DebugFrame(this, _frameId, _variables, meta);
-        this.frames.push(frame);
-        return frame;
-    }
-
-    async queryFrame(): Promise<DebugFrame[] | undefined> {
-        const stackTrace = await this.tracker.session?.customRequest('stackTrace',
-            { threadId: this.id, startFrame: 0, levels: 1000 }
-        );
-        console.log(stackTrace);
-        if (stackTrace) {
-            this._frames = [];
-            stackTrace.stackFrames.map((stackFrame: any) => {
-                this.addFrame(stackFrame.id, [], stackFrame);
-            });
-            return this._frames;
-        }
-        else {
-            return undefined;
-        }
-    }
-
-    async fetchLocalVariablesInFirstFrame() {
-        if (this.frames.length === 0) {
-            await this.queryFrame();
-        }
-        if (this.frames.length === 0) {
-            return [];
-        }
-        const frame = this.frames[0];
-        const scopes = await this.tracker.session?.customRequest('scopes', { frameId: frame.id });
-        console.log("scopes", scopes);
-        if (scopes) {
-            const local_scope = scopes.scopes.find((scope: any) => scope.name === "Locals");
-            console.log("local_scope", local_scope);
-            const variables = await this.tracker.session?.customRequest('variables', { variablesReference: local_scope.variablesReference });
-            console.log("variables", variables);
-            variables.variables.forEach((variable: any) => {
-                if (VariableTypeFactory.ImageTypeNames.includes(variable.type)) {
-                    let imageType = VariableTypeFactory.get(variable.type) || undefined;
-                    frame.addVariable(variable, imageType);
-                }
-                else {
-                    // comment out below if you don't want to fetch non-image variables
-                    frame.addVariable(variable);
-                }
-            });
-        }
-        for (let variable of frame.variables) {
-            console.log("start drillDown", variable);
-            await variable.drillDown({ depth: -1, type_names: VariableTypeFactory.ImageTypeNames });
-        }
-        return frame.variables;
-    }
-
-}
-
-export class DebugFrame {
-    public readonly thread: DebugThread;
-    public readonly id: IdType;
-    public readonly variables: DebugVariable[];
-
-    public meta: any;
-
-    constructor(
-        _thread: DebugThread,
-        _frameId: IdType,
-        _variables: DebugVariable[] = [],
-        meta?: any
-    ) {
-        this.thread = _thread;
-        this.id = _frameId;
-        this.variables = _variables;
-        this.meta = meta;
-    }
-
-    addVariable(meta: any, type?: DebugVariableType): DebugVariable {
-        let variable;
-        if (type instanceof ImageVariableType) {
-            variable = new ImageVariable(this, meta, type);
-        }
-        else {
-            variable = new DebugVariable(this, meta);
-        }
-        this.variables.push(variable);
-        return variable;
-    }
-
-}
-
 

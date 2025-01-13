@@ -10,6 +10,10 @@ vsc-extension-quickstart.md
 **/*.ts
 **/.vscode-test.*
 
+.github/**
+breakpoints.example.json
+**/pnpm-lock.yaml
+
 *.pptx
 cflow.exe
 msys-2.0.dll
@@ -17,3 +21,5 @@ test/**
 test2/**
 setup.sh
 setup.bat
+launch.sh
+rename.ps1

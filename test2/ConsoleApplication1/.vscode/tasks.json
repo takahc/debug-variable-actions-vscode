@@ -3,6 +3,24 @@
   "tasks": [
     {
       "type": "cppbuild",
+      "label": "C/C++: cl.exe build active file",
+      "command": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsDevCmd.bat",
+      "args": [
+        "&&",
+        "cl.exe",
+        "/Zi",
+        "/EHsc",
+        "/nologo",
+        "/Fe:",
+        "${fileDirname}\\${fileBasenameNoExtension}.exe",
+        "${file}"
+      ],
+      "problemMatcher": [
+        "$msCompile"
+      ]
+    },
+    {
+      "type": "cppbuild",
       "label": "C/C++: g++ build c.cpp",
       "command": "g++",
       "args": [

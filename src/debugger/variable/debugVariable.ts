@@ -1,19 +1,15 @@
-import { DebugFrame } from './debugSessionTracker';
-import { EvalExpression } from './evalExpression';
-import { ImageVariable, ImageVariableType } from './imageVariable';
+import { DebugFrame } from '../debugFrame';
+import { ImageVariable } from './imageVariable';
+import { ImageVariableType } from './imageVariableType';
+import { BinaryInfo, DebugVariableType, DebugVariableArrayType, DebugVariableStructType } from './debugVariableType';
 import { VariableTypeFactory } from './variableTypeFactory';
+import { EvalExpression } from '../../utils/evalExpression';
 
 export type DebugEntity = DebugVariable | ImageVariable;
 
-export interface IbinaryInfo<T> {
-    [key: string]: T,
-    sizeByte: T,
-    littleEndian: T,
-    signed: T,
-    fixedSize: T,
-    isInt: T,
-}
 export class DebugVariable {
+    public category: string = "primitive";
+    public isImageVariable: boolean = false;
     public meta: any;
     public readonly frame: DebugFrame;
     public name: string | undefined;
@@ -23,14 +19,13 @@ export class DebugVariable {
     public endAddress: string | undefined;
     public sizeByte: string | undefined;
 
-    public binaryInfo: IbinaryInfo<any> = {
+    public binaryInfo: BinaryInfo = {
         sizeByte: 0,
         littleEndian: true,
         signed: true,
         fixedSize: false,
         isInt: true,
     };
-
 
     // value's type is the variable type or an array of DebugVariable or dictionary of DebugVariable
     public value: any | DebugVariableArrayType | DebugVariableStructType | undefined;
@@ -65,7 +60,6 @@ export class DebugVariable {
             //     this.endAddress = "0X" + (parseInt(this.meta.endAddress) + typeBinaryInfo.sizeByte).toString(16).toUpperCase();
             // }
         }
-
     }
 
     parse() {
@@ -125,29 +119,34 @@ export class DebugVariable {
         // if (this.meta === undefined) { return; }
         // if (until.depth === 0) { return; } // break if the depth reaches 0
 
-        console.log(
-            this,
-            this.meta.name,
-            {
-                variablesReference: this.meta.variablesReference,
-                filter: undefined,
-                start: 0,
-                count: 1000
-
-            });
-
         if (this.meta.variablesReference === 0) { return; }
+
+        // check prevent drill down
+        for (const cond of VariableTypeFactory.preventDrillDownConditions) {
+            if (VariableTypeFactory.preventDrillDownConditions) {
+                const args = {
+                    value: this.getVariableValuesAsDict({}),
+                    meta: this.gatherMeta(),
+                };
+                const check = EvalExpression.eval(cond, args);
+                if (check) {
+                    // console.log("skip drill down by cond", cond, check, this.meta.name);
+                    return;
+                }
+            }
+
+        }
 
         // fetch child debug variables
         let variables;
         try {
-
             variables = await this.frame.thread.tracker.session?.customRequest('variables',
                 {
                     variablesReference: this.meta.variablesReference,
                     filter: undefined,
                     // start: 0,
                     count: 1000
+                    // count: 0
 
                 }
             );
@@ -249,52 +248,33 @@ export class DebugVariable {
         }
         return "other";
     }
-}
 
-export class DebugVariableType {
-    public readonly name: string | undefined;
-    public readonly expression: string | undefined;
-    public isVisualizable: boolean = false;
-
-    private binaryMeta: IbinaryInfo<EvalExpression<any>>;
-
-    constructor(
-        name: string,
-        expression?: string,
-        binaryMetaString?: IbinaryInfo<string>,
-    ) {
-        this.name = name;
-        this.expression = expression;
-        this.binaryMeta = {
-            sizeByte: new EvalExpression<number>(binaryMetaString?.sizeByte || ""),
-            littleEndian: new EvalExpression<boolean>(binaryMetaString?.littleEndian || "true"),
-            signed: new EvalExpression<boolean>(binaryMetaString?.signed || "true"),
-            fixedSize: new EvalExpression<boolean>(binaryMetaString?.fixedSize || "false"),
-            isInt: new EvalExpression<boolean>(binaryMetaString?.isInt || "true"),
-        };
-    }
-
-    evalBinaryInfo(members: any): IbinaryInfo<any> {
-        const binaryInfo: IbinaryInfo<any> = {
-            sizeByte: 0,
-            littleEndian: false,
-            signed: false,
-            fixedSize: false,
-            isInt: true
+    getSerializable() {
+        let ret: any = {
+            category: this.category,
+            isImageVariable: this.isImageVariable,
+            name: this.name,
+            meta: this.meta,
+            expression: this.expression,
+            type: this.type,
+            startAddress: this.startAddress,
+            endAddress: this.endAddress,
+            sizeByte: this.sizeByte,
+            binaryInfo: this.binaryInfo,
+            value: this.value,
+            isVisualizable: this.isVisualizable,
+            isArray: this.isArray,
+            isStruct: this.isStruct,
+            parentName: this.parent?.name,
         };
 
-        Object.entries(this.binaryMeta).forEach(([key, evalExpression]) => {
-            binaryInfo[key] = evalExpression.eval(members);
-        });
+        if (this.value instanceof Array) {
+            ret.value = [];
+            this.value.forEach((variable: DebugVariable) => {
+                ret.value.push(variable.getSerializable());
+            });
+        }
 
-        return binaryInfo;
+        return ret;
     }
 }
-
-
-// Array type
-export type DebugVariableArrayType = DebugVariableType[];
-
-// Struct type
-export type DebugVariableStructType = { [key: string]: DebugVariableType };
-

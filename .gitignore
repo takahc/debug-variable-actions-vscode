@@ -4,6 +4,7 @@ node_modules
 .vscode-test/
 *.vsix
 ~$*
+public/webview/main.js
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/node,python,c,c++,react,vuejs,jspm

@@ -1,17 +1,11 @@
 import * as vscode from 'vscode';
-import { DebugVariableType, IbinaryInfo } from "./debugVariable";
-import { ImageVariableType, IimageInfo } from "./imageVariable";
-
-interface IimageTypeConfig {
-    display_name: string;
-    match_types: string[];
-    binary_info: IbinaryInfo<string>;
-    image_info: IimageInfo<string>;
-}
+import { DebugVariableType } from "./debugVariableType";
+import { ImageVariableType, ImageTypeConfig } from "./imageVariableType";
 
 export class VariableTypeFactory {
-    private static imageTypesConfig: { [key: string]: IimageTypeConfig } = {};
+    private static imageTypesConfig: { [key: string]: ImageTypeConfig } = {};
     private static imageMatchTypeStrs: string[] = [];
+    public static preventDrillDownConditions: string[] = [];
 
     private static _primitiveTypes: { [key: string]: { sizeByte: number, signed: boolean, isInt: boolean } } = {
         "char": { sizeByte: 1, signed: true, isInt: true },
@@ -107,7 +101,7 @@ export class VariableTypeFactory {
 
     static loadSettings() {
         // load user defined types
-        const _configs: IimageTypeConfig[] | undefined = vscode.workspace.getConfiguration().get("debug-variable-actions.config.image-types");
+        const _configs: ImageTypeConfig[] | undefined = vscode.workspace.getConfiguration().get("debug-variable-actions.config.image-types");
         if (_configs) {
             console.log("Before loading config: imageTypesConfig", this.imageTypesConfig);
             this.imageTypesConfig = {};
@@ -122,6 +116,10 @@ export class VariableTypeFactory {
         } else {
             console.log("No config found: imageTypesConfig");
         }
+
+        // load preventDrillDownConditions
+        this.preventDrillDownConditions = vscode.workspace.getConfiguration().get<string[]>('debug-variable-actions.config.prevent-drilldown-conditions') || [];
+        console.log("preventDrillDownConditions", this.preventDrillDownConditions);
     }
 
 }

@@ -3,6 +3,7 @@
     "displayName": "debug-variable-actions-vscode",
     "description": "A VSCode extension for debugging variables",
     "version": "0.0.32",
+    "icon": "images/icon.png",
     "engines": {
         "vscode": "^1.89.0"
     },
@@ -11,12 +12,13 @@
         "Other"
     ],
     "activationEvents": [
+        "onStartupFinished",
         "onDebug"
     ],
     "publisher": "akipg",
     "repository": {
         "type": "git",
-        "url": "https://github.com/akipg/debug-variable-actions-vscode.git"
+        "url": "https://github.com/takahc/debug-variable-actions-vscode.git"
     },
     "main": "./out/extension.js",
     "contributes": {
@@ -40,6 +42,14 @@
             {
                 "command": "debug-variable-actions.topanel",
                 "title": "To Panel"
+            },
+            {
+                "command": "debug-variable-actions.autocontinueframe",
+                "title": "DebugVariableActions: Auto continue for frame"
+            },
+            {
+                "command": "debug-variable-actions.autocontinueframe-stop",
+                "title": "DebugVariableActions: Stop auto continue for frame"
             }
         ],
         "menus": {
@@ -62,6 +72,31 @@
                 }
             ]
         },
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "debug-variable-actions-activity-bar",
+                    "title": "Debug Variable Actions",
+                    "icon": "images/icon.png"
+                }
+            ]
+        },
+        "views": {
+            "debug-variable-actions-activity-bar": [
+                {
+                    "id": "debug-variable-actions.views.controller",
+                    "type": "webview",
+                    "name": "Controller",
+                    "canToggleVisibility": false
+                },
+                {
+                    "id": "debug-variable-actions.views.image-panel",
+                    "type": "webview",
+                    "name": "Image Panel",
+                    "canToggleVisibility": false
+                }
+            ]
+        },
         "configuration": {
             "title": "Debug Variable Actions",
             "properties": {
@@ -69,6 +104,42 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Enable the extension"
+                },
+                "debug-variable-actions.config.prevent-drilldown-conditions": {
+                    "type": "array",
+                    "description": "Prevent drilldown types",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "debug-variable-actions.config.render-mode": {
+                    "type": "string",
+                    "default": "panel",
+                    "description": "Render mode",
+                    "enum": [
+                        "panel",
+                        "panel-vue",
+                        "stack-vue"
+                    ],
+                    "enumDescriptions": [
+                        "Simple visualization",
+                        "Stack trace visualization"
+                    ]
+                },
+                "debug-variable-actions.config.image-sizebyte-limit": {
+                    "type": "number",
+                    "default": 4294967295,
+                    "description": "Image size limit (in bytes)"
+                },
+                "debug-variable-actions.config.post-server": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Post messages to the frontend server"
+                },
+                "debug-variable-actions.config.serv-url": {
+                    "type": "string",
+                    "default": "http://localhost:8080",
+                    "description": "Frontend server URL"
                 },
                 "debug-variable-actions.config.image-types": {
                     "type": "array",
@@ -161,10 +232,12 @@
         "@types/mocha": "^10.0.6",
         "@types/node": "18.x",
         "@types/vscode": "^1.89.0",
+        "@types/ws": "^8.5.12",
         "@typescript-eslint/eslint-plugin": "^7.11.0",
         "@typescript-eslint/parser": "^7.11.0",
         "@vscode/test-cli": "^0.0.9",
         "@vscode/test-electron": "^2.4.0",
+        "cross-env": "^7.0.3",
         "eslint": "^8.57.0",
         "typescript": "^5.4.5"
     },
@@ -172,6 +245,8 @@
         "dedent": "^1.5.3",
         "ejs": "^3.1.10",
         "jimp": "^0.22.12",
-        "sharp": "^0.33.5"
+        "optional": "^0.1.4",
+        "sharp": "^0.33.5",
+        "ws": "^8.18.0"
     }
 }
