@@ -3,7 +3,8 @@
 import * as vscode from 'vscode';
 import dedent from 'dedent';
 
-import { VariableTrackerRegister } from './tracker/variableTrackerRegister';
+import { DebugAdapterTrackerRegister } from './tracker/debugAdapterTrackerRegister';
+import { VariableViewProvider } from './panel/variableViewProvider';
 import *  as actions from './action/debugAction';
 
 // process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
@@ -15,7 +16,17 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Register a variable tracker:
 	console.log("context", context);
-	context.subscriptions.push(VariableTrackerRegister.register(context));
+	context.subscriptions.push(DebugAdapterTrackerRegister.register(context));
+
+	// Register views
+	console.log("registerWebviewViewProvider");
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider('debug-variable-actions.views.image-panel', new VariableViewProvider(context), {
+			webviewOptions: {
+				retainContextWhenHidden: true,
+			}
+		})
+	);
 
 	// Register commands:
 	context.subscriptions.push(

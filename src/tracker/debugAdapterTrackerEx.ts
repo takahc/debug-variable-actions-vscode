@@ -4,8 +4,9 @@ import { VariableViewPanel } from '../panel/variableViewPanel';
 import { DebugSessionTracker } from '../debugger/debugSessionTracker';
 import { VariableTypeFactory } from '../debugger/variable/variableTypeFactory';
 import { ImageVariable } from '../debugger/variable/imageVariable';
+import { VariableViewProvider } from '../panel/variableViewProvider';
 
-export class VariableTracker implements vscode.DebugAdapterTracker {
+export class DebugAdapterTrackerEx implements vscode.DebugAdapterTracker {
     private _context: vscode.ExtensionContext;
     private _panel: VariableViewPanel | undefined;
     public breakpoints: any[] = [];
@@ -92,9 +93,11 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         if (!session) { return; }
 
         VariableViewPanel.render(this._context, panelType);
+
+        // const panel = VariableViewProvider.currentView;
         const panel = VariableViewPanel.currentPanel;
         if (panel) {
-            panel.sendInstanceMessage("WAIT FOR IMAGES...");
+            panel.sendInstantMessage("WAIT FOR IMAGES...");
         }
 
         DebugSessionTracker.newSessionTracker(this._context, session);
@@ -123,7 +126,7 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
             });
             panel.showPanel();
             panel.postMessage({ command: "capture" });
-            panel.sendInstanceMessage("DONE!");
+            panel.sendInstantMessage("DONE!");
         }
     }
 
