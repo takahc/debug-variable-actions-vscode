@@ -6,10 +6,6 @@ inputs:
         description: "Is pre-release"
         required: false
         default: true
-    tag:
-        description: "Tag"
-        required: false
-        default: null
 
 runs:
     using: "composite"
