@@ -15,20 +15,14 @@ jobs:
             - name: Setup Node.js
               uses: ./.github/actions/install-nodejs-and-packages
 
-            - name: Update version
-              id: update-version
-              uses: ./.github/actions/update-version
-              with:
-                  update_semantic: "patch"
-
             - name: Build (pre-release)
               id: build
               uses: ./.github/actions/build-pre-release
               with:
                   is_pre_release: true
                   save_artifacts: true
-                  push_changes: true
-                  tag: ${{ steps.update-version.outputs.tag }}
+                  push_changes: false
+                  tag: false
 
             - name: Publish to marketplace
               uses: ./.github/actions/publish-to-marketplace
@@ -37,4 +31,3 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
                   pre_release: true
-                  tag: ${{ steps.update-version.outputs.tag }}
