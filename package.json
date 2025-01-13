@@ -3,6 +3,7 @@
     "displayName": "debug-variable-actions-vscode",
     "description": "A VSCode extension for debugging variables",
     "version": "0.0.32",
+    "icon": "images/icon.png",
     "engines": {
         "vscode": "^1.89.0"
     },
@@ -11,12 +12,13 @@
         "Other"
     ],
     "activationEvents": [
+        "onStartupFinished",
         "onDebug"
     ],
     "publisher": "akipg",
     "repository": {
         "type": "git",
-        "url": "https://github.com/akipg/debug-variable-actions-vscode.git"
+        "url": "https://github.com/takahc/debug-variable-actions-vscode.git"
     },
     "main": "./out/extension.js",
     "contributes": {
@@ -67,6 +69,31 @@
                 {
                     "command": "debug-variable-actions.topanel",
                     "when": "true"
+                }
+            ]
+        },
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "debug-variable-actions-activity-bar",
+                    "title": "Debug Variable Actions",
+                    "icon": "images/icon.png"
+                }
+            ]
+        },
+        "views": {
+            "debug-variable-actions-activity-bar": [
+                {
+                    "id": "debug-variable-actions.views.controller",
+                    "type": "webview",
+                    "name": "Controller",
+                    "canToggleVisibility": false
+                },
+                {
+                    "id": "debug-variable-actions.views.image-panel",
+                    "type": "webview",
+                    "name": "Image Panel",
+                    "canToggleVisibility": false
                 }
             ]
         },
