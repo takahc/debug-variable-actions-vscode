@@ -1,7 +1,5 @@
 import * as vscode from 'vscode';
 import { VariableViewPanel } from './panel';
-import { register } from 'module';
-
 import { DebugSessionTracker } from './variable/debugSessionTracker';
 import { DebugVariable } from './variable/debugVariable';
 import { VariableTypeFactory } from './variable/variableTypeFactory';
@@ -30,44 +28,36 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
     }
 
     async procImagePanel(message: any) {
+        await this.initializeImagePanel();
+        const sessionTracker = this.setupSessionTracker(message);
+        const variables = await this.fetchVariables(sessionTracker, message);
+        const imageMetaWides = await this.processImageVariables(sessionTracker);
+        await this.renderImagePanel(imageMetaWides, message);
+    }
+
+    private async initializeImagePanel(): Promise<void> {
         VariableTypeFactory.loadSettings();
-
         VariableViewPanel.render(this._context);
-        const panel = VariableViewPanel.currentPanel;
-        if (panel) {
-            // panel.showPanel();
-        }
         VariableViewPanel.sendInstanceMessage("WAIT FOR IMAGES...");
+    }
 
-
+    private setupSessionTracker(message: any): DebugSessionTracker {
         const session = vscode.debug.activeDebugSession;
-
-        // Create new tracker to manage debug variables every frames and threads,
-        //   not to share them among debug trackers even if they have same session.
         DebugSessionTracker.newSessionTracker(this._context, session!);
-        let sessionTracker = DebugSessionTracker.currentTracker!;
+        const sessionTracker = DebugSessionTracker.currentTracker!;
         DebugSessionTracker.breakCount++;
+        return sessionTracker;
+    }
+
+    private async fetchVariables(sessionTracker: DebugSessionTracker, message: any): Promise<DebugVariable[]> {
         const threadId = message.body.threadId;
-
-        // const stackTrace = await session?.customRequest('stackTrace', { threadId });
-        // const frameId = stackTrace.stackFrames[0].id;
-        // const scopes = await session?.customRequest('scopes', { frameId });
-
-        // console.log(frameId);
-        // console.log(stackTrace);
-        // console.log("scopes", scopes);
-        // for (const scope of scopes.scopes) {
-        //     const variables = await session?.customRequest('variables', { variablesReference: scope.variablesReference });
-        //     console.log(variables);
-        //     // Here you can process the variables as needed
-        // }
-
         console.log("fetchLocalVariablesInFirstFrame", sessionTracker);
+        
         const thread = sessionTracker.addThread(threadId, [], message.body);
         const variables = await thread.fetchLocalVariablesInFirstFrame();
         console.log("fetchLocalVariablesInFirstFrame", variables);
 
-        let values: any = [];
+        const values: any = [];
         variables.forEach((variable: DebugVariable) => {
             values.push(variable.getVariableValuesAsDict());
         });
@@ -76,6 +66,10 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         const allVariables = sessionTracker.gatherAllVariables();
         console.log(allVariables);
 
+        return variables;
+    }
+
+    private async processImageVariables(sessionTracker: DebugSessionTracker): Promise<any[]> {
         const imageVariables: ImageVariable[] = sessionTracker.gatherImageVariables();
         console.log(imageVariables);
 
@@ -83,37 +77,23 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         for (const imageVariable of imageVariables) {
             imageVariable.updateImageInfo();
             imageVariable.updateBinaryInfo();
-            const metaWide = await imageVariable.toFile(); // toFile() may return undefined if the image could not read properly.
+            const metaWide = await imageVariable.toFile();
             if (metaWide) {
                 imageMetaWides.push(metaWide);
             }
-            // imageVariable.toFile();
         }
 
+        return imageMetaWides;
+    }
 
+    private async renderImagePanel(imageMetaWides: any[], message: any): Promise<void> {
         console.log("rendering panel");
         VariableViewPanel.render(this._context, "image-panel");
+        const panel = VariableViewPanel.currentPanel;
+        
         if (panel) {
-            // Set web url
-            for (const metaWide of imageMetaWides) {
-                metaWide.imageWebUrl = panel.getWebViewUrlString(vscode.Uri.file(metaWide.vscode.filePath));
-            }
-            console.log("imageMetaWides", imageMetaWides);
-
-            // Display
-            // const openPath = vscode.Uri.file(filePath.toString()).toString().replace("/file:", "");
-            // vscode.commands.executeCommand('vscode.open', filePath.fsPath);
-            console.log("showing images on panel", panel);
-            const workspaceFolders = vscode.workspace.workspaceFolders;
-            panel.postMessage({
-                command: "images",
-                metas: imageMetaWides,
-                breakpointMeta: message.body,
-                vscodeMeta: { workspaceFolders }
-
-            });
-            panel.showPanel();
-
+            this.setImageWebUrls(panel, imageMetaWides);
+            this.displayImages(panel, imageMetaWides, message);
             console.log("DONE!!");
         } else {
             console.log("panel is undefined");
@@ -124,39 +104,25 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         VariableViewPanel.sendInstanceMessage("DONE!");
     }
 
-    //     public onDidSendMessage(message: any) {
-    //         console.log(Object.assign({}, message));
-    //         if ((message.type === 'event' && message.event === 'output') ||
-    //             (message.type === 'response' && message.command === 'evaluate')) {
-    //             console.log(Object.assign({}, message));
-    //             if ((message.body && message.body.category === 'stdout') ||
-    //                 (message.boy)) {
-    //                 console.log('message.body', message.body);
-    //                 if (!this._panel) {
-    //                     console.log("this._panel is undefined")
-    //                     this._panel = new VariableViewPanel(this._context);
-    //                 }
-    //                 else{
-    //                     console.log("this._panel is NOT undefined")
-    //                 }
-    //                 console.log("this._panel.isPanelExist 1", this._panel.isPanelExist());
-    //                 this._panel.render();
-    //                 this._panel.showPanel(vscode.ViewColumn.Two);
-    //                 console.log("this._panel.isPanelExist 2", this._panel.isPanelExist());
+    private setImageWebUrls(panel: VariableViewPanel, imageMetaWides: any[]): void {
+        for (const metaWide of imageMetaWides) {
+            metaWide.imageWebUrl = panel.getWebViewUrlString(vscode.Uri.file(metaWide.vscode.filePath));
+        }
+        console.log("imageMetaWides", imageMetaWides);
+    }
 
-    //                 let variableOut = {
-    //                     message,
-    //                     name: message.body.variablesReference,
-    //                     value: message.body.output
-    //                 };
-
-    //                 console.log("this._panel.isPanelExist 3", this._panel.isPanelExist());
-    //                 console.log("posting message to panel")
-    //                 this._panel.postMessage({ command: 'variable', output: variableOut });
-    //                 console.log("this._panel.isPanelExist 4", this._panel.isPanelExist());
-    //             }
-    //         }
-    //     }
+    private displayImages(panel: VariableViewPanel, imageMetaWides: any[], message: any): void {
+        console.log("showing images on panel", panel);
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        
+        panel.postMessage({
+            command: "images",
+            metas: imageMetaWides,
+            breakpointMeta: message.body,
+            vscodeMeta: { workspaceFolders }
+        });
+        panel.showPanel();
+    }
 }
 
 
