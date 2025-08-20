@@ -336,21 +336,15 @@ class BreakpointCapture {
         const workspaceFolder = this.vscodeMeta.workspaceFolder;
         const sourcePathRelative = this.meta.source.path.replace(workspaceFolder, ".");
         const sourcePathExp = `${sourcePathRelative}:${meta.line}:${meta.column}`;
-        this.frameInfoDom.innerHTML = `${sourcePathExp}`;
+        
+        this.frameInfoDom.innerHTML = sourcePathExp;
         this.frameInfoDom.onclick = () => {
             console.log("Open file", meta.source.path, "pos:", [meta.line, meta.column]);
-            // revealTextFile(meta.frame.source.path, [meta.frame.line, meta.frame.column]);
             vscodeOpen(meta.source.path, [meta.line, meta.column]);
         };
-
-        this.frameInfoDom.innerHTML = `${this.meta.source.path}:${this.meta.line}:${this.meta.column}`;
     }
     addImageIdxCapture(imageTraceId, imageIdx) {
         this.imageTraceIdxDict[imageTraceId] = imageIdx;
-    }
-
-    vscodeOpen(uri, pos = undefined) {
-        vscodeOpen(uri, pos);
     }
 
     setLink(prev, next) {
