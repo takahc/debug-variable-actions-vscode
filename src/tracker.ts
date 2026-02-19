@@ -92,30 +92,30 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
 
         console.log("rendering panel");
         VariableViewPanel.render(this._context, "image-panel");
-        if (panel) {
-            // Set web url
+
+        // Re-fetch currentPanel after render (it may have just been created above)
+        const currentPanel = VariableViewPanel.currentPanel;
+        if (currentPanel) {
+            // Resolve webview-accessible URLs for each saved image
             for (const metaWide of imageMetaWides) {
-                metaWide.imageWebUrl = panel.getWebViewUrlString(vscode.Uri.file(metaWide.vscode.filePath));
+                metaWide.imageWebUrl = currentPanel.getWebViewUrlString(
+                    vscode.Uri.file(metaWide.vscode.filePath)
+                );
             }
             console.log("imageMetaWides", imageMetaWides);
 
-            // Display
-            // const openPath = vscode.Uri.file(filePath.toString()).toString().replace("/file:", "");
-            // vscode.commands.executeCommand('vscode.open', filePath.fsPath);
-            console.log("showing images on panel", panel);
             const workspaceFolders = vscode.workspace.workspaceFolders;
-            panel.postMessage({
+            currentPanel.postMessage({
                 command: "images",
                 metas: imageMetaWides,
                 breakpointMeta: message.body,
                 vscodeMeta: { workspaceFolders }
-
             });
-            panel.showPanel();
-
+            // Always bring the panel to the foreground after a breakpoint
+            currentPanel.showPanel();
             console.log("DONE!!");
         } else {
-            console.log("panel is undefined");
+            console.log("panel is undefined after render — this should not happen");
         }
 
         console.log("DONE!!!!!!!!!!!");

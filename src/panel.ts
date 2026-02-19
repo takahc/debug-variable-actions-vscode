@@ -130,10 +130,17 @@ export class VariableViewPanel {
             // If the webview panel already exists reveal it
             VariableViewPanel.currentPanel._panel.reveal(vscode.ViewColumn.Two);
         } else {
-            let localResourceRoots = context.storageUri ? [
+            // Always include both storageUri and globalStorageUri so images saved
+            // in either location can be served to the webview.
+            const localResourceRoots: vscode.Uri[] = [
                 vscode.Uri.joinPath(context.extensionUri, "public"),
-                vscode.Uri.joinPath(context.storageUri)
-            ] : [vscode.Uri.joinPath(context.extensionUri, "public")];
+            ];
+            if (context.storageUri) {
+                localResourceRoots.push(context.storageUri);
+            }
+            if (context.globalStorageUri) {
+                localResourceRoots.push(context.globalStorageUri);
+            }
 
             // If a webview panel does not already exist create and show a new one
             const panel = vscode.window.createWebviewPanel(

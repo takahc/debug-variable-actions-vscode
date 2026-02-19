@@ -72,14 +72,14 @@ export class ImageVariable extends DebugVariable {
         this.updateImageInfo();
         this.updateBinaryInfo();
 
-        // Extract hex address from imageInfo.data (e.g. "0x7f1234abcd")
-        const startAddress = ((str: string): string => {
-            if (str.charAt(0) === '0' && str.charAt(1).toLowerCase() === 'x') {
-                const hexMatch = str.match(/^0x[0-9A-Fa-f]+/);
-                return hexMatch ? hexMatch[0] : "0x00";
-            }
-            return "0x00";
-        })(this.imageInfo.data);
+        // Extract hex address from imageInfo.data.
+        // GDB formats a pointer as "0x1234abcd" or "0x1234abcd \"some text...\"".
+        // We need just the hex part.
+        const rawData: string = String(this.imageInfo.data ?? "");
+        const startAddress = ((): string => {
+            const hexMatch = rawData.match(/0x[0-9A-Fa-f]+/);
+            return hexMatch ? hexMatch[0] : "0x00";
+        })();
 
         // check null pointer
         if (parseInt(startAddress, 16) === 0) {

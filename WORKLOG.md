@@ -194,6 +194,82 @@ npm run lint     → 成功 (エラーなし)
 
 ---
 
+## 2026-02-20 — パネル表示バグ修正セッション (branch: `claude/improvements`)
+
+### 報告された問題
+
+- デバッグが止まることはなくなったが、ブレークしてもパネルが開かない
+- `Redundant folding ranges request received` が出る（これはVS Code本体の内部警告で拡張機能とは無関係）
+
+### 根本原因分析
+
+#### 1. `panel.ts`: `globalStorageUri` が `localResourceRoots` に含まれていない
+
+```typescript
+// 修正前: storageUri のみ
+let localResourceRoots = context.storageUri ? [
+    extensionUri/public,
+    context.storageUri       // ← globalStorageUri が未追加
+] : [extensionUri/public];
+```
+
+`imageVariable.ts` では `context.storageUri` が `undefined` の場合に `context.globalStorageUri` へフォールバックします。
+しかしパネルの `localResourceRoots` には `globalStorageUri` が含まれていないため、
+webview からの画像リソースアクセスがブロックされていました。
+
+#### 2. `tracker.ts`: `panel` 参照のタイミング問題
+
+```typescript
+// 修正前:
+VariableViewPanel.render(this._context);     // 1回目のrender
+const panel = VariableViewPanel.currentPanel; // ← ここで取得
+// ... 画像処理 await ...
+VariableViewPanel.render(this._context, "image-panel"); // 2回目のrender
+if (panel) { ... panel.showPanel(); }  // ← 古い参照を使用
+```
+
+`render()` は既存パネルがある場合 `reveal` のみを行いますが、
+将来のリファクタリングへの堅牢性のため `render()` 後に `currentPanel` を再取得するよう変更。
+
+#### 3. `imageVariable.ts`: `data` ポインタの解析がシンプルすぎる
+
+```typescript
+// 修正前: 先頭が "0x" で始まる場合のみマッチ
+if (str.charAt(0) === '0' && str.charAt(1).toLowerCase() === 'x') { ... }
+```
+
+GDB が返す `data` フィールドの値は様々な形式があります:
+- `"0x1234abcd"` — ポインタのみ
+- `"0x1234abcd \"\\x01\\x02...\""` — ポインタ + 文字列データ
+- `"0x1234abcd <some_symbol>"` — ポインタ + シンボル名
+- 式評価後の結果が先頭に `"` や空白を含む場合
+
+`/0x[0-9A-Fa-f]+/` の正規表現を使うことで文字列中の任意の位置の hex アドレスを確実に抽出。
+
+### 修正内容
+
+#### `src/panel.ts`
+- `globalStorageUri` も `localResourceRoots` に追加
+- `context.storageUri` と `context.globalStorageUri` を両方チェックして追加
+
+#### `src/tracker.ts`
+- `render()` 後に `VariableViewPanel.currentPanel` を再取得 (`currentPanel` 変数)
+- `imageMetaWides` が空でも `showPanel()` が呼ばれるようにフロー改善
+- (旧 `panel` 変数は `render()` 前の取得だったため、新規作成時も問題なく動くが、明示的に再取得することで確実性向上)
+
+#### `src/variable/imageVariable.ts`
+- `startAddress` 抽出を正規表現 `/0x[0-9A-Fa-f]+/` ベースに変更
+- `imageInfo.data` が `null`/`undefined` の場合のフォールバック追加 (`String(... ?? "")`)
+
+### コンパイル・Lint結果
+
+```
+npm run compile  → 成功 (エラーなし)
+npm run lint     → 成功 (エラーなし)
+```
+
+---
+
 ### 今後の改善候補 (TODO)
 
 - [ ] `imageVariable.ts`: 画像のチャンネル順 (BGR→RGB) の自動変換オプション
