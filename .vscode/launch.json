@@ -11,7 +11,7 @@
       "request": "launch",
       "args": [
         "--profile=development2",
-        "--extensionDevelopmentPath=${workspaceFolder}"
+        "--extensionDevelopmentPath=${workspaceFolder}/test2/ConsoleApplication1"
       ],
       "outFiles": [
         "${workspaceFolder}/out/**/*.js"

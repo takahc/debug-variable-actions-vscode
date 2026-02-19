@@ -86,16 +86,37 @@ export class ImageVariable extends DebugVariable {
             console.log("toFile skip null pointer image", this.name, this.expression);
             return;
         }
-        if (this.binaryInfo.sizeByte === 0 || this.imageInfo.mem_width === 0 || this.imageInfo.mem_height === 0) {
-            console.log("toFile skip zero size image", this.name, this.expression);
+        // Sanity-check image dimensions. Uninitialised struct members can produce
+        // garbage values (e.g. stack addresses interpreted as width/height) that
+        // cause an astronomically large sizeByte and crash the DAP server.
+        const MAX_DIM = 32768;   // 32K px per side is more than enough for debugging
+        const MAX_READ_BYTES = 256 * 1024 * 1024; // 256 MiB hard cap for readMemory count
+
+        const wVal = Math.trunc(Number(this.imageInfo.mem_width));
+        const hVal = Math.trunc(Number(this.imageInfo.mem_height));
+        if (!isFinite(wVal) || wVal <= 0 || wVal > MAX_DIM ||
+            !isFinite(hVal) || hVal <= 0 || hVal > MAX_DIM) {
+            console.log("toFile skip: image dimensions out of range",
+                { width: wVal, height: hVal }, this.name, this.expression,
+                "(variable may be uninitialised)");
             return;
         }
 
-        console.log("startAddress", startAddress, "sizeByte", this.binaryInfo.sizeByte, this.name, this.expression);
+        // Ensure sizeByte is a safe positive integer that the DAP server can accept.
+        // GDB's readMemory 'count' field must fit in a 32-bit signed integer.
+        const rawSizeByte = this.binaryInfo.sizeByte;
+        const sizeByte = Math.trunc(Number(rawSizeByte));
+        if (!isFinite(sizeByte) || sizeByte <= 0 || sizeByte > MAX_READ_BYTES) {
+            console.log("toFile skip: sizeByte out of range", sizeByte, rawSizeByte, this.name, this.expression,
+                `(width=${wVal}, height=${hVal}, channels=${this.imageInfo.channels}, bpp=${this.imageInfo.bytesForPx})`);
+            return;
+        }
+
+        console.log("startAddress", startAddress, "sizeByte", sizeByte, this.name, this.expression);
         let readMemory;
         try {
             readMemory = await this.frame.thread.tracker.session.customRequest('readMemory', {
-                memoryReference: startAddress, offset: 0, count: this.binaryInfo.sizeByte
+                memoryReference: startAddress, offset: 0, count: sizeByte
             });
         } catch (e) {
             console.log("error readMemory", this, e);
@@ -113,7 +134,9 @@ export class ImageVariable extends DebugVariable {
         // For non-uint8 types we normalise values into [0,255] so sharp can render them.
         let rawBuffer: Buffer;
         const { mem_width, mem_height, channels, bytesForPx } = this.imageInfo;
-        const totalPixels = mem_width * mem_height * channels;
+        // Clamp totalPixels to what was actually read, to guard against expression mis-evaluation.
+        const maxFromBuffer = Math.floor(bufferData.byteLength / Math.max(1, bytesForPx));
+        const totalPixels = Math.min(mem_width * mem_height * channels, maxFromBuffer);
 
         if (!this.binaryInfo.isInt) {
             // Float32 / Float64 → normalise to uint8

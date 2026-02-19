@@ -130,6 +130,70 @@ npm run lint     → 成功 (エラーなし)
 
 ---
 
+## 2026-02-20 — バグ修正セッション (branch: `claude/improvements`)
+
+### 報告されたバグ
+
+**症状:** L111 `MyImage edge = edge_detection(&img)` のブレークポイントで停止後、Continue ができなくなる。
+
+DEBUG CONSOLEのエラー:
+```
+Stopping due to fatal error: JsonReaderException: Could not convert to integer: -35153120620800. Path 'count'.
+```
+
+### 根本原因分析
+
+**発生箇所:** `imageVariable.ts` → `readMemory` DAP リクエストの `count` フィールド
+
+**原因の連鎖:**
+1. L111 時点では `edge` 変数は宣言済みだが未初期化 (スタック上のゴミ値)
+2. 拡張機能はスコープ内の全 `MyImage` 型変数を収集するため `img` と `edge` の両方を処理
+3. `edge.width` = 未初期化のスタック値 (例: `0x7FFF_C3A2...` のような大きな数)
+4. `sizeByte = width * height * 1 * 1` で `width × height` が天文学的な数になる
+5. `count: -35153120620800` として DAP サーバーへ送信 → GDB が 32bit 整数に変換できずクラッシュ
+
+### 修正内容 (`src/variable/imageVariable.ts`)
+
+#### 1. 画像寸法の範囲チェックを追加
+```typescript
+const MAX_DIM = 32768;
+const wVal = Math.trunc(Number(this.imageInfo.mem_width));
+const hVal = Math.trunc(Number(this.imageInfo.mem_height));
+if (!isFinite(wVal) || wVal <= 0 || wVal > MAX_DIM || ...) {
+    // skip uninitialised variable
+    return;
+}
+```
+- 最大 32768px (32K) 以上の寸法はスキップ
+- 負値・非数・0 もスキップ
+- 未初期化変数のゴミ値を確実に検出
+
+#### 2. sizeByte の範囲チェックを追加
+```typescript
+const MAX_READ_BYTES = 256 * 1024 * 1024; // 256 MiB
+const sizeByte = Math.trunc(Number(rawSizeByte));
+if (!isFinite(sizeByte) || sizeByte <= 0 || sizeByte > MAX_READ_BYTES) {
+    return;
+}
+```
+- GDB が受け付けられない巨大な `count` 値を防ぐ最後の防衛線
+
+#### 3. totalPixels のクランプ
+```typescript
+const maxFromBuffer = Math.floor(bufferData.byteLength / Math.max(1, bytesForPx));
+const totalPixels = Math.min(mem_width * mem_height * channels, maxFromBuffer);
+```
+- 実際に読み取ったバイト数を超えてバッファにアクセスすることを防ぐ
+
+### コンパイル・Lint結果
+
+```
+npm run compile  → 成功 (エラーなし)
+npm run lint     → 成功 (エラーなし)
+```
+
+---
+
 ### 今後の改善候補 (TODO)
 
 - [ ] `imageVariable.ts`: 画像のチャンネル順 (BGR→RGB) の自動変換オプション
