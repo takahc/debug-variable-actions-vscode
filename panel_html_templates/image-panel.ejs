@@ -1,15 +1,21 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
     <head>
-        <link
-            rel="stylesheet"
-            href="<%- publicDir %>/style_image_panel.css"
-            type="text/css"
-        />
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="Content-Security-Policy"
+              content="default-src 'none';
+                       img-src vscode-resource: https: data:;
+                       script-src vscode-resource:;
+                       style-src vscode-resource: 'unsafe-inline';" />
+        <title>Debug Variable Images</title>
+        <link rel="stylesheet" href="<%- publicDir %>/style_image_panel.css" type="text/css" />
     </head>
 
     <body>
-        <div id="instant-message"></div>
+        <!-- Toolbar is injected by JS (ImageTraceManager.addToParentDom) -->
         <div id="wrapper"></div>
-        <script src="<%- publicDir %>/index_image_panel.js" />
+        <div id="instant-message"></div>
+        <script src="<%- publicDir %>/index_image_panel.js"></script>
     </body>
 </html>

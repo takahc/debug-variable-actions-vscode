@@ -79,16 +79,15 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
         const imageVariables: ImageVariable[] = sessionTracker.gatherImageVariables();
         console.log(imageVariables);
 
-        const imageMetaWides = [];
-        for (const imageVariable of imageVariables) {
-            imageVariable.updateImageInfo();
-            imageVariable.updateBinaryInfo();
-            const metaWide = await imageVariable.toFile(); // toFile() may return undefined if the image could not read properly.
-            if (metaWide) {
-                imageMetaWides.push(metaWide);
-            }
-            // imageVariable.toFile();
-        }
+        // Process all image variables in parallel for faster breakpoint handling
+        const metaWideResults = await Promise.all(
+            imageVariables.map(async (imageVariable) => {
+                imageVariable.updateImageInfo();
+                imageVariable.updateBinaryInfo();
+                return imageVariable.toFile(); // may return undefined if image could not be read
+            })
+        );
+        const imageMetaWides = metaWideResults.filter((m): m is NonNullable<typeof m> => m !== undefined);
 
 
         console.log("rendering panel");

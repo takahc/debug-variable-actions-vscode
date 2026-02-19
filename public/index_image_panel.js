@@ -1,5 +1,3 @@
-console.log("hey yo");
-
 const vscode = acquireVsCodeApi();
 window.addEventListener('DOMContentLoaded', () => {
     const manager = new ImageTraceManager("#wrapper");
@@ -73,7 +71,7 @@ class ImageTraceManager {
 
     get _initial_dom() {
         // div.image-trace-manager
-        let imageTraceManagerDiv = document.createElement("div");
+        const imageTraceManagerDiv = document.createElement("div");
         imageTraceManagerDiv.classList.add("image-trace-manager");
         this.frameInfo.classList.add("frame-info");
         this.goLineCheckBox.classList.add("go-line-checkbox");
@@ -96,20 +94,19 @@ class ImageTraceManager {
         const backNextSpan = document.createElement("span");
         // Returns a function to add to this.slider.value
         const buttonClickFunc = (add) => {
-            console.log("clicked add", add);
-            return (e => {
-                console.log("clicked this", this);
+            return (() => {
                 const valAfter = parseInt(this.slider.value) + add;
-                if (valAfter < this.slider.min || this.slider.max < valAfter) {
-                    console.log("button click was ignored", this.slider.min, this.slider.max, valAfter);
+                if (valAfter < parseInt(this.slider.min) || parseInt(this.slider.max) < valAfter) {
                     return;
                 }
                 this.slider.value = valAfter;
                 const captureIdx = this.slider.value;
-                // this.render(captureIdx, true);
                 const breakpointCapture = this.breakpointCaptureList[captureIdx];
                 this.renderAtBreakpoint(breakpointCapture);
-                this.frameInfo.click();
+                this._updateBreakCountBadge(captureIdx);
+                if (this.goLineCheckBox.checked) {
+                    this.frameInfo.click();
+                }
             });
         };
         const backButton = document.createElement("button");
@@ -133,11 +130,44 @@ class ImageTraceManager {
     }
 
     addToParentDom() {
-        document.querySelector(this.parentDomQuery).appendChild(this.backNextSpan);
-        document.querySelector(this.parentDomQuery).appendChild(this.slider);
-        document.querySelector(this.parentDomQuery).appendChild(this.goLineCheckBox);
-        document.querySelector(this.parentDomQuery).appendChild(this.frameInfo);
-        document.querySelector(this.parentDomQuery).appendChild(this.dom);
+        // Build a sticky toolbar that contains all controls
+        const toolbar = document.createElement("div");
+        toolbar.id = "toolbar";
+
+        // Breakpoint counter badge
+        this._breakCountBadge = document.createElement("span");
+        this._breakCountBadge.id = "break-count-badge";
+        this._breakCountBadge.title = "Breakpoint index";
+        this._breakCountBadge.style.cssText =
+            "font-size:10px;color:var(--text-muted);font-family:var(--font-mono);min-width:32px;text-align:right;";
+        toolbar.appendChild(this.backNextSpan);
+        toolbar.appendChild(this.slider);
+        toolbar.appendChild(this._breakCountBadge);
+
+        const goLineLabel = document.createElement("label");
+        goLineLabel.title = "Auto-jump to source location when navigating breakpoints";
+        goLineLabel.style.display = "flex";
+        goLineLabel.style.alignItems = "center";
+        goLineLabel.style.gap = "4px";
+        goLineLabel.appendChild(this.goLineCheckBox);
+        const goLineText = document.createElement("span");
+        goLineText.textContent = "Go to line";
+        goLineLabel.appendChild(goLineText);
+        toolbar.appendChild(goLineLabel);
+
+        toolbar.appendChild(this.frameInfo);
+
+        // Insert toolbar before wrapper, not inside it
+        const parent = document.querySelector(this.parentDomQuery);
+        parent.parentNode.insertBefore(toolbar, parent);
+        parent.appendChild(this.dom);
+    }
+
+    _updateBreakCountBadge(idx) {
+        if (this._breakCountBadge) {
+            const total = this.breakpointCaptureList.length;
+            this._breakCountBadge.textContent = total > 0 ? `${parseInt(idx) + 1} / ${total}` : "";
+        }
     }
 
     has(id) {
@@ -181,6 +211,11 @@ class ImageTraceManager {
     addBreakpointCapture(breakpointCapture) {
         breakpointCapture.setFrameInfoDom(this.frameInfo);
         this.breakpointCaptureList.push(breakpointCapture);
+        // Keep slider range in sync
+        const newMax = this.breakpointCaptureList.length - 1;
+        this.slider.max = newMax;
+        this.slider.value = newMax;
+        this._updateBreakCountBadge(newMax);
     }
 
     render(captureIdx = -1, isSliderEvent = false) {
@@ -305,10 +340,10 @@ class ImageTraceManager {
     }
 
     _handleSliderEvent(e) {
-        let captureIdx = e.target.value;
-        // this.render(captureIdx, true);
+        const captureIdx = e.target.value;
         const breakpointCapture = this.breakpointCaptureList[captureIdx];
         this.renderAtBreakpoint(breakpointCapture);
+        this._updateBreakCountBadge(captureIdx);
         if (this.goLineCheckBox.checked) {
             this.frameInfo.click();
         }
@@ -596,39 +631,53 @@ class ImageItemDomFactory {
     constructor(imageUrl, meta) {
         this.imageUrl = imageUrl;
         this.meta = meta;
+
+        // Card root
         this.imageItemDiv = document.createElement("div");
-        this.a_filename = document.createElement("a");
-        this.a_source = document.createElement("a");
+
+        // Image wrapper (dark bg, centred)
+        this.imageWrapper = document.createElement("div");
+        this.imageWrapper.classList.add("image-wrapper");
+
+        // The actual <img>
         this.img = document.createElement("img");
+
+        // Card body
+        this.cardBody = document.createElement("div");
+        this.cardBody.classList.add("card-body");
+
+        // Variable name link
+        this.a_filename = document.createElement("a");
+
+        // Hidden source-info anchor (kept for back-compat)
+        this.a_source = document.createElement("a");
+        this.a_source.classList.add("source-info");
+
+        // Meta info row
         this.variableInfoDiv = document.createElement("div");
+        this.variableInfoDiv.classList.add("variable-info");
     }
 
     create() {
-        const imageUrl = this.imageUrl;
-        const meta = this.meta;
-
-        // img.image
+        // img
         this.img.classList.add("image");
-        this.img.src = this.imageUrl;
-        this.imageItemDiv.appendChild(this.img);
+        this.img.src = this.imageUrl || "";
+        this.imageWrapper.appendChild(this.img);
 
-        // div.image-item
+        // card root
         this.imageItemDiv.classList.add("image-item");
+        this.imageItemDiv.appendChild(this.imageWrapper);
 
-        // a
-        const adiv = document.createElement("div");
-        adiv.style.padding = "3px";
-        adiv.style.paddingTop = "0px";
-        adiv.appendChild(this.a_filename);
-        adiv.appendChild(this.a_source);
-        this.imageItemDiv.appendChild(adiv);
+        // card body
+        this.a_filename.classList.add("evaluate-name");
+        this.cardBody.appendChild(this.a_filename);
+        this.cardBody.appendChild(this.a_source);
+        this.cardBody.appendChild(this.variableInfoDiv);
+        this.imageItemDiv.appendChild(this.cardBody);
 
-        // div.variable-info
-        this.variableInfoDiv.classList.add("variable-info");
         if (this.imageUrl !== undefined && this.meta !== undefined) {
             this.update(this.imageUrl, this.meta);
         }
-        this.imageItemDiv.appendChild(this.variableInfoDiv);
 
         return this.imageItemDiv;
     }
@@ -637,41 +686,37 @@ class ImageItemDomFactory {
         this.imageUrl = imageUrl;
         this.meta = meta;
 
-        // img.image
+        // Update image src
         this.img.src = imageUrl;
+        this.img.title = "Click to copy image";
+        this.img.onclick = () => copyPngImageToClipboard(imageUrl);
 
-        // a
+        // Variable name — click to copy image
         this.a_filename.href = "#";
-        this.a_filename.onclick = () => copyPngImageToClipboard(`${imageUrl}`);
-        // this.a_filename.innerHTML = `<b>${meta.variable.evaluateName}</b><br>`;
-        this.a_filename.innerHTML = `${meta.variable.evaluateName}<br>`;
-        this.a_filename.classList.add("evaluate-name");
+        this.a_filename.onclick = (e) => { e.preventDefault(); copyPngImageToClipboard(imageUrl); };
+        this.a_filename.textContent = meta.variable.evaluateName;
+        this.a_filename.title = `Copy ${meta.variable.evaluateName} to clipboard`;
 
-        const workspaceFolder = meta.vscode.workspaceFolder.uri.fsPath;
-        const sourcePathRelative = meta.frame.source.path.replace(workspaceFolder, ".");
-        const sourcePathExp = `${sourcePathRelative}:${meta.frame.line}:${meta.frame.column}`;
-        const imageFileFsPath = `file:\\\\\\${meta.vscode.filePath}`;
-        this.a_source.classList.add("source-info");
-        this.a_source.innerHTML = `${sourcePathExp}`;
-        this.a_source.onclick = (() => () => {
-            console.log("Open file", meta.frame.source.path, "pos:", [meta.frame.line, meta.frame.column]);
-            // revealTextFile(meta.frame.source.path, [meta.frame.line, meta.frame.column]);
-            vscodeOpen(meta.frame.source.path, [meta.frame.line, meta.frame.column]);
-        })(meta);
-        // this.a_source.innerHTML = ``;
+        // Hidden source link
+        if (meta.frame && meta.frame.source) {
+            const workspaceFolder = meta.vscode.workspaceFolder.uri.fsPath;
+            const sourcePathRelative = meta.frame.source.path.replace(workspaceFolder, ".");
+            this.a_source.textContent = `${sourcePathRelative}:${meta.frame.line}:${meta.frame.column}`;
+            this.a_source.onclick = () => vscodeOpen(meta.frame.source.path, [meta.frame.line, meta.frame.column]);
+        }
 
-        // div.variable-info
-        const filename = decodeURI(imageUrl.split('/').pop());
-        const imageSizeString = `${meta.imageInfo.mem_width}x${meta.imageInfo.mem_height}`;
-        // variableInfoDiv.innerHTML = `<b><a onclick="copyPngImageToClipboard(${imageUrl})" href="${imageFileFsPath}">${meta.variable.evaluateName}</a></b>
-        // this.variableInfoDiv.innerHTML = `<span>${meta.variable.type}</span> <span> ${imageSizeString}</span> <span> <i>${filename}</i></span>`;
-        this.variableInfoDiv.innerHTML = `<span>${meta.variable.type}</span> <span> ${imageSizeString}</span></span>`;
+        // Meta info: type badge + size badge + channels
+        const imageSizeString = `${meta.imageInfo.mem_width}\u00d7${meta.imageInfo.mem_height}`;
+        const chStr = meta.imageInfo.channels > 1 ? ` \u00d7${meta.imageInfo.channels}ch` : "";
+        this.variableInfoDiv.innerHTML =
+            `<span class="type-badge">${meta.variable.type}</span>` +
+            `<span class="size-badge">${imageSizeString}${chStr}</span>`;
 
-        // Update is-***-image class
-        this.imageItemDiv.classList.remove(`is-new-image`);
-        this.imageItemDiv.classList.remove(`is-changed-image`);
-        this.imageItemDiv.classList.remove(`is-same-image`);
-        this.imageItemDiv.classList.add(`is-${changedState}-image`);
+        // Change-state border strip
+        this.imageItemDiv.classList.remove("is-new-image", "is-changed-image", "is-same-image");
+        if (changedState) {
+            this.imageItemDiv.classList.add(`is-${changedState}-image`);
+        }
     }
 }
 

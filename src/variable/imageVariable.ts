@@ -1,9 +1,7 @@
 import * as vscode from 'vscode';
 import { EvalExpression } from "./evalExpression";
 import { DebugVariable, DebugVariableType, IbinaryInfo } from "./debugVariable";
-import { VariableViewPanel } from '../panel';
 import sharp from 'sharp';
-// import * as cv from '@techstark/opencv-js';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
@@ -70,30 +68,18 @@ export class ImageVariable extends DebugVariable {
 
     async toFile() {
         console.log("begin toFile", this, this.name, this.expression);
-        let buffer = this.buffer;
-
 
         this.updateImageInfo();
         this.updateBinaryInfo();
-        let startAddress = ((str: string) => {
-            let result = "";
-            const hexChars = "0123456789ABCDEFabcdef";
 
+        // Extract hex address from imageInfo.data (e.g. "0x7f1234abcd")
+        const startAddress = ((str: string): string => {
             if (str.charAt(0) === '0' && str.charAt(1).toLowerCase() === 'x') {
-                result = "0x";
-                for (var i = 2; i < str.length; i++) {
-                    if (hexChars.includes(str.charAt(i))) {
-                        result += str.charAt(i);
-                    } else {
-                        break;
-                    }
-                }
-            } else {
-                result = "0x00";
+                const hexMatch = str.match(/^0x[0-9A-Fa-f]+/);
+                return hexMatch ? hexMatch[0] : "0x00";
             }
-            return result;
+            return "0x00";
         })(this.imageInfo.data);
-
 
         // check null pointer
         if (parseInt(startAddress, 16) === 0) {
@@ -105,7 +91,6 @@ export class ImageVariable extends DebugVariable {
             return;
         }
 
-
         console.log("startAddress", startAddress, "sizeByte", this.binaryInfo.sizeByte, this.name, this.expression);
         let readMemory;
         try {
@@ -114,100 +99,81 @@ export class ImageVariable extends DebugVariable {
             });
         } catch (e) {
             console.log("error readMemory", this, e);
+            return;
         }
-        console.log("readMemory: ", readMemory);
+        if (!readMemory) {
+            console.log("readMemory returned undefined", this.name);
+            return;
+        }
+        console.log("readMemory done", this.name);
 
+        const bufferData = Buffer.from(readMemory.data, "base64");
 
-        let a = 1;
+        // Build a Uint8 raw buffer suitable for sharp.
+        // For non-uint8 types we normalise values into [0,255] so sharp can render them.
+        let rawBuffer: Buffer;
+        const { mem_width, mem_height, channels, bytesForPx } = this.imageInfo;
+        const totalPixels = mem_width * mem_height * channels;
 
-
-        let bufferData = Buffer.from(readMemory.data, "base64");
-        const byteStrideForPx = this.imageInfo.bytesForPx * this.imageInfo.channels;
-        console.log("bufferData", bufferData, this);
-
-
-        // Determine the correct TypedArray based on data characteristics
-        const TypedArray = !(this.binaryInfo.isInt) ? (this.imageInfo.bytesForPx === 4 ? Float32Array : Float64Array) : (
-            this.imageInfo.bytesForPx === 1 ? (this.binaryInfo.signed ? Int8Array : Uint8Array) :
-                this.imageInfo.bytesForPx === 2 ? (this.binaryInfo.signed ? Int16Array : Uint16Array) :
-                    this.imageInfo.bytesForPx === 4 ? (this.binaryInfo.signed ? Int32Array : Uint32Array) : Uint8Array
-        );
-
-        // Create a typed array from the buffer data
-        let imageArray = new TypedArray(
-            bufferData.buffer,
-            bufferData.byteOffset,
-            bufferData.byteLength / this.imageInfo.bytesForPx
-        );
-        try {
-            for (let i = 0; i < this.imageInfo.mem_height; i++) {
-                for (let j = 0; j < this.imageInfo.mem_width; j++) {
-                    for (let c = 0; c < this.imageInfo.channels; c++) {
-                        const offset = (i * this.imageInfo.mem_width + j) * this.imageInfo.bytesForPx + this.imageInfo.channels - 1;
-                        let b;
-                        if (this.binaryInfo.isInt) {
-                            if (this.binaryInfo.signed) {
-                                b = bufferData.readIntLE(offset, this.imageInfo.bytesForPx);
-                            }
-                            else {
-                                b = bufferData.readUIntLE(offset, this.imageInfo.bytesForPx);
-                            }
-                        }
-                        else {
-                            if (this.imageInfo.bytesForPx === 4) {
-                                b = bufferData.readFloatLE(offset);
-                            }
-                            else if (this.imageInfo.bytesForPx === 8) {
-                                b = bufferData.readDoubleLE(offset);
-                            }
-                            else {
-                                throw Error;
-                            }
-                        }
-                        imageArray[i * this.imageInfo.mem_width + j + c] = b;
-                    }
+        if (!this.binaryInfo.isInt) {
+            // Float32 / Float64 → normalise to uint8
+            const isFloat32 = bytesForPx === 4;
+            const floatArr = isFloat32
+                ? new Float32Array(bufferData.buffer, bufferData.byteOffset, totalPixels)
+                : new Float64Array(bufferData.buffer, bufferData.byteOffset, totalPixels);
+            let min = Infinity, max = -Infinity;
+            for (let k = 0; k < floatArr.length; k++) {
+                const v = floatArr[k];
+                if (v < min) { min = v; }
+                if (v > max) { max = v; }
+            }
+            const range = max - min || 1;
+            rawBuffer = Buffer.allocUnsafe(totalPixels);
+            for (let k = 0; k < floatArr.length; k++) {
+                rawBuffer[k] = Math.round(((floatArr[k] - min) / range) * 255);
+            }
+        } else if (bytesForPx === 1) {
+            // uint8 / int8 — use buffer directly (zero-copy for unsigned)
+            if (!this.binaryInfo.signed) {
+                rawBuffer = bufferData.subarray(0, totalPixels);
+            } else {
+                // Shift signed int8 to [0,255]
+                rawBuffer = Buffer.allocUnsafe(totalPixels);
+                for (let k = 0; k < totalPixels; k++) {
+                    rawBuffer[k] = bufferData.readInt8(k) + 128;
                 }
             }
-        } catch (e) {
-            console.log("error read array", this, e);
+        } else {
+            // uint16/int16/uint32/int32 → normalise to uint8
+            const readFn = bytesForPx === 2
+                ? (this.binaryInfo.signed ? (o: number) => bufferData.readInt16LE(o) : (o: number) => bufferData.readUInt16LE(o))
+                : (this.binaryInfo.signed ? (o: number) => bufferData.readInt32LE(o) : (o: number) => bufferData.readUInt32LE(o));
+            // First pass: find min/max
+            let min = Infinity, max = -Infinity;
+            for (let k = 0; k < totalPixels; k++) {
+                const v = readFn(k * bytesForPx);
+                if (v < min) { min = v; }
+                if (v > max) { max = v; }
+            }
+            const range = max - min || 1;
+            rawBuffer = Buffer.allocUnsafe(totalPixels);
+            for (let k = 0; k < totalPixels; k++) {
+                rawBuffer[k] = Math.round(((readFn(k * bytesForPx) - min) / range) * 255);
+            }
         }
-        console.log("imageArray:", imageArray);
 
+        console.log("rawBuffer ready, size:", rawBuffer.length);
 
-        // refer to https://github.com/Mohamed5341/opencv-image/blob/main/src/myimages.ts
-        // console.log("convert array to opencv image");
-        // let imageSrc = cv.matFromArray(this.imageInfo.mem_width, this.imageInfo.mem_height, this.type, imageArray);
-        // if (this.imageInfo.channels === 1) {
-        //     console.log("convert image to RGB from gray");
-        //     cv.cvtColor(imageSrc, imageSrc, cv.COLOR_GRAY2RGB);
-        // }
-
-        // if (this.imageInfo.channels === 3) {
-        //     cv.cvtColor(imageSrc, imageSrc, cv.COLOR_BGR2RGB);
-        // } else if (this.imageInfo.channels === 4) {
-        //     cv.cvtColor(imageSrc, imageSrc, cv.COLOR_BGRA2RGBA);
-        // }
 
         // Save
         const context = this.frame.thread.tracker.context;
         const storageUri = context.storageUri ? context.storageUri : context.globalStorageUri;
-        const breakCount = DebugSessionTracker.breakCount; //FIXME
-        const threadId = this.frame.thread.id;
-        const frameId = this.frame.meta.name;
-        const frameName = this.frame.meta.name;
-        const source = `${this.frame.meta.source.name}(${this.frame.meta.line},${this.frame.meta.column})`;
+        const breakCount = DebugSessionTracker.breakCount;
 
-        // const session_dir_name = `Session${date}_${this.frame.thread.tracker.session.type}_${this.frame.thread.tracker.session.id}`;
-        // const session_dir_name = `Session${this.frame.thread.tracker.debugStartDate}`;
         const session_dir_name = `Session${this.frame.thread.tracker.session.id}`;
-        this.frame.thread.tracker.debugStartDate;
-        // const break_dir_name = `Break${breakCount}_thread${threadId}_frame${frameId}_${frameName}_${source}`;
         const break_dir_name = `Break${breakCount}`;
-        // const filename = `${this.name}_${this.expression}.png`;
-        // const filename = `${this.expression}.png`;
-        const pattern = /[\\\/:\*\?\"<>\|]/;
+        const pattern = /[\\/:*?"<>|]/g;
         const filename = `${this.expression}.png`.replace(pattern, "-");
-        // const filename = `${this.expression}.tif`.replace(pattern, "-");
         const filePath = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, filename);
         console.log("filePath", filePath);
 
@@ -215,99 +181,49 @@ export class ImageVariable extends DebugVariable {
         const filenameHicont = `${this.expression}.hicont.png`.replace(pattern, "-");
         const filePathHicont = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, filenameHicont);
 
-        // Extract the directory path from filePath
+        // Ensure directory exists
         const dirPath = path.dirname(filePath.fsPath);
-
-        // Check if the directory exists, if not, create it
         if (!fs.existsSync(dirPath)) {
-            await fs.mkdirSync(dirPath, { recursive: true });
+            fs.mkdirSync(dirPath, { recursive: true });
         }
 
-        if (filePath) {
-            // Sanitize path
-            // const filePathSafe = vscode.Uri.parse(filePath.fsPath.replace("[\\\/:\*\?\"<>\|]", "$"))
+        // Build sharp input from the normalised uint8 raw buffer
+        const sharpInput = sharp(rawBuffer, {
+            raw: {
+                width: mem_width,
+                height: mem_height,
+                channels: channels as 1 | 2 | 3 | 4,
+            }
+        });
 
-            // Use Sharp to process the image data
-            console.log("toFile creating image", this, this.name, this.expression, filePath.fsPath);
-            await sharp(imageArray, {
-                raw: {
-                    width: this.imageInfo.mem_width,
-                    height: this.imageInfo.mem_height,
-                    channels: this.imageInfo.channels,
-                }
-            }).toFile(filePath.fsPath, (err, info) => {
-                if (err) {
-                    console.error('Error processing image:', this.expression, err);
-                } else {
-                    console.log('Image processed and saved:', this.expression, info);
-                }
-            });
+        console.log("toFile creating images (parallel)", this.expression, filePath.fsPath);
 
-            await sharp(imageArray, {
-                raw: {
-                    width: this.imageInfo.mem_width,
-                    height: this.imageInfo.mem_height,
-                    channels: this.imageInfo.channels,
-                }
-            }).normalize().toFile(filePathHicont.fsPath, (err, info) => {
-                if (err) {
-                    console.error('Error processing image:', this.expression, err);
-                } else {
-                    console.log('Image processed and saved:', this.expression, info);
-                }
-            });
+        // Write original and contrast-enhanced (hicont) images in parallel
+        await Promise.all([
+            sharpInput.clone().toFile(filePath.fsPath),
+            sharpInput.clone().normalize().toFile(filePathHicont.fsPath),
+        ]);
 
-            // console.log("Setting opencv image to jimp");
-            // new Jimp({
-            //     width: this.imageInfo.mem_width, height: this.imageInfo.mem_height, data: Buffer.from(imageSrc.data)
-            // }
-            // ).write(filePath.fsPath);
-            // console.log("delete opencv image");
-            // imageSrc.delete();
+        console.log("toFile images written", this.expression);
 
-            // Calc image hash
-            // this.imageHash = crypto.createHash('blake2b512').update(bufferData).digest('hex');
-            this.imageHash = crypto.createHash('md5').update(bufferData).digest('hex');
+        // Calc image hash from raw buffer (fast, already in memory)
+        this.imageHash = crypto.createHash('md5').update(rawBuffer).digest('hex');
 
-            this.metaWide = await {
-                "vscode": {
-                    "workspaceFolder": this.frame.thread.tracker.session.workspaceFolder,
-                    "storageUri": storageUri.fsPath,
-                    "filePath": filePath.fsPath,
-                    "filePathHicont": filePathHicont.fsPath,
-                },
-                "imageInfo": this.imageInfo,
-                "imageHash": this.imageHash,
-                "imagewebUrl": "",
-                ...this.gatherMeta()
-            };
-
-            // Display
-            // const openPath = vscode.Uri.file(filePath.toString()).toString().replace("/file:", "");
-            // vscode.commands.executeCommand('vscode.open', filePath.fsPath);
-            // console.log("rendering panel");
-            // VariableViewPanel.render(this.frame.thread.tracker.context);
-            // const panel = VariableViewPanel.currentPanel;
-            // if (panel) {
-            //     console.log("showing image on panel", panel);
-            //     const weburi = panel.getWebViewUrlString(filePath);
-            //     panel.postMessage({
-            //         command: "image",
-            //         // url: filePath.toString()
-            //         url: weburi,
-            //         meta: this.metaWide
-
-            //     });
-            //     panel.showPanel();
-            // }
-            // else {
-            //     console.log("panel is undefined");
-            // }
-        }
+        this.metaWide = {
+            "vscode": {
+                "workspaceFolder": this.frame.thread.tracker.session.workspaceFolder,
+                "storageUri": storageUri.fsPath,
+                "filePath": filePath.fsPath,
+                "filePathHicont": filePathHicont.fsPath,
+            },
+            "imageInfo": this.imageInfo,
+            "imageHash": this.imageHash,
+            "imagewebUrl": "",
+            ...this.gatherMeta()
+        };
 
         // Save .meta.json
         const metaPath = vscode.Uri.joinPath(storageUri, session_dir_name, break_dir_name, `${filename}.meta.json`);
-        console.log("metaPath", metaPath);
         fs.writeFileSync(metaPath.fsPath, JSON.stringify(this.metaWide, null, 4));
 
         return this.metaWide;
