@@ -38,6 +38,11 @@ window.addEventListener('DOMContentLoaded', () => {
             console.log("capturing", manager);
             manager.capture();
         }
+        else if (message.command === 'clear') {
+            console.log("clearing panel - debug session ended");
+            manager.clear();
+            displayInstantMessage("Debug session ended", 2000);
+        }
         else if (message.command === 'instant-message') {
             let duration = 1000;
             if (message.message === "WAIT FOR IMAGES...") {
@@ -286,26 +291,26 @@ class ImageTraceManager {
     renderAtBreakpoint(breakpointCapture) {
         console.log("renderAtBreakpoint", breakpointCapture);
 
-        // Render imageTraces in the given breakpointCapture
+        // Collect all imageTraceIds that exist in the current breakpoint
         const imageTraceIds = Object.keys(breakpointCapture.imageTraceIdxDict);
+
+        // First, hide ALL imageTraces to ensure clean state
+        for (const imageTraceId in this.imageTraceList) {
+            const imageTrace = this.imageTraceList[imageTraceId];
+            imageTrace.hide();
+        }
+
+        // Then, show and render only the imageTraces that exist in the current breakpoint
         for (const imageTraceId of imageTraceIds) {
             const idx = breakpointCapture.imageTraceIdxDict[imageTraceId];
             const imageTrace = this.imageTraceList[imageTraceId];
-            imageTrace.show();
-            imageTrace.render(idx);
-            breakpointCapture.updateFrameInfoDom();
-        }
-
-        // Hide imageTraces which are not in the current breakpointCapture
-        if (this.lastRenderedBreakpointCapture !== undefined) {
-            for (const pastImageTraceId of Object.keys(this.lastRenderedBreakpointCapture.imageTraceIdxDict)) {
-                if (!imageTraceIds.includes(pastImageTraceId)) {
-                    const imageTrace = this.imageTraceList[pastImageTraceId];
-                    imageTrace.hide();
-                }
+            if (imageTrace) {
+                imageTrace.show();
+                imageTrace.render(idx);
             }
         }
 
+        breakpointCapture.updateFrameInfoDom();
         this._refreshFrameInfoByBreakpointCapture(breakpointCapture);
         this.lastRenderedBreakpointCapture = breakpointCapture;
     }
@@ -347,6 +352,39 @@ class ImageTraceManager {
         if (this.goLineCheckBox.checked) {
             this.frameInfo.click();
         }
+    }
+
+    /**
+     * Clear all panel state when debug session ends.
+     * This ensures a new session starts fresh without old data.
+     */
+    clear() {
+        console.log("ImageTraceManager.clear - resetting all state");
+        // Remove all image trace DOM elements
+        for (const imageTraceId in this.imageTraceList) {
+            const imageTrace = this.imageTraceList[imageTraceId];
+            if (imageTrace.dom && imageTrace.dom.parentNode) {
+                imageTrace.dom.parentNode.removeChild(imageTrace.dom);
+            }
+        }
+        // Reset all state
+        this.imageTraceList = {};
+        this.captures = [];
+        this.imageTraceIdsAddedFromLastCapture = {};
+        this.lastRenderedCaptureIdx = 0;
+        this.currentRenderedCaptureIdx = 0;
+        this.lastRenderedImageTraceIds = {};
+        this.breakpointCaptureList = [];
+        this.lastRenderedBreakpointCapture = undefined;
+        // Reset slider
+        this.slider.min = 0;
+        this.slider.max = 0;
+        this.slider.value = 0;
+        // Clear frame info
+        this.frameInfo.innerHTML = "";
+        this.frameInfo.onclick = null;
+        // Clear badge
+        this._updateBreakCountBadge(0);
     }
 }
 

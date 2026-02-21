@@ -270,6 +270,152 @@ npm run lint     → 成功 (エラーなし)
 
 ---
 
+## 2026-02-21 — UX改善セッション (branch: `claude/improvements`)
+
+### 報告された問題
+
+ユーザーから3つのUX改善要望:
+
+1. **デバッグセッション終了時のパネル履歴問題:** デバッグを終了/再起動した際、新しいセッションであるにもかかわらず、パネルのスライダーで過去のセッションの履歴まで遡って表示できてしまう。セッション間でデータが混在し混乱を招く。
+2. **パネルの開く位置の問題:** パネルが閉じた状態から開く際、常に2番目の画面分割位置 (`ViewColumn.Two`) に開く。ユーザーが2番目の位置にソースコードを開いている場合、パネルがそこに表示されて非常に使いづらい。最右端 (Aside) に開くべき。
+3. **シーク時の画像表示問題:** ブレークポイント履歴をスライダーでシークする際、過去のブレークポイント時点で存在しない変数の画像が表示されたまま残る。存在しない画像は非表示にすべき。
+
+### 修正内容
+
+#### 1. `src/tracker.ts` — デバッグセッション終了時にパネルをクリア
+
+```typescript
+public async onDidSendMessage(message: any) {
+    // ... existing code ...
+
+    // Clear panel when debug session terminates
+    if (message.type === 'event' && message.event === 'terminated') {
+        console.log("Debug session terminated - clearing panel");
+        VariableViewPanel.clearPanel();
+    }
+}
+```
+
+**動作:**
+- DAP の `terminated` イベントを監視
+- セッション終了時に `VariableViewPanel.clearPanel()` を呼び出してパネルの全状態をリセット
+- 次のデバッグセッションは完全にクリーンな状態で開始
+
+#### 2. `src/panel.ts` — パネル位置の修正とクリアメソッド追加
+
+**パネル開く位置を Aside (最右端) に変更:**
+```typescript
+// Before: ViewColumn.Two
+public static render(context: vscode.ExtensionContext, renderMode?: string) {
+    if (VariableViewPanel.currentPanel) {
+        VariableViewPanel.currentPanel._panel.reveal(vscode.ViewColumn.Beside);
+    } else { ... }
+}
+
+showPanel(where: vscode.ViewColumn = vscode.ViewColumn.Beside): boolean {
+    // ...
+}
+```
+
+**clearPanel メソッド追加:**
+```typescript
+static clearPanel() {
+    const panel = VariableViewPanel.currentPanel;
+    if (panel) {
+        console.log("Clearing panel contents for new debug session");
+        panel._panel.webview.postMessage({ command: "clear" });
+    }
+}
+```
+
+**効果:**
+- パネルは常に最右端に開き、既存のソースコードエディタを上書きしない
+- `clearPanel()` は webview に `clear` コマンドを送信してフロントエンドの状態をリセット
+
+#### 3. `public/index_image_panel.js` — フロントエンドでのクリア処理とシーク修正
+
+**clear コマンドハンドリング追加:**
+```javascript
+else if (message.command === 'clear') {
+    console.log("clearing panel - debug session ended");
+    manager.clear();
+    displayInstantMessage("Debug session ended", 2000);
+}
+```
+
+**ImageTraceManager.clear() メソッド追加:**
+```javascript
+clear() {
+    console.log("ImageTraceManager.clear - resetting all state");
+    // Remove all image trace DOM elements
+    for (const imageTraceId in this.imageTraceList) {
+        const imageTrace = this.imageTraceList[imageTraceId];
+        if (imageTrace.dom && imageTrace.dom.parentNode) {
+            imageTrace.dom.parentNode.removeChild(imageTrace.dom);
+        }
+    }
+    // Reset all state
+    this.imageTraceList = {};
+    this.captures = [];
+    this.imageTraceIdsAddedFromLastCapture = {};
+    this.lastRenderedCaptureIdx = 0;
+    this.currentRenderedCaptureIdx = 0;
+    this.lastRenderedImageTraceIds = {};
+    this.breakpointCaptureList = [];
+    this.lastRenderedBreakpointCapture = undefined;
+    // Reset slider
+    this.slider.min = 0;
+    this.slider.max = 0;
+    this.slider.value = 0;
+    // Clear frame info
+    this.frameInfo.innerHTML = "";
+    this.frameInfo.onclick = null;
+    // Clear badge
+    this._updateBreakCountBadge(0);
+}
+```
+
+**renderAtBreakpoint の修正 (シーク時の画像非表示):**
+```javascript
+// Before: 過去のブレークポイントと比較して差分のみを非表示化
+// After: すべての画像を一旦非表示にしてから、現在のブレークポイントに存在するもののみ表示
+renderAtBreakpoint(breakpointCapture) {
+    const imageTraceIds = Object.keys(breakpointCapture.imageTraceIdxDict);
+
+    // First, hide ALL imageTraces to ensure clean state
+    for (const imageTraceId in this.imageTraceList) {
+        const imageTrace = this.imageTraceList[imageTraceId];
+        imageTrace.hide();
+    }
+
+    // Then, show and render only the imageTraces that exist in the current breakpoint
+    for (const imageTraceId of imageTraceIds) {
+        const idx = breakpointCapture.imageTraceIdxDict[imageTraceId];
+        const imageTrace = this.imageTraceList[imageTraceId];
+        if (imageTrace) {
+            imageTrace.show();
+            imageTrace.render(idx);
+        }
+    }
+    // ...
+}
+```
+
+**効果:**
+- セッション終了時、DOM要素を含む全状態がクリアされる
+- スライダーも `0 / 0` にリセット
+- 次のセッション開始時は完全に空の状態から再構築
+- シーク時は「現在のブレークポイントに存在する画像のみ表示」という明確なロジックで、残像問題を解決
+
+### コンパイル・Lint結果
+
+```
+npm run compile  → 成功 (エラーなし)
+npm run lint     → 成功 (エラーなし)
+```
+
+---
+
 ### 今後の改善候補 (TODO)
 
 - [ ] `imageVariable.ts`: 画像のチャンネル順 (BGR→RGB) の自動変換オプション
@@ -283,4 +429,4 @@ npm run lint     → 成功 (エラーなし)
 
 ---
 
-*最終更新: 2026-02-20 by Claude (claude-sonnet-4-5-20250929)*
+*最終更新: 2026-02-21 by Claude (claude-sonnet-4-5-20250929)*

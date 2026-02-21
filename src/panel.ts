@@ -110,7 +110,7 @@ export class VariableViewPanel {
         return this._panel;
     }
 
-    showPanel(where: vscode.ViewColumn = vscode.ViewColumn.Two): boolean {
+    showPanel(where: vscode.ViewColumn = vscode.ViewColumn.Beside): boolean {
         console.log("VariableViewPanel show");
         if (this._panel) {
             this._panel.reveal(where);
@@ -128,7 +128,7 @@ export class VariableViewPanel {
     public static render(context: vscode.ExtensionContext, renderMode?: string) {
         if (VariableViewPanel.currentPanel) {
             // If the webview panel already exists reveal it
-            VariableViewPanel.currentPanel._panel.reveal(vscode.ViewColumn.Two);
+            VariableViewPanel.currentPanel._panel.reveal(vscode.ViewColumn.Beside);
         } else {
             // Always include both storageUri and globalStorageUri so images saved
             // in either location can be served to the webview.
@@ -195,6 +195,18 @@ export class VariableViewPanel {
                 message: instant_message
             };
             panel._panel.webview.postMessage(message);
+        }
+    }
+
+    /**
+     * Clear the panel contents when debug session ends.
+     * Sends a 'clear' command to the webview to reset all state.
+     */
+    static clearPanel() {
+        const panel = VariableViewPanel.currentPanel;
+        if (panel) {
+            console.log("Clearing panel contents for new debug session");
+            panel._panel.webview.postMessage({ command: "clear" });
         }
     }
 

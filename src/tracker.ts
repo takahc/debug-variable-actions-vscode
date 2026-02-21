@@ -27,6 +27,12 @@ export class VariableTracker implements vscode.DebugAdapterTracker {
                 console.log("debug-variable-actions.config.enable is", enable);
             }
         }
+
+        // Clear panel when debug session terminates
+        if (message.type === 'event' && message.event === 'terminated') {
+            console.log("Debug session terminated - clearing panel");
+            VariableViewPanel.clearPanel();
+        }
     }
 
     async procImagePanel(message: any) {
