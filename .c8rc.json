@@ -1,0 +1,16 @@
+{
+  "reporter": [
+    "text",
+    "html",
+    "lcov"
+  ],
+  "exclude": [
+    "out/test/**",
+    "src/test/**",
+    "node_modules/**",
+    "**/*.d.ts"
+  ],
+  "all": true,
+  "check-coverage": false,
+  "report-dir": "./coverage"
+}

@@ -555,4 +555,284 @@ jobs:
 
 ---
 
-*最終更新: 2026-02-21 by Claude (claude-sonnet-4-5-20250929)*
+## 2026-02-23 — 自動テスト実装 (branch: `claude/improvements`)
+
+### 目的
+
+ユーザー要求: 「全部やってたも！」(Do everything!)
+→ 前セッションで提案した包括的な自動テストスイートを完全実装
+
+### テスト戦略
+
+#### テスト構成
+
+```
+src/test/
+├── unit/                              # 単体テスト (モック化された依存関係)
+│   ├── panel.test.ts                 # パネルのライフサイクル・状態管理
+│   ├── tracker.test.ts               # DAP メッセージハンドリング
+│   ├── imageVariable.buffer.test.ts  # バッファ変換ロジック (全ピクセル形式)
+│   ├── variableTypeFactory.test.ts   # 型ファクトリー・設定読み込み
+│   └── debugSessionTracker.test.ts   # セッション/スレッド/フレーム階層
+└── suite/                             # 統合テスト (実際のVS Code環境)
+    ├── panelLifecycle.test.ts        # パネルのライフサイクル統合
+    ├── imageProcessing.test.ts       # Sharp PNG生成・並列処理
+    ├── errorHandling.test.ts         # エラー処理・グレースフルデグラデーション
+    ├── imageGuards.test.ts           # (既存) 未初期化変数ガード
+    └── mockHelpers.ts                # (既存) モックヘルパー
+```
+
+### 実装したテストファイル
+
+#### 1. `src/test/unit/panel.test.ts` (11テスト)
+
+**テスト内容:**
+- パネル作成時の挙動 (存在しない場合に新規作成、存在する場合は reveal)
+- `clearPanel()` が正しく `clear` コマンドを送信
+- `dispose()` が `currentPanel` 参照をクリア
+- `postMessage()` / `sendInstanceMessage()` の動作
+- `getWebViewUrlString()` の URI 変換ロジック
+- パネルがない状態での `clearPanel()` の安全性
+
+**技術的重点:**
+- Webview との通信テスト
+- シングルトンパターンの状態管理
+- URI 変換 (`vscode.Uri.file()` → webview用URI)
+
+#### 2. `src/test/unit/tracker.test.ts` (5テスト)
+
+**テスト内容:**
+- `terminated` イベント受信時に `clearPanel()` 呼び出し
+- `stopped` イベントでは `clearPanel()` を呼び出さない
+- 非イベントメッセージの無視
+
+**技術的重点:**
+- DAP メッセージハンドリング
+- イベントフィルタリング
+
+#### 3. `src/test/unit/imageVariable.buffer.test.ts` (11テスト)
+
+**テスト内容:**
+- **uint8**: ゼロコピー (`Buffer.subarray` 使用)
+- **int8**: +128 シフト変換
+- **uint16/int16**: 2パス min/max 正規化
+- **uint32/int32**: 2パス min/max 正規化
+- **float32/float64**: TypedArray 読み取り → 2パス正規化
+- `totalPixels` クランプ (バッファサイズ不足時)
+- MD5 ハッシュの一貫性
+- 異なるピクセルデータで異なるハッシュ
+
+**技術的重点:**
+- パフォーマンス最適化の検証 (ゼロコピー、min/max正規化)
+- すべてのピクセル形式の網羅的テスト
+- MD5 ハッシュ生成の正確性
+
+#### 4. `src/test/unit/variableTypeFactory.test.ts` (10テスト)
+
+**テスト内容:**
+- `MyImageType` のデフォルト設定検証
+- プリミティブ型の取得 (`char`, `int`, `float`, etc.)
+- 整数型のサイズ検証 (1/2/4/8 bytes)
+- float型のプロパティ検証
+- 不明な型で `undefined` を返す
+- `Image` 型の取得
+- signed/unsigned の正確性
+- データポインタ抽出式の検証
+
+**技術的重点:**
+- 型システムの正確性
+- デフォルト設定の妥当性
+- GDB 出力解析式のテスト
+
+#### 5. `src/test/unit/debugSessionTracker.test.ts` (20テスト)
+
+**テスト内容:**
+- `newSessionTracker()` で一意のID割り当て
+- `currentTracker` の設定
+- `trackers` 配列への追加
+- `getTrackerById()` による取得
+- `debugStartDate` の形式検証
+- スレッド・フレームの追加
+- `gatherAllVariables()` による全変数収集
+- ネストされた変数の再帰的収集
+- `gatherImageVariables()` による ImageVariable フィルタリング
+- DAP リクエストのモック (stackTrace, scopes, variables)
+
+**技術的重点:**
+- セッション/スレッド/フレーム階層の正確性
+- DAP カスタムリクエストのモック化
+- 変数の再帰的収集ロジック
+
+#### 6. `src/test/suite/panelLifecycle.test.ts` (8テスト)
+
+**テスト内容:**
+- `terminated` イベント統合テスト
+- パネルの複数作成/破棄サイクル
+- パネルが存在しない状態での `clearPanel()` 安全性
+- 複数 `render()` 呼び出しでインスタンス再利用
+- ブレークポイントイベント間でのパネル永続性
+- `dispose()` の即時クリーンアップ
+
+**技術的重点:**
+- 実際の VS Code 環境でのライフサイクル統合
+- 複数のデバッグセッションシミュレーション
+
+#### 7. `src/test/suite/imageProcessing.test.ts` (6テスト)
+
+**テスト内容:**
+- `toFile()` が original と hicont の両方の PNG を生成
+- MD5 ハッシュの正確な計算
+- メタデータ JSON ファイルの作成
+- 複数画像の並列処理 (Promise.all)
+- 異なるピクセル値で異なるハッシュ
+
+**技術的重点:**
+- Sharp ライブラリの統合テスト
+- 並列処理の検証 (Promise.all)
+- ファイルシステム操作
+- PNG メタデータ検証
+
+#### 8. `src/test/suite/errorHandling.test.ts` (13テスト)
+
+**テスト内容:**
+- `readMemory` 失敗時に `undefined` を返す (例外をスローしない)
+- 無効なメモリアドレスのグレースフル処理
+- null ポインタ (0x0) の拒否 (readMemory 呼び出し前)
+- 負の寸法の拒否
+- 過大な寸法の拒否 (MAX_DIM = 32768 超過)
+- ゼロ寸法の拒否
+- NaN 寸法の拒否
+- Infinity 寸法の拒否
+- 空の readMemory レスポンス
+- 不正な base64 データ
+- 複数画像処理で1つが失敗しても続行
+- width/height 子変数が欠損している場合
+
+**技術的重点:**
+- グレースフルデグラデーション (クラッシュせず `undefined` を返す)
+- ガード条件の網羅的検証
+- 複数画像の並列処理での耐障害性
+
+### インフラストラクチャ更新
+
+#### 1. `package.json` — テストスクリプトと依存関係
+
+**追加したスクリプト:**
+```json
+"test:unit": "vscode-test --label unit src/test/unit/**/*.test.ts",
+"test:suite": "vscode-test --label suite src/test/suite/**/*.test.ts",
+"test:coverage": "c8 npm test",
+"test:watch": "vscode-test --watch"
+```
+
+**追加した依存関係:**
+```json
+"devDependencies": {
+    "c8": "^9.1.0"  // カバレッジツール
+}
+```
+
+#### 2. `.github/workflows/test.yml` — カバレッジレポート統合
+
+**修正内容:**
+```yaml
+- name: Run tests with coverage (headless)
+  run: xvfb-run -a npm run test:coverage
+  env:
+    DISPLAY: ":99"
+
+- name: Upload coverage reports
+  uses: codecov/codecov-action@v4
+  with:
+    files: ./coverage/lcov.info
+    flags: unittests
+    name: codecov-umbrella
+    fail_ci_if_error: false
+
+- name: Upload test results on failure
+  if: failure()
+  uses: actions/upload-artifact@v4
+  with:
+    name: test-results
+    path: |
+      test-results/
+      .vscode-test/
+      coverage/        # カバレッジディレクトリも含める
+    retention-days: 7
+```
+
+**効果:**
+- CI パイプラインでカバレッジレポート生成
+- Codecov へ自動アップロード
+- 失敗時にカバレッジデータも artifacts として保存
+
+#### 3. `.c8rc.json` — カバレッジ設定
+
+```json
+{
+  "reporter": ["text", "html", "lcov"],
+  "exclude": [
+    "out/test/**",
+    "src/test/**",
+    "node_modules/**",
+    "**/*.d.ts"
+  ],
+  "all": true,
+  "check-coverage": false,
+  "report-dir": "./coverage"
+}
+```
+
+**効果:**
+- テストファイル自体を除外
+- HTML レポート生成 (ローカル確認用)
+- LCOV 形式 (Codecov 用)
+
+### テストカバレッジの重点領域
+
+| モジュール | カバレッジ重点 | テスト数 |
+|-----------|---------------|---------|
+| `panel.ts` | ライフサイクル、メッセージング | 11 (unit) + 8 (suite) |
+| `tracker.ts` | DAP イベントハンドリング | 5 (unit) |
+| `imageVariable.ts` | バッファ変換、エラーハンドリング | 11 (buffer) + 6 (processing) + 13 (errors) |
+| `variableTypeFactory.ts` | 型システム、設定 | 10 (unit) |
+| `debugSessionTracker.ts` | 階層管理、変数収集 | 20 (unit) |
+
+**合計テストケース数: 84**
+
+### テスト実行方法
+
+```bash
+# 全テスト実行
+npm test
+
+# 単体テストのみ
+npm run test:unit
+
+# 統合テストのみ
+npm run test:suite
+
+# カバレッジ付きテスト
+npm run test:coverage
+
+# ウォッチモード
+npm run test:watch
+```
+
+### コンパイル・Lint結果
+
+```
+npm run compile  → 成功 (エラーなし)
+npm run lint     → 成功 (エラーなし)
+```
+
+### 今後のテスト改善候補
+
+- [ ] E2Eテスト: 実際のC++デバッガとの統合テスト
+- [ ] パフォーマンステスト: 大きな画像 (4K, 8K) の処理時間ベンチマーク
+- [ ] ビジュアルリグレッションテスト: PNG出力の視覚的検証
+- [ ] Webviewテスト: フロントエンドJavaScriptの単体テスト (Jest/Mocha)
+
+---
+
+*最終更新: 2026-02-23 by Claude (claude-sonnet-4-5-20250929)*

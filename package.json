@@ -154,7 +154,11 @@
         "watch": "tsc -watch -p ./",
         "pretest": "npm run compile && npm run lint",
         "lint": "eslint src --ext ts",
-        "test": "vscode-test"
+        "test": "vscode-test",
+        "test:unit": "vscode-test --label unit src/test/unit/**/*.test.ts",
+        "test:suite": "vscode-test --label suite src/test/suite/**/*.test.ts",
+        "test:coverage": "c8 npm test",
+        "test:watch": "vscode-test --watch"
     },
     "devDependencies": {
         "@types/ejs": "^3.1.5",
@@ -165,6 +169,7 @@
         "@typescript-eslint/parser": "^7.11.0",
         "@vscode/test-cli": "^0.0.9",
         "@vscode/test-electron": "^2.4.0",
+        "c8": "^9.1.0",
         "eslint": "^8.57.0",
         "typescript": "^5.4.5"
     },
