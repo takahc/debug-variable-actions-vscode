@@ -157,7 +157,10 @@ export class VariableViewPanel {
                     // Restrict the webview to only load resources from the `out` directory
                     localResourceRoots: localResourceRoots,
                     // misc
-                    enableFindWidget: true
+                    enableFindWidget: true,
+                    // Retain webview content when hidden (switching tabs)
+                    // This prevents the webview from being destroyed and recreated
+                    retainContextWhenHidden: true
                 }
             );
 

@@ -416,6 +416,54 @@ npm run lint     → 成功 (エラーなし)
 
 ---
 
+## 2026-02-21 — パネル状態保持の修正 (branch: `claude/improvements`)
+
+### 報告された問題
+
+パネルを開いた状態で別のタブに切り替えると、パネルの内容が消えてしまう。
+
+### 根本原因
+
+VS Code の Webview は、デフォルトでタブが非表示になると破棄され、再び表示されるときに再作成されます。これにより、Webview内のすべての状態（画像履歴、スライダーの位置、DOM要素など）が失われます。
+
+### 修正内容
+
+#### `src/panel.ts` — `retainContextWhenHidden` オプションを有効化
+
+```typescript
+const panel = vscode.window.createWebviewPanel(
+    'variableView',
+    'Variable View',
+    vscode.ViewColumn.Beside,
+    {
+        enableScripts: true,
+        localResourceRoots: localResourceRoots,
+        enableFindWidget: true,
+        // Retain webview content when hidden (switching tabs)
+        // This prevents the webview from being destroyed and recreated
+        retainContextWhenHidden: true
+    }
+);
+```
+
+**効果:**
+- タブを切り替えてもWebviewが破棄されず、すべての状態が保持される
+- 画像履歴、スライダーの位置、表示中の画像がそのまま残る
+- ユーザーが別のタブで作業してから戻っても、パネルは元の状態のまま
+
+**注意:**
+- `retainContextWhenHidden: true` はメモリ使用量が増加しますが、ユーザー体験の向上のため有効化
+- パネルが非表示でもWebviewコンテキストがメモリに保持される
+
+### コンパイル・Lint結果
+
+```
+npm run compile  → 成功 (エラーなし)
+npm run lint     → 成功 (エラーなし)
+```
+
+---
+
 ### 今後の改善候補 (TODO)
 
 - [ ] `imageVariable.ts`: 画像のチャンネル順 (BGR→RGB) の自動変換オプション
