@@ -464,8 +464,86 @@ npm run lint     → 成功 (エラーなし)
 
 ---
 
-### 今後の改善候補 (TODO)
+## 2026-02-21 — GitHub Actions ワークフロー改善 (branch: `claude/improvements`)
 
+### 改善内容
+
+#### `.github/workflows/test.yml` の改善
+
+**修正前の問題点:**
+1. 全ブランチでテストが実行される (`branches: ["**"]`) → 作業ブランチでも毎回実行
+2. Lintステップがない → コードスタイルのチェックなし
+3. セキュリティ設定がない → 権限・タイムアウト未設定
+4. `npm install` を使用 → `npm ci` より遅い・不確実
+5. テスト失敗時のデバッグ情報がない
+
+**修正内容:**
+
+```yaml
+name: Test
+
+on:
+  push:
+    branches: [main, pre-release, develop]  # 重要なブランチのみ
+  pull_request:
+    branches: [main, pre-release]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10              # タイムアウト設定
+    permissions:
+      contents: read                 # 最小権限
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --loglevel verbose  # npm ci でより確実に
+
+      - name: Run linter             # Lint追加
+        run: npm run lint
+
+      - name: Compile TypeScript
+        run: npm run compile
+
+      - name: Run tests (headless)
+        run: xvfb-run -a npm test
+        env:
+          DISPLAY: ":99"
+
+      - name: Upload test results on failure  # 失敗時のデバッグ情報
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            test-results/
+            .vscode-test/
+          retention-days: 7
+```
+
+**改善効果:**
+- **パフォーマンス向上**: 作業ブランチでの不要なテスト実行を削減
+- **品質向上**: Lintステップでコードスタイルを自動チェック
+- **セキュリティ向上**: 最小権限の原則、タイムアウトで無限ループ防止
+- **デバッグ容易性**: 失敗時のテスト結果をアーティファクトとして保存
+- **信頼性向上**: `npm ci` でロックファイルに基づいた確実なインストール
+
+### 今後の改善候補
+
+**GitHub Actions関連:**
+- [ ] マトリックス戦略の導入 (Windows/macOS/複数Node.jsバージョン)
+- [ ] TypeScriptコンパイル結果のキャッシュ
+- [ ] カスタムアクションの統合・簡素化
+- [ ] pre-releaseワークフローの重複削減
+
+**機能改善:**
 - [ ] `imageVariable.ts`: 画像のチャンネル順 (BGR→RGB) の自動変換オプション
 - [ ] `imageVariable.ts`: 大きな画像のリサイズオプション (表示用サムネイル)
 - [ ] GUI: ズームモーダル (画像クリックで拡大表示)
